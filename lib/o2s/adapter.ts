@@ -254,7 +254,8 @@ export function createO2sFetch(original: FetchFn, rules: O2sRule[]): FetchFn {
       }
     }
 
-    const companyId = (headers.get("x-organization-id") ?? "").trim() || readSelectedOrganizationId()
+    const fromHeader = (headers.get("x-organization-id") ?? "").trim()
+    const companyId = (fromHeader && fromHeader !== "null" && fromHeader !== "undefined" ? fromHeader : "") || readSelectedOrganizationId()
     const ctx: O2sContext = {
       companyId,
       method,
