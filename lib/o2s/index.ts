@@ -2,9 +2,10 @@
 import { createO2sFetch, type O2sRule } from "./adapter"
 import { accountRules } from "./rules/account"
 import { configurationRules } from "./rules/configuration"
+import { merchandisingRules } from "./rules/merchandising"
 
 /** Every rule, the first match wins. Steps 2–4 add their modules' rules here. */
-export const O2S_RULES: O2sRule[] = [...accountRules, ...configurationRules]
+export const O2S_RULES: O2sRule[] = [...accountRules, ...configurationRules, ...merchandisingRules]
 
 declare global {
   interface Window {

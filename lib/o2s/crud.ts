@@ -7,15 +7,15 @@
 //   POST   /<resource>/{id}/restore, /<resource>/upload, GET /template/upload -> a clear "not in O2S" error
 // Every record gets code-crafter's audit names (created_at, created_by_user, organizationId, ...).
 
-import { companyPath, isRecord, mapItems, O2sError, type O2sContext, type O2sRule } from "./adapter"
+import { companyPath, isRecord, mapItems, O2sError, singularNavs, type O2sContext, type O2sRule } from "./adapter"
 
 type Rec = Record<string, unknown>
 
 export type CrudOptions = {
   /** O2S → screen, per record (after the audit names are added). */
   fromO2s?: (record: Rec, ctx: O2sContext) => Rec
-  /** Screen → O2S, per body (the merge base on PATCH is the stored O2S record). */
-  toO2s?: (body: Rec, ctx: O2sContext) => Rec
+  /** Screen → O2S, per body. On PATCH `stored` is the O2S record being changed (also the merge base). */
+  toO2s?: (body: Rec, ctx: O2sContext, stored?: Rec) => Rec
   /** Renames the list's query keys (screen name -> O2S name). */
   queryNames?: Record<string, string>
   /** Extra rules for this resource, tried before the CRUD ones. */
@@ -57,8 +57,12 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
   const one = new RegExp(`^/api/v1/${esc}/([^/]+)$`)
   const label = options.label ?? "This record"
   const from = (data: unknown, ctx: O2sContext) =>
-    mapItems(data, (r) => (options.fromO2s ? options.fromO2s(withAuditNames(r), ctx) : withAuditNames(r)))
-  const to = (body: unknown, ctx: O2sContext) => (isRecord(body) && options.toO2s ? options.toO2s(body, ctx) : body)
+    mapItems(data, (r) => {
+      const record = singularNavs(withAuditNames(r)) as Rec
+      return options.fromO2s ? options.fromO2s(record, ctx) : record
+    })
+  const to = (body: unknown, ctx: O2sContext, stored?: Rec) =>
+    isRecord(body) && options.toO2s ? options.toO2s(body, ctx, stored) : body
 
   return [
     ...(options.extra ?? []),
@@ -74,23 +78,7 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
         throw new O2sError(`${label} cannot be restored: O2S deletes records permanently.`, 400)
       },
     },
-    {
-      methods: ["GET"],
-      match: base,
-      handle: async (_m, ctx) => {
-        if (ctx.query.get("deletedOnly") === "true") return { data: EMPTY_PAGE(ctx.query) }
-        const q = new URLSearchParams()
-        ctx.query.forEach((value, key) => {
-          if (key === "deletedOnly" || key === "organizationId" || value === "" || value === "all") return
-          if (key === "page") q.set("pageNumber", value)
-          else if (key === "limit") q.set("pageSize", value)
-          else q.set(options.queryNames?.[key] ?? key, value)
-        })
-        if (!q.has("pageSize")) q.set("pageSize", "1000")
-        const data = await ctx.call(companyPath(ctx, `${o2sPath}/paginated-list?${q}`))
-        return { data: from(pageOf(data, ctx.query), ctx) }
-      },
-    },
+    { methods: ["GET"], match: base, handle: crudListHandler(o2sPath, options) },
     {
       methods: ["GET"],
       match: one,
@@ -110,7 +98,7 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
       handle: async (m, ctx) => {
         const path = companyPath(ctx, `${o2sPath}/${m[1]}`)
         const stored = (await ctx.call(path)) as Rec
-        const changes = to(ctx.body, ctx) as Rec
+        const changes = to(ctx.body, ctx, stored) as Rec
         await ctx.call(path, { method: "PUT", body: { ...stored, ...changes } })
         return { data: from(await ctx.call(path), ctx), message: "Saved successfully" }
       },
@@ -122,6 +110,29 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
       response: () => ({ deleted: true }),
     },
   ]
+}
+
+/** GET /<resource>: the O2S paginated list with the screen's filters, as `{ items, meta }`. */
+export function crudListHandler(o2sPath: string, options: CrudOptions = {}): NonNullable<O2sRule["handle"]> {
+  return async (_m, ctx) => {
+    if (ctx.query.get("deletedOnly") === "true") return { data: EMPTY_PAGE(ctx.query) }
+    const q = new URLSearchParams()
+    ctx.query.forEach((value, key) => {
+      if (key === "deletedOnly" || key === "organizationId" || value === "" || value === "all") return
+      if (key === "page") q.set("pageNumber", value)
+      else if (key === "limit") q.set("pageSize", value)
+      else q.set(options.queryNames?.[key] ?? key, value)
+    })
+    if (!q.has("pageSize")) q.set("pageSize", "1000")
+    const data = await ctx.call(companyPath(ctx, `${o2sPath}/paginated-list?${q}`))
+    const page = pageOf(data, ctx.query)
+    return {
+      data: mapItems(page, (r) => {
+        const record = singularNavs(withAuditNames(r)) as Rec
+        return options.fromO2s ? options.fromO2s(record, ctx) : record
+      }),
+    }
+  }
 }
 
 /** An O2S page (or a plain list) as code-crafter's `{ items, meta }`. */

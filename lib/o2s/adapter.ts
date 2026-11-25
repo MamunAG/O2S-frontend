@@ -113,13 +113,34 @@ export function stringifyIds(value: unknown): unknown {
   return out
 }
 
-/** "" ids -> null before they reach O2S (an int there). */
+/** Before a body reaches O2S: a new row's "" / null `id` -> 0, a "" `<thing>Id` -> null (ints there). */
 export function normalizeRequestBody(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(normalizeRequestBody)
   if (!isRecord(value)) return value
   const out: Record<string, unknown> = {}
   for (const [key, v] of Object.entries(value)) {
-    out[key] = v === "" && ID_KEY.test(key) ? null : normalizeRequestBody(v)
+    if (key === "id" && (v === "" || v === null || v === undefined)) out[key] = 0
+    else out[key] = v === "" && ID_KEY.test(key) ? null : normalizeRequestBody(v)
+  }
+  return out
+}
+
+// O2S names a record's navigation by the table (plural: buyers, currencies); code-crafter by the relation
+// (singular: buyer, currency). Only object values are renamed, so lists named the same stay as they are.
+const SINGULAR_NAVS: Record<string, string> = {
+  buyers: "buyer", currencies: "currency", factories: "factory", countries: "country", units: "unit",
+  materialGroups: "materialGroup", sizes: "size", colors: "color", fabrics: "fabric", yarns: "yarn",
+  processes: "process", gmtCostScopes: "gmtCostScope", embellishments: "embellishment", tasks: "task",
+  jobs: "job", styles: "style", companies: "organization",
+}
+
+export function singularNavs(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(singularNavs)
+  if (!isRecord(value)) return value
+  const out: Record<string, unknown> = {}
+  for (const [key, v] of Object.entries(value)) {
+    const name = isRecord(v) && SINGULAR_NAVS[key] ? SINGULAR_NAVS[key] : key
+    out[name] = singularNavs(v)
   }
   return out
 }
