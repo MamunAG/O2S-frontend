@@ -9,7 +9,7 @@ export function LoginHero({ apiUrl }: { apiUrl: string }) {
           Sign in to continue building the workspace.
         </h1>
         <p className="max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
-          This form connects to the NestJS auth API at{" "}
+          This form connects to the O2S auth API at{" "}
           <span className="font-mono text-sm text-slate-900 dark:text-slate-100">
             {apiUrl}
           </span>

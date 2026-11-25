@@ -27,7 +27,7 @@ import type {
 import type { OrganizationMembershipRecord } from "@/features/organization/organization.types"
 
 export function OrganizationAccessRequestAdminPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3050"
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5299"
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [pendingRequests, setPendingRequests] = useState<OrganizationAccessRequestRecord[]>([])

@@ -96,7 +96,7 @@ const quickActions = [
 
 export function IamOverview() {
   const moduleData = getModuleNavigation("iam")
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3050"
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5299"
   const [pendingRequestCount, setPendingRequestCount] = useState<number | null>(
     null
   )

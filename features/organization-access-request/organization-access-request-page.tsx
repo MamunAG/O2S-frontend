@@ -38,7 +38,7 @@ export function OrganizationAccessRequestPage() {
   async function handleSubmit() {
     const accessToken = window.localStorage.getItem("access_token")
     const storedUser = parseStoredAuthUser(window.localStorage.getItem("auth_user"))
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3050"
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5299"
 
     if (!accessToken || !storedUser?.id) {
       toast.error("Please sign in again to submit an access request.")

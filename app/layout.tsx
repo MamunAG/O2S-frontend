@@ -3,6 +3,7 @@ import { Geist_Mono, Figtree } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
+import { O2sApiBridge } from "@/components/o2s-api-bridge"
 import { cn } from "@/lib/utils";
 
 const figtree = Figtree({ subsets: ['latin'], variable: '--font-sans' })
@@ -24,6 +25,7 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", figtree.variable)}
     >
       <body suppressHydrationWarning>
+        <O2sApiBridge />
         <ThemeProvider>{children}</ThemeProvider>
         <Toaster position="top-center" richColors closeButton />
       </body>

@@ -11,7 +11,7 @@ export function ForgotPasswordHero({ apiUrl }: { apiUrl: string }) {
         <p className="max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
           We will send a 4-digit verification code to your email or recovery
           email, then let you set a new password once the code is confirmed.
-          The recovery flow uses the NestJS auth API at{" "}
+          The recovery flow uses the O2S auth API at{" "}
           <span className="font-mono text-sm text-slate-900 dark:text-slate-100">
             {apiUrl}
           </span>

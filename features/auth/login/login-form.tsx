@@ -121,12 +121,12 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
         <div className="mt-8 space-y-5">
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-              Email
+              Email or user name
             </span>
             <input
-              type="email"
+              type="text"
               name="email"
-              autoComplete="email"
+              autoComplete="username"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="admin@blueatlantic.com"

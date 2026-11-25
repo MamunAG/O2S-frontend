@@ -29,7 +29,7 @@ function hasStoredAuth() {
 
 export function LoginPage() {
   const router = useRouter()
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3050"
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5299"
 
   useEffect(() => {
     if (!hasStoredAuth()) {

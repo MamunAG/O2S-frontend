@@ -68,7 +68,7 @@ export function OrganizationEntryDialog({
   onSaved,
   showLogoutAction = false,
 }: OrganizationEntryDialogProps) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3050"
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5299"
 
   const {
     register,

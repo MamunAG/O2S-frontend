@@ -52,7 +52,7 @@ export function OrganizationComboBox({
   const router = useRouter()
   const pathname = usePathname()
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3050"
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5299"
 
   useEffect(() => {
     const accessToken = window.localStorage.getItem("access_token")

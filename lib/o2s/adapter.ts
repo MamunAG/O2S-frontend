@@ -1,0 +1,355 @@
+// The bridge between this app (written for the code-crafter NestJS API) and the O2S .NET backend.
+//
+// Every service in features/ calls `fetch(`${NEXT_PUBLIC_API_URL}/api/v1/<code-crafter path>`)` and reads
+// code-crafter's envelope `{ success, message, data }`. Instead of rewriting each service, this module wraps
+// window.fetch once (lib/o2s/index.ts, mounted by components/o2s-api-bridge.tsx) and, for requests to the API:
+//   - finds the rule for the code-crafter path (lib/o2s/rules/*) and calls the O2S route instead, with the
+//     selected organization as the route's {companyId} (O2S has no x-organization-id header);
+//   - maps request bodies and query strings (page/limit -> pageNumber/pageSize, "" ids -> null);
+//   - turns O2S's `{ IsError, ErrorMessage, Data }` (or a bare 201 body) into `{ success, message, data }`,
+//     O2S pages `{ pageNumber, pageSize, totalItems, totalPages, data }` into `{ items, meta }`, and numeric
+//     ids into strings (code-crafter used uuids, the screens compare ids as strings);
+//   - refreshes the access token once on a 401 with the stored refresh token.
+// A path with no rule is sent unchanged (its envelope is still translated).
+
+import { readSelectedOrganizationId } from "@/lib/organization-selection"
+
+export type O2sContext = {
+  /** The selected organization (O2S company id), "" when none is selected. */
+  companyId: string
+  method: string
+  /** The code-crafter URL the app asked for. */
+  url: URL
+  query: URLSearchParams
+  /** The parsed JSON body (or the FormData) the app sent. */
+  body: unknown
+  /** Calls an O2S route (path relative to the API base, e.g. "/api/v1/account/profile") and returns its Data. */
+  call: (path: string, init?: { method?: string; body?: unknown }) => Promise<unknown>
+  /** The signed-in user stored at login (localStorage "auth_user"). */
+  userId: string
+}
+
+export type O2sResult = { status?: number; data: unknown; message?: string }
+
+export type O2sRule = {
+  /** HTTP methods the rule applies to (default: any). */
+  methods?: string[]
+  /** Matched against the code-crafter pathname, e.g. /^\/api\/v1\/buyer\/([^/]+)$/. */
+  match: RegExp
+  /** The O2S path (with its own query string, if any). */
+  to?: (m: RegExpMatchArray, ctx: O2sContext) => string
+  /** The O2S method, when it differs (PATCH -> PUT, ...). */
+  method?: string | ((ctx: O2sContext) => string)
+  /** Maps the query string the app sent (after the default page/limit mapping). */
+  query?: (q: URLSearchParams, ctx: O2sContext) => void
+  /** Maps the request body. May call other routes through ctx.call. */
+  request?: (body: unknown, ctx: O2sContext) => unknown | Promise<unknown>
+  /** Maps the O2S Data back to what the screen expects (after the default page mapping). */
+  response?: (data: unknown, ctx: O2sContext) => unknown
+  /** Handles the request entirely (several calls, or nothing to call). */
+  handle?: (m: RegExpMatchArray, ctx: O2sContext) => Promise<O2sResult>
+  /** The response is a file (pdf / xlsx / csv): passed through untouched. */
+  file?: boolean
+}
+
+type FetchFn = typeof window.fetch
+
+export class O2sError extends Error {
+  constructor(message: string, readonly status: number, readonly data: unknown = null) {
+    super(message)
+  }
+}
+
+export function apiBase() {
+  return (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "")
+}
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+// ---------- response shapes ----------
+
+type O2sPage = { pageNumber?: number | null; pageSize?: number | null; totalItems: number; totalPages: number; data: unknown[] }
+
+export function isO2sPage(value: unknown): value is O2sPage {
+  return isRecord(value) && Array.isArray(value.data) && typeof value.totalItems === "number"
+}
+
+/** O2S page -> code-crafter `{ items, meta }` (extra fields, e.g. unreadCount, are kept). */
+export function toCodeCrafterPage(page: O2sPage, query?: URLSearchParams) {
+  const limit = page.pageSize ?? (Number(query?.get("limit") ?? query?.get("pageSize") ?? 0) || page.data.length)
+  const current = page.pageNumber ?? (Number(query?.get("page") ?? query?.get("pageNumber") ?? 1) || 1)
+  const totalPages = page.totalPages || (limit ? Math.ceil(page.totalItems / limit) : 1)
+  const { data, totalItems, pageNumber, pageSize, totalPages: _t, metaData: _m, ...rest } = page as O2sPage & Record<string, unknown>
+  void pageNumber
+  void pageSize
+  void _t
+  void _m
+  return {
+    ...rest,
+    items: data,
+    meta: {
+      total: totalItems,
+      page: current,
+      limit,
+      totalPages,
+      hasNextPage: current < totalPages,
+      hasPreviousPage: current > 1,
+    },
+  }
+}
+
+const ID_KEY = /^(id|.*Id)$/
+
+/** Numeric ids -> strings, deep (code-crafter ids were uuids; the screens compare them as strings). */
+export function stringifyIds(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stringifyIds)
+  if (!isRecord(value)) return value
+  const out: Record<string, unknown> = {}
+  for (const [key, v] of Object.entries(value)) {
+    out[key] = typeof v === "number" && ID_KEY.test(key) ? String(v) : stringifyIds(v)
+  }
+  return out
+}
+
+/** "" ids -> null before they reach O2S (an int there). */
+export function normalizeRequestBody(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeRequestBody)
+  if (!isRecord(value)) return value
+  const out: Record<string, unknown> = {}
+  for (const [key, v] of Object.entries(value)) {
+    out[key] = v === "" && ID_KEY.test(key) ? null : normalizeRequestBody(v)
+  }
+  return out
+}
+
+/** Reads an O2S answer: the envelope, a bare (201) object, nothing (204) or ProblemDetails. */
+async function readO2s(response: Response): Promise<{ ok: boolean; message: string; data: unknown }> {
+  if (response.status === 204) return { ok: response.ok, message: "OK", data: null }
+  const text = await response.text()
+  let payload: unknown = null
+  try {
+    payload = text ? JSON.parse(text) : null
+  } catch {
+    return { ok: response.ok, message: response.ok ? "OK" : text || response.statusText, data: null }
+  }
+  if (isRecord(payload) && "IsError" in payload) {
+    return {
+      ok: response.ok && payload.IsError !== true,
+      message: (payload.ErrorMessage as string | null) || (response.ok ? "OK" : response.statusText),
+      data: payload.Data ?? null,
+    }
+  }
+  if (isRecord(payload) && !response.ok) {
+    const message = (payload.detail as string) || (payload.title as string) || response.statusText
+    return { ok: false, message, data: payload }
+  }
+  return { ok: response.ok, message: response.ok ? "OK" : response.statusText, data: payload }
+}
+
+function codeCrafterResponse(status: number, ok: boolean, message: string, data: unknown) {
+  const body = {
+    success: ok,
+    message,
+    // A NestJS error carried the status too; some screens read it.
+    ...(ok ? {} : { statusCode: status, error: message }),
+    data,
+    timestamp: new Date().toISOString(),
+  }
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  })
+}
+
+// ---------- the fetch wrapper ----------
+
+function readUserId() {
+  try {
+    const user = JSON.parse(window.localStorage.getItem("auth_user") ?? "null") as { id?: string } | null
+    return user?.id ?? ""
+  } catch {
+    return ""
+  }
+}
+
+let refreshing: Promise<boolean> | null = null
+
+async function refreshAccessToken(original: FetchFn): Promise<boolean> {
+  const refreshToken = window.localStorage.getItem("refresh_token")
+  if (!refreshToken) return false
+  refreshing ??= (async () => {
+    try {
+      const response = await original(`${apiBase()}/api/v1/account/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      })
+      const { ok, data } = await readO2s(response)
+      if (!ok || !isRecord(data) || typeof data.token !== "string") return false
+      window.localStorage.setItem("access_token", data.token)
+      if (typeof data.refreshToken === "string") window.localStorage.setItem("refresh_token", data.refreshToken)
+      return true
+    } catch {
+      return false
+    } finally {
+      setTimeout(() => (refreshing = null), 0)
+    }
+  })()
+  return refreshing
+}
+
+/** Sends one request to O2S with the caller's headers; retries once after a token refresh on 401. */
+async function sendToO2s(original: FetchFn, path: string, init: RequestInit, allowRefresh = true): Promise<Response> {
+  const headers = new Headers(init.headers)
+  headers.delete("x-organization-id")
+  const token = window.localStorage.getItem("access_token")
+  if (headers.has("Authorization") && token) headers.set("Authorization", `Bearer ${token}`)
+  const response = await original(`${apiBase()}${path}`, { ...init, headers })
+  if (response.status === 401 && allowRefresh && headers.has("Authorization") && (await refreshAccessToken(original))) {
+    return sendToO2s(original, path, init, false)
+  }
+  return response
+}
+
+function serializeBody(body: unknown, headers: Headers): BodyInit | undefined {
+  if (body === undefined) return undefined
+  if (body instanceof FormData || body instanceof Blob || typeof body === "string") return body as BodyInit
+  headers.set("Content-Type", "application/json")
+  return JSON.stringify(body)
+}
+
+function defaultQuery(q: URLSearchParams) {
+  const mapped = new URLSearchParams()
+  q.forEach((value, key) => {
+    if (key === "organizationId") return // the route carries the company
+    if (key === "page") mapped.set("pageNumber", value)
+    else if (key === "limit") mapped.set("pageSize", value)
+    else mapped.append(key, value)
+  })
+  return mapped
+}
+
+export function createO2sFetch(original: FetchFn, rules: O2sRule[]): FetchFn {
+  return async (input, init) => {
+    const base = apiBase()
+    const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.href : input.url
+    if (!base || !rawUrl.startsWith(base)) return original(input, init)
+    const url = new URL(rawUrl)
+    if (!url.pathname.startsWith("/api/v1/")) return original(input, init)
+    if (input instanceof Request) {
+      // Not used by this app's services; send as is.
+      return original(input, init)
+    }
+
+    const method = (init?.method ?? "GET").toUpperCase()
+    const headers = new Headers(init?.headers)
+    let body: unknown = init?.body
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body)
+      } catch {
+        // keep the text
+      }
+    }
+
+    const companyId = (headers.get("x-organization-id") ?? "").trim() || readSelectedOrganizationId()
+    const ctx: O2sContext = {
+      companyId,
+      method,
+      url,
+      query: url.searchParams,
+      body,
+      userId: readUserId(),
+      call: async (path, callInit) => {
+        const callHeaders = new Headers({ Accept: "application/json" })
+        const auth = headers.get("Authorization")
+        if (auth) callHeaders.set("Authorization", auth)
+        const response = await sendToO2s(original, path, {
+          method: callInit?.method ?? "GET",
+          headers: callHeaders,
+          body: serializeBody(callInit?.body, callHeaders),
+          cache: "no-store",
+        })
+        const read = await readO2s(response)
+        if (!read.ok) throw new O2sError(read.message, response.status, read.data)
+        return read.data
+      },
+    }
+
+    const rule = rules.find((r) => (!r.methods || r.methods.includes(method)) && r.match.test(url.pathname))
+    const match = rule ? url.pathname.match(rule.match)! : null
+
+    try {
+      if (rule?.handle) {
+        const result = await rule.handle(match!, ctx)
+        return codeCrafterResponse(result.status ?? 200, true, result.message ?? "OK", stringifyIds(result.data))
+      }
+
+      let path = rule?.to ? rule.to(match!, ctx) : url.pathname
+      const query = defaultQuery(url.searchParams)
+      rule?.query?.(query, ctx)
+      const [pathOnly, ownQuery] = path.split("?")
+      new URLSearchParams(ownQuery ?? "").forEach((v, k) => query.set(k, v))
+      path = pathOnly + (query.toString() ? `?${query}` : "")
+
+      const o2sMethod = typeof rule?.method === "function" ? rule.method(ctx) : (rule?.method ?? method)
+      let o2sBody = body
+      if (o2sBody !== undefined && !(o2sBody instanceof FormData)) {
+        o2sBody = normalizeRequestBody(rule?.request ? await rule.request(o2sBody, ctx) : o2sBody)
+      } else if (o2sBody instanceof FormData && rule?.request) {
+        o2sBody = await rule.request(o2sBody, ctx)
+      }
+      const outHeaders = new Headers(headers)
+      outHeaders.delete("Content-Type")
+      const response = await sendToO2s(original, path, {
+        ...init,
+        method: o2sMethod,
+        headers: outHeaders,
+        body: serializeBody(o2sBody, outHeaders),
+      })
+
+      const contentType = response.headers.get("Content-Type") ?? ""
+      if (rule?.file && response.ok && !contentType.includes("json")) return response
+
+      const read = await readO2s(response)
+      if (!read.ok) {
+        return codeCrafterResponse(response.status, false, read.message, stringifyIds(read.data))
+      }
+      let data = read.data
+      if (isO2sPage(data)) data = toCodeCrafterPage(data, url.searchParams)
+      if (rule?.response) data = rule.response(data, ctx)
+      return codeCrafterResponse(response.status === 204 ? 200 : response.status, true, read.message, stringifyIds(data))
+    } catch (error) {
+      if (error instanceof O2sError) {
+        return codeCrafterResponse(error.status || 400, false, error.message, stringifyIds(error.data))
+      }
+      return codeCrafterResponse(400, false, error instanceof Error ? error.message : "The request failed.", null)
+    }
+  }
+}
+
+// ---------- helpers for the rules ----------
+
+/** The route prefix for the selected company: /api/v1/{companyId}. */
+export function companyPath(ctx: O2sContext, rest: string) {
+  if (!ctx.companyId) throw new O2sError("Select an organization before continuing.", 400)
+  return `/api/v1/${encodeURIComponent(ctx.companyId)}${rest}`
+}
+
+/** Copies `from` -> `to` keys of a record (others unchanged); missing keys are skipped. */
+export function renameKeys(value: unknown, names: Record<string, string>): unknown {
+  if (Array.isArray(value)) return value.map((v) => renameKeys(v, names))
+  if (!isRecord(value)) return value
+  const out: Record<string, unknown> = {}
+  for (const [key, v] of Object.entries(value)) out[names[key] ?? key] = v
+  return out
+}
+
+/** Maps a list (or a code-crafter page's items) with fn. */
+export function mapItems(data: unknown, fn: (item: Record<string, unknown>) => unknown): unknown {
+  if (Array.isArray(data)) return data.map((item) => (isRecord(item) ? fn(item) : item))
+  if (isRecord(data) && Array.isArray(data.items)) return { ...data, items: mapItems(data.items, fn) }
+  return isRecord(data) ? fn(data) : data
+}
