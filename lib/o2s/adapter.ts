@@ -102,8 +102,14 @@ export function toCodeCrafterPage(page: O2sPage, query?: URLSearchParams) {
 
 const ID_KEY = /^(id|.*Id)$/
 
-/** Numeric ids -> strings, deep (code-crafter ids were uuids; the screens compare them as strings). */
+const DATE_ONLY = /^(\d{4}-\d{2}-\d{2})T00:00:00$/
+
+/**
+ * Deep, on every answer: numeric ids -> strings (code-crafter ids were uuids; the screens compare them as
+ * strings) and O2S's date-only values ("2026-01-31T00:00:00", no zone) -> "2026-01-31" for date inputs.
+ */
 export function stringifyIds(value: unknown): unknown {
+  if (typeof value === "string") return value.replace(DATE_ONLY, "$1")
   if (Array.isArray(value)) return value.map(stringifyIds)
   if (!isRecord(value)) return value
   const out: Record<string, unknown> = {}
@@ -131,7 +137,9 @@ const SINGULAR_NAVS: Record<string, string> = {
   buyers: "buyer", currencies: "currency", factories: "factory", countries: "country", units: "unit",
   materialGroups: "materialGroup", sizes: "size", colors: "color", fabrics: "fabric", yarns: "yarn",
   processes: "process", gmtCostScopes: "gmtCostScope", embellishments: "embellishment", tasks: "task",
-  jobs: "job", styles: "style", companies: "organization",
+  jobs: "job", styles: "style", companies: "organization", designations: "designation", departments: "department",
+  employmentTypes: "employmentType", grades: "grade", payGroups: "payGroup", workLocations: "workLocation",
+  employees: "employee", leaveTypes: "leaveType", shifts: "shift",
 }
 
 export function singularNavs(value: unknown): unknown {
@@ -306,7 +314,7 @@ export function createO2sFetch(original: FetchFn, rules: O2sRule[]): FetchFn {
     try {
       if (rule?.handle) {
         const result = await rule.handle(match!, ctx)
-        return codeCrafterResponse(result.status ?? 200, true, result.message ?? "OK", stringifyIds(result.data))
+        return codeCrafterResponse(result.status ?? 200, true, result.message ?? "OK", stringifyIds(result.data ?? {}))
       }
 
       let path = rule?.to ? rule.to(match!, ctx) : url.pathname
@@ -342,7 +350,8 @@ export function createO2sFetch(original: FetchFn, rules: O2sRule[]): FetchFn {
       let data = read.data
       if (isO2sPage(data)) data = toCodeCrafterPage(data, url.searchParams)
       if (rule?.response) data = rule.response(data, ctx)
-      return codeCrafterResponse(response.status === 204 ? 200 : response.status, true, read.message, stringifyIds(data))
+      // code-crafter always answered with data; some screens refuse a success without it (a 204 delete).
+      return codeCrafterResponse(response.status === 204 ? 200 : response.status, true, read.message, stringifyIds(data ?? {}))
     } catch (error) {
       if (error instanceof O2sError) {
         return codeCrafterResponse(error.status || 400, false, error.message, stringifyIds(error.data))
