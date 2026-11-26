@@ -127,19 +127,19 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
     <section className="flex items-center">
       <form
         onSubmit={handleSubmit}
-        className="w-full rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70 dark:shadow-[0_20px_80px_rgba(0,0,0,0.35)] sm:p-8"
+        className="w-full rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_20px_80px_rgba(15,23,42,0.12)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70 dark:shadow-[0_20px_80px_rgba(0,0,0,0.35)] sm:p-8"
       >
         <div className="space-y-2">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
             Welcome back
           </p>
-          <h2 className="text-2xl font-semibold tracking-tight">User Login</h2>
-          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-            Use your registered email and password to authenticate.
+          <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
+          <p className="hidden text-sm leading-6 text-slate-600 dark:text-slate-300 sm:block">
+            Use your email or user name and password to open your workspace.
           </p>
         </div>
 
-        <div className="mt-8 space-y-5">
+        <div className="mt-5 space-y-4 sm:mt-8 sm:space-y-5">
           <label className="block space-y-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Email or user name
@@ -191,7 +191,7 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
         </Button>
 
         <p className="mt-3 text-center text-sm text-slate-600 dark:text-slate-300">
-          Do not have account?{" "}
+          Don't have an account?{" "}
           <Link
             href="/register"
             className="font-medium text-slate-900 underline underline-offset-4 transition hover:text-primary dark:text-slate-100"
@@ -244,7 +244,7 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
           </div>
         ) : null}
 
-        <p className="mt-6 text-xs leading-5 text-slate-500 dark:text-slate-400">
+        <p className="mt-6 hidden text-xs leading-5 text-slate-500 dark:text-slate-400 sm:block">
           New account? Confirm your email with the code we sent before you sign in.
         </p>
       </form>
