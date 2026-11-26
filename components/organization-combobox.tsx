@@ -170,6 +170,9 @@ export function OrganizationComboBox({
 
   function handleOrganizationSaved(organization: OrganizationRecord) {
     preferredOrganizationIdRef.current = organization.id
+    // Close it here: handleOrganizationDialogOpenChange keeps the dialog open while the user has no
+    // organization, and the list still looks empty until the reload below comes back.
+    setOrganizationDialogOpen(false)
     setReloadKey((currentReloadKey) => currentReloadKey + 1)
   }
 
