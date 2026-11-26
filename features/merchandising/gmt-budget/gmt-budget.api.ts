@@ -25,16 +25,16 @@ export const fetchPoStyleList = (ctx: ApiContext, page: number, limit: number, f
     fallback: "Unable to load the PO / style list.",
   })
 
-export const fetchGmtBudget = (ctx: ApiContext, id: number) =>
+export const fetchGmtBudget = (ctx: ApiContext, id: string) =>
   request<GmtBudget>(ctx, `${BUDGET}/${id}`, { fallback: "Unable to load the GMT budget." })
 
 export const createGmtBudget = (ctx: ApiContext, body: unknown) =>
   request<GmtBudget>(ctx, `${BUDGET}/`, { method: "POST", body, fallback: "Unable to save the GMT budget." })
 
-export const updateGmtBudget = (ctx: ApiContext, id: number, body: unknown) =>
+export const updateGmtBudget = (ctx: ApiContext, id: string, body: unknown) =>
   request<unknown>(ctx, `${BUDGET}/${id}`, { method: "PUT", body, fallback: "Unable to update the GMT budget." })
 
-export const deleteGmtBudget = (ctx: ApiContext, id: number) =>
+export const deleteGmtBudget = (ctx: ApiContext, id: string) =>
   request<unknown>(ctx, `${BUDGET}/${id}`, { method: "DELETE", fallback: "Unable to delete the GMT budget." })
 
 /** The POs of a buyer / style (from the PO / style list): the PO picker. */
@@ -45,7 +45,7 @@ export async function loadPoOptions(ctx: ApiContext, p: LoadParams, buyerId?: st
     isBudgetDone: isBudgetDone === undefined ? "" : isBudgetDone ? "true" : "false",
   })
   const query = p.query.trim().toLowerCase()
-  const seen = new Set<number>()
+  const seen = new Set<string>()
   const items = (page?.items ?? [])
     .filter((row) => !query || row.po.toLowerCase().includes(query))
     .filter((row) => (seen.has(row.poId) ? false : (seen.add(row.poId), true)))
@@ -54,7 +54,7 @@ export async function loadPoOptions(ctx: ApiContext, p: LoadParams, buyerId?: st
 }
 
 /** The PO + style's row of the PO / style list (its budget id, when it has one). */
-export async function findPoStyle(ctx: ApiContext, poId: number, styleId: number) {
+export async function findPoStyle(ctx: ApiContext, poId: string, styleId: string) {
   const page = await fetchPoStyleList(ctx, 1, 5, { poId: String(poId), styleId: String(styleId) })
   return (page?.items ?? []).find((r) => r.poId === poId && r.styleId === styleId) ?? null
 }
@@ -63,8 +63,8 @@ export async function findPoStyle(ctx: ApiContext, poId: number, styleId: number
  * The PO's job lines of the style: the jobs whose PO number matches, read one by one (the job list has no
  * lines), and their lines of this PO id + style. Needs Read on the Job menu.
  */
-export async function fetchPoStyleLines(ctx: ApiContext, poNo: string, poId: number, styleId: number) {
-  const jobs = await request<Page<{ id: number }>>(ctx, `${MERCH}/job/paginated-list`, {
+export async function fetchPoStyleLines(ctx: ApiContext, poNo: string, poId: string, styleId: string) {
+  const jobs = await request<Page<{ id: string }>>(ctx, `${MERCH}/job/paginated-list`, {
     query: { poNo, pageNumber: 1, pageSize: 50 },
     fallback: "Unable to read the PO's job lines.",
   })
@@ -72,7 +72,7 @@ export async function fetchPoStyleLines(ctx: ApiContext, poNo: string, poId: num
   for (const job of jobs?.items ?? []) {
     const full = await request<{ details?: Array<Record<string, unknown>> }>(ctx, `${MERCH}/job/${job.id}`)
     for (const line of full?.details ?? []) {
-      if (Number(line.poId) === poId && Number(line.styleId) === styleId) lines.push(line)
+      if (String(line.poId) === poId && String(line.styleId) === styleId) lines.push(line)
     }
   }
   return lines
@@ -81,7 +81,7 @@ export async function fetchPoStyleLines(ctx: ApiContext, poNo: string, poId: num
 /** The style's GMT costings (the costing picker). */
 export async function loadCostingOptions(ctx: ApiContext, p: LoadParams, styleId?: string) {
   if (!styleId) return { items: [], hasNextPage: false }
-  const page = await request<Page<{ id: number; costName: string }>>(ctx, `${MERCH}/gmt-costing/paginated-list`, {
+  const page = await request<Page<{ id: string; costName: string }>>(ctx, `${MERCH}/gmt-costing/paginated-list`, {
     query: { styleId, costName: p.query, pageNumber: p.page, pageSize: p.limit },
   })
   return {

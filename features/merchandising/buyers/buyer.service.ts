@@ -184,7 +184,7 @@ function buildBuyerPayload(payload: BuyerFormValues) {
     displayName: payload.displayName.trim(),
     contact: optionalString(payload.contact),
     email: optionalString(payload.email),
-    countryId: optionalNumber(payload.countryId),
+    countryId: (payload.countryId ? String(payload.countryId) : null),
     address: optionalString(payload.address),
     remarks: optionalString(payload.remarks),
     isActive: payload.isActive,

@@ -293,8 +293,8 @@ export function GmtFabricCostDialog({
               onClick={() => {
                 const clean = {
                   ...cost,
-                  lastYarnDtls: cost.lastYarnDtls.filter((y) => y.yarnId > 0),
-                  lstProcessDtls: cost.lstProcessDtls.filter((p) => p.processId > 0),
+                  lastYarnDtls: cost.lastYarnDtls.filter((y) => !!y.yarnId),
+                  lstProcessDtls: cost.lstProcessDtls.filter((p) => !!p.processId),
                 }
                 onSet(clean.lastYarnDtls.length || clean.lstProcessDtls.length ? clean : null)
                 onClose()
@@ -316,7 +316,7 @@ function ScopeCombobox({
   disabled,
   onChange,
 }: {
-  value: number
+  value: string
   label: string
   options: AppComboboxOption[]
   disabled: boolean
@@ -373,7 +373,7 @@ function ProcessTable({
                   label={p.processName}
                   options={options}
                   disabled={readOnly}
-                  onChange={(o) => onPatch(p.clientId, { processId: o ? Number(o.value) : 0, processName: o?.label ?? "" })}
+                  onChange={(o) => onPatch(p.clientId, { processId: o ? String(o.value) : "", processName: o?.label ?? "" })}
                 />
               </td>
               <td className={TD_CLASS}>
@@ -438,7 +438,7 @@ function YarnRows({
               loadItems={loadMaterials}
               placeholder="Yarn"
               disabled={readOnly}
-              onChange={(o) => onPatch({ yarnId: o ? Number(o.value) : 0, yarnName: o?.label ?? "" })}
+              onChange={(o) => onPatch({ yarnId: o ? String(o.value) : "", yarnName: o?.label ?? "" })}
             />
             {ownCount ? <Badge variant="outline" className="rounded-md px-1 text-[10px]">+{ownCount}</Badge> : null}
           </div>
@@ -466,7 +466,7 @@ function YarnRows({
             loadItems={loadColors}
             placeholder="Color"
             disabled={readOnly}
-            onChange={(o) => onPatch({ yarnDyeingColorId: o ? Number(o.value) : null, yarnDyeingColorName: o?.label ?? "" })}
+            onChange={(o) => onPatch({ yarnDyeingColorId: o ? String(o.value) : null, yarnDyeingColorName: o?.label ?? "" })}
           />
         </td>
         <td className={TD_CLASS}>

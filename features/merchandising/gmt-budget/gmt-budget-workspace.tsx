@@ -65,7 +65,7 @@ function toQuery(f: Filters): PoStyleFilters {
   }
 }
 
-type Editor = { mode: GmtBudgetDialogMode; id: number | null; seed: BudgetSeed | null; key: number }
+type Editor = { mode: GmtBudgetDialogMode; id: string | null; seed: BudgetSeed | null; key: number }
 
 export function GmtBudgetWorkspace({ apiUrl }: { apiUrl: string }) {
   const router = useRouter()
@@ -169,7 +169,7 @@ export function GmtBudgetWorkspace({ apiUrl }: { apiUrl: string }) {
   }, [access?.canView, ctx, filters, limit, organizationId, page, reportError, requestKey])
 
   const refresh = useCallback(() => setRefreshVersion((v) => v + 1), [])
-  const open = useCallback((mode: GmtBudgetDialogMode, id: number | null, seed: BudgetSeed | null = null) => setEditor({ mode, id, seed, key: Date.now() }), [])
+  const open = useCallback((mode: GmtBudgetDialogMode, id: string | null, seed: BudgetSeed | null = null) => setEditor({ mode, id, seed, key: Date.now() }), [])
 
   async function confirmDelete() {
     if (!deleteTarget) return
@@ -387,15 +387,15 @@ export function GmtBudgetWorkspace({ apiUrl }: { apiUrl: string }) {
                 >
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="budgetFilterBuyer">Buyer</FieldLabel>
-                    <LookupCombobox id="budgetFilterBuyer" value={draft.buyer ? Number(draft.buyer.value) : null} label={draft.buyer?.label ?? ""} loadItems={loadBuyers} placeholder="All buyers" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, buyer: o, style: null, po: null })} />
+                    <LookupCombobox id="budgetFilterBuyer" value={draft.buyer ? draft.buyer.value : null} label={draft.buyer?.label ?? ""} loadItems={loadBuyers} placeholder="All buyers" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, buyer: o, style: null, po: null })} />
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="budgetFilterStyle">Style</FieldLabel>
-                    <LookupCombobox key={draft.buyer?.value ?? "any"} id="budgetFilterStyle" value={draft.style ? Number(draft.style.value) : null} label={draft.style?.label ?? ""} loadItems={loadStyles} placeholder="All styles" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, style: o, po: null })} />
+                    <LookupCombobox key={draft.buyer?.value ?? "any"} id="budgetFilterStyle" value={draft.style ? draft.style.value : null} label={draft.style?.label ?? ""} loadItems={loadStyles} placeholder="All styles" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, style: o, po: null })} />
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="budgetFilterPo">PO</FieldLabel>
-                    <LookupCombobox key={`${draft.buyer?.value}-${draft.style?.value}`} id="budgetFilterPo" value={draft.po ? Number(draft.po.value) : null} label={draft.po?.label ?? ""} loadItems={loadPos} placeholder="All POs" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, po: o })} />
+                    <LookupCombobox key={`${draft.buyer?.value}-${draft.style?.value}`} id="budgetFilterPo" value={draft.po ? draft.po.value : null} label={draft.po?.label ?? ""} loadItems={loadPos} placeholder="All POs" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, po: o })} />
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="budgetFilterStatus">Status</FieldLabel>

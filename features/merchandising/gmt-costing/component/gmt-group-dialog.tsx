@@ -62,7 +62,7 @@ export function GmtGroupDialog({
 
   /** Other groups already holding an item (amber for sizes; a color there is refused). */
   const elsewhere = useMemo(() => {
-    const map = new Map<number, string[]>()
+    const map = new Map<string, string[]>()
     for (const r of rows) {
       const isOwn = oldName && !thisRowOnly ? groupNameOf(r, kind) === oldName : r.clientId === row.clientId
       if (isOwn) continue

@@ -8,8 +8,8 @@ import type {
 import { MATERIAL_IMAGE_TOO_LARGE_MESSAGE } from "./material.constants"
 
 type BackendFileRecord = {
-  id?: number
-  file_id: number
+  id?: string
+  file_id: string
   file_name?: string
   original_name?: string
   file_path?: string
@@ -196,9 +196,9 @@ function buildMaterialPayload(payload: MaterialFormValues) {
     name: payload.name.trim(),
     code: optionalString(payload.code),
     description: optionalString(payload.description),
-    unitId: optionalNumber(payload.unitId),
+    unitId: (payload.unitId ? String(payload.unitId) : null),
     materialGroupId: optionalString(payload.materialGroupId),
-    imageId: optionalNumber(payload.imageId),
+    imageId: (payload.imageId ? String(payload.imageId) : null),
     isActive: payload.isActive,
   }
 }

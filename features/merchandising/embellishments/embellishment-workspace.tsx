@@ -276,7 +276,7 @@ export function EmbellishmentWorkspace({ apiUrl }: { apiUrl: string }) {
   const [editorSubmitting, setEditorSubmitting] = useState(false)
   const [editorError, setEditorError] = useState("")
   const [editorInitialValues, setEditorInitialValues] = useState<EmbellishmentFormValues>(DEFAULT_FORM_VALUES)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const [deleteTarget, setDeleteTarget] = useState<EmbellishmentRecord | null>(null)
   const [deleteWorking, setDeleteWorking] = useState(false)
@@ -400,7 +400,7 @@ export function EmbellishmentWorkspace({ apiUrl }: { apiUrl: string }) {
     }
   }, [apiUrl, handleAuthFailure, refreshVersion, selectedOrganizationId])
 
-  const openEditDialog = useCallback(async (embellishmentId: number) => {
+  const openEditDialog = useCallback(async (embellishmentId: string) => {
     if (!accessRules?.canUpdate) {
       toast.error("You do not have permission to update embellishments.")
       return

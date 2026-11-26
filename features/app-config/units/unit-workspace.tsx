@@ -247,7 +247,7 @@ export function UnitWorkspace({ apiUrl }: { apiUrl: string }) {
   const [editorSubmitting, setEditorSubmitting] = useState(false)
   const [editorError, setEditorError] = useState("")
   const [editorInitialValues, setEditorInitialValues] = useState<UnitFormValues>(DEFAULT_FORM_VALUES)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [downloadingTemplate, setDownloadingTemplate] = useState(false)
   const [uploadingTemplate, setUploadingTemplate] = useState(false)
 
@@ -365,7 +365,7 @@ export function UnitWorkspace({ apiUrl }: { apiUrl: string }) {
     }
   }, [apiUrl, handleAuthFailure, refreshVersion, selectedOrganizationId])
 
-  const openEditDialog = useCallback(async (unitId: number) => {
+  const openEditDialog = useCallback(async (unitId: string) => {
     if (!accessRules?.canUpdate) {
       toast.error("You do not have permission to update units.")
       return

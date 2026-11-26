@@ -41,7 +41,7 @@ const NO_ACCESS: AccessRules = { canView: false, canCreate: false, canUpdate: fa
 const DEFAULT_FILTERS: GmtCostingFilters = { costName: "", buyer: null, style: null, isActive: "", fromCostDate: "", toCostDate: "" }
 const ALL = "__all__"
 
-type EditorState = { open: boolean; mode: GmtCostingDialogMode; id: number | null }
+type EditorState = { open: boolean; mode: GmtCostingDialogMode; id: string | null }
 
 export function GmtCostingWorkspace({ apiUrl }: { apiUrl: string }) {
   const router = useRouter()
@@ -165,7 +165,7 @@ export function GmtCostingWorkspace({ apiUrl }: { apiUrl: string }) {
   }, [access?.canView, ctx, filters, limit, organizationId, page, requestKey, reportError])
 
   const refresh = useCallback(() => setRefreshVersion((v) => v + 1), [])
-  const openEditor = useCallback((mode: GmtCostingDialogMode, id: number | null) => setEditor({ open: true, mode, id }), [])
+  const openEditor = useCallback((mode: GmtCostingDialogMode, id: string | null) => setEditor({ open: true, mode, id }), [])
 
   async function confirmDelete() {
     if (!deleteTarget) return
@@ -396,7 +396,7 @@ export function GmtCostingWorkspace({ apiUrl }: { apiUrl: string }) {
                     <FieldLabel htmlFor="gmtFilterBuyer">Buyer</FieldLabel>
                     <LookupCombobox
                       id="gmtFilterBuyer"
-                      value={draft.buyer ? Number(draft.buyer.value) : null}
+                      value={draft.buyer ? draft.buyer.value : null}
                       label={draft.buyer?.label ?? ""}
                       loadItems={loadBuyers}
                       placeholder="All buyers"
@@ -409,7 +409,7 @@ export function GmtCostingWorkspace({ apiUrl }: { apiUrl: string }) {
                     <LookupCombobox
                       key={draft.buyer?.value ?? "any"}
                       id="gmtFilterStyle"
-                      value={draft.style ? Number(draft.style.value) : null}
+                      value={draft.style ? draft.style.value : null}
                       label={draft.style?.label ?? ""}
                       loadItems={loadStyles}
                       placeholder="All styles"
@@ -530,7 +530,7 @@ function RowActions({
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
-  onOpen: (mode: GmtCostingDialogMode, id: number) => void
+  onOpen: (mode: GmtCostingDialogMode, id: string) => void
   onSheet: (item: GmtCostingListItem) => void
   onDelete: (item: GmtCostingListItem) => void
 }) {

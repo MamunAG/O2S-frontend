@@ -27,7 +27,7 @@ type CountryTableSectionProps = {
   onPageChange: (nextPage: number | ((current: number) => number)) => void
   onLimitChange: (nextPageSize: number) => void
   onCreateCountry: () => void
-  onEditCountry: (countryId: number) => void
+  onEditCountry: (countryId: string) => void
   onDeleteCountry: (country: CountryRecord) => void
   onResetFilters: () => void
   onDownloadTemplate: () => void

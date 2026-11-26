@@ -115,25 +115,25 @@ const named = (scope: CostScope, name: string) => scope.name.trim().toUpperCase(
 function asCopy(source: GmtCosting): GmtCosting {
   return {
     ...source,
-    id: 0,
+    id: "",
     costName: `${source.costName} (copy)`,
     lstDetails: source.lstDetails.map((row) => copyDetail(row)),
-    lstGMTCostPerPcs: source.lstGMTCostPerPcs.map((r) => ({ ...r, clientId: newClientId(), id: 0, masterId: 0 })),
+    lstGMTCostPerPcs: source.lstGMTCostPerPcs.map((r) => ({ ...r, clientId: newClientId(), id: "", masterId: "" })),
     lstGMTOtherCost: source.lstGMTOtherCost.map((r) => ({
       ...r,
       clientId: newClientId(),
-      id: 0,
-      masterId: 0,
-      lstColors: r.lstColors.map((c) => ({ ...c, clientId: newClientId(), id: 0, otherCostDtlsId: 0 })),
+      id: "",
+      masterId: "",
+      lstColors: r.lstColors.map((c) => ({ ...c, clientId: newClientId(), id: "", otherCostDtlsId: "" })),
     })),
-    lstGMTCommission: source.lstGMTCommission.map((r) => ({ ...r, clientId: newClientId(), id: 0, masterId: 0 })),
+    lstGMTCommission: source.lstGMTCommission.map((r) => ({ ...r, clientId: newClientId(), id: "", masterId: "" })),
     lstFile: [],
     lstItemWiseSupplier: source.lstItemWiseSupplier.map((r) => ({
       ...r,
       clientId: newClientId(),
-      id: 0,
-      masterId: 0,
-      lstSupplierDetails: r.lstSupplierDetails.map((s) => ({ ...s, clientId: newClientId(), id: 0, itemWiseSupplierMasterId: 0 })),
+      id: "",
+      masterId: "",
+      lstSupplierDetails: r.lstSupplierDetails.map((s) => ({ ...s, clientId: newClientId(), id: "", itemWiseSupplierMasterId: "" })),
     })),
     createdBy: null,
     createdDate: null,
@@ -156,12 +156,12 @@ export function GmtCostingFormDialog({
 }: {
   open: boolean
   mode: GmtCostingDialogMode
-  costingId: number | null
+  costingId: string | null
   ctx: ApiContext
   access: AccessRules
   onAuthFailure: (message: string) => boolean
   onOpenChange: (open: boolean) => void
-  onSaved: (id: number) => void
+  onSaved: (id: string) => void
 }) {
   const [mode, setMode] = useState<GmtCostingDialogMode>(initialMode)
   const readOnly = mode === "view"
@@ -286,7 +286,7 @@ export function GmtCostingFormDialog({
   const loadColors = useCallback((p: AppComboboxLoadParams) => loadColorOptions(ctx, p), [ctx])
   const loadSuppliers = useCallback((p: AppComboboxLoadParams) => loadSupplierOptions(ctx, p), [ctx])
   const resolveMaterial = useCallback(
-    async (id: number) => {
+    async (id: string) => {
       const info = await fetchMaterialInfo(ctx, id)
       return info ? { unitId: info.unitId, unitName: info.unitName, isColorWise: isFabricGroup(info.materialGroupName, settings) } : null
     },
@@ -516,9 +516,9 @@ export function GmtCostingFormDialog({
                               disabled={readOnly}
                               inputClassName={INPUT_CLASS}
                               onChange={(o) => {
-                                const buyerId = o ? Number(o.value) : 0
+                                const buyerId = o ? String(o.value) : ""
                                 if (buyerId === costing.buyerId) return
-                                update({ buyerId, buyerName: o?.label ?? "", styleId: 0, styleNo: "", styleName: "", techSheetId: null, technicalSheetNo: "" })
+                                update({ buyerId, buyerName: o?.label ?? "", styleId: "", styleNo: "", styleName: "", techSheetId: null, technicalSheetNo: "" })
                               }}
                             />
                           </div>
@@ -532,7 +532,7 @@ export function GmtCostingFormDialog({
                               placeholder={costing.buyerId ? "Style" : "Pick a buyer first"}
                               disabled={readOnly || !costing.buyerId}
                               inputClassName={INPUT_CLASS}
-                              onChange={(o) => update({ styleId: o ? Number(o.value) : 0, styleNo: o?.label ?? "", styleName: "", techSheetId: null, technicalSheetNo: "" })}
+                              onChange={(o) => update({ styleId: o ? String(o.value) : "", styleNo: o?.label ?? "", styleName: "", techSheetId: null, technicalSheetNo: "" })}
                             />
                             {style?.styleName ? <p className="truncate text-[11px] text-slate-500">{style.styleName}</p> : null}
                           </div>
@@ -546,7 +546,7 @@ export function GmtCostingFormDialog({
                               placeholder={costing.styleId ? "Technical sheet" : "Pick a style first"}
                               disabled={readOnly || !costing.styleId}
                               inputClassName={INPUT_CLASS}
-                              onChange={(o) => update({ techSheetId: o ? Number(o.value) : null, technicalSheetNo: o?.label ?? "" })}
+                              onChange={(o) => update({ techSheetId: o ? String(o.value) : null, technicalSheetNo: o?.label ?? "" })}
                             />
                           </div>
                           <DateField label="Cost Date" required value={costing.costDate} readOnly={readOnly} onChange={(v) => update({ costDate: v })} />

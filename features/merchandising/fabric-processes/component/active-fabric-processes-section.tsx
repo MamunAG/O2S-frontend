@@ -35,7 +35,7 @@ type ActiveFabricProcessesSectionProps = {
   onPageChange: (nextPage: number | ((current: number) => number)) => void
   onLimitChange: (nextPageSize: number) => void
   onCreateFabricProcess: () => void
-  onEditFabricProcess: (fabricProcessId: number) => void
+  onEditFabricProcess: (fabricProcessId: string) => void
   onDeleteFabricProcess: (fabricProcess: FabricProcessRecord) => void
   onResetFilters: () => void
   canCreateFabricProcess: boolean

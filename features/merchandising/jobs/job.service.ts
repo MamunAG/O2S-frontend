@@ -131,8 +131,8 @@ function buildJobPayload(values: JobFormValues) {
     jobDetails: values.jobDetails.map((detail) => ({
       pono: detail.pono.trim(),
       styleId: detail.styleId.trim(),
-      sizeId: Number(detail.sizeId),
-      colorId: Number(detail.colorId),
+      sizeId: String(detail.sizeId),
+      colorId: String(detail.colorId),
       quantity: normalizeNumber(detail.quantity),
       fob: normalizeNumber(detail.fob),
       cm: normalizeNumber(detail.cm),

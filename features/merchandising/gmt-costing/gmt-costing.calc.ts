@@ -36,7 +36,7 @@ export const num = (value: unknown) => {
 }
 const text = (value: unknown) => (value === null || value === undefined ? "" : String(value))
 const list = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
-const optionalId = (value: unknown) => (Number(value) > 0 ? Number(value) : null)
+const optionalId = (value: unknown) => (value === null || value === undefined || value === "" || value === 0 ? null : String(value))
 
 // ---------- settings (ClickERP's page configurations; per browser here) ----------
 
@@ -87,7 +87,7 @@ const nameList = (names: string) =>
 export const isFabricGroup = (groupName: string, settings: GmtCostingSettings) =>
   nameList(settings.fabricMaterialGroupNames || "Fabric").includes(groupName.trim().toLowerCase())
 
-export type ProcessGroups = { knittingProcessIds: number[]; yarnDyeingProcessIds: number[] }
+export type ProcessGroups = { knittingProcessIds: string[]; yarnDyeingProcessIds: string[] }
 
 /** The cost scopes whose name is one of the knitting / yarn dyeing names. */
 export function processGroupsOf(scopes: CostScope[], settings: GmtCostingSettings): ProcessGroups {
@@ -102,7 +102,7 @@ export function processGroupsOf(scopes: CostScope[], settings: GmtCostingSetting
 // ---------- groups ----------
 
 export type GroupKind = "size" | "color"
-export type GroupItem = { id: number; name: string }
+export type GroupItem = { id: string; name: string }
 
 export const SIZE_GROUP_DEFAULT_NAME = "All Size"
 export const COLOR_GROUP_DEFAULT_NAME = "All Color"
@@ -120,10 +120,10 @@ export const groupNameOf = (row: GmtCostingDetail, kind: GroupKind) =>
 export const groupDisplayNameOf = (row: GmtCostingDetail, kind: GroupKind) =>
   groupItemsOf(row, kind).length === 0 ? groupDefaultName(kind) : groupNameOf(row, kind) || groupDefaultName(kind)
 
-const idSignature = (ids: number[]) => [...ids].sort((a, b) => a - b).join("_")
+const idSignature = (ids: string[]) => [...ids].sort().join("_")
 
 /** The name of a row already holding exactly these items (desktop GetPreSizeGroupName), else "". */
-export function findPreGroupName(rows: GmtCostingDetail[], kind: GroupKind, ids: number[]) {
+export function findPreGroupName(rows: GmtCostingDetail[], kind: GroupKind, ids: string[]) {
   if (ids.length === 0) return groupDefaultName(kind)
   const signature = idSignature(ids)
   for (const row of rows) {
@@ -146,7 +146,7 @@ export function applyGroupToRow(row: GmtCostingDetail, kind: GroupKind, groupNam
       ...row,
       sizeGroupName: items.length ? groupName : "",
       lstGMT_SIZEs: items.map<GmtDetailsSize>((item) => ({
-        clientId: newClientId(), id: 0, detailsId: 0, sizeGroupName: groupName, gmtSizeId: item.id, gmtSizeName: item.name,
+        clientId: newClientId(), id: "", detailsId: "", sizeGroupName: groupName, gmtSizeId: item.id, gmtSizeName: item.name,
       })),
     }
   }
@@ -154,7 +154,7 @@ export function applyGroupToRow(row: GmtCostingDetail, kind: GroupKind, groupNam
     ...row,
     colorGroupName: items.length ? groupName : "",
     lstGMT_COLORs: items.map<GmtDetailsColor>((item) => ({
-      clientId: newClientId(), id: 0, detailsId: 0, colorGroupName: groupName, gmtColorId: item.id, gmtColorName: item.name,
+      clientId: newClientId(), id: "", detailsId: "", colorGroupName: groupName, gmtColorId: item.id, gmtColorName: item.name,
     })),
   }
 }
@@ -179,7 +179,7 @@ export function setGroup(
 }
 
 /** A color cannot sit in two color groups (desktop ColourGroupColorValidation): the clashing group, or null. */
-export function findColorConflict(rows: GmtCostingDetail[], ownGroupName: string, clientId: string, colorId: number) {
+export function findColorConflict(rows: GmtCostingDetail[], ownGroupName: string, clientId: string, colorId: string) {
   for (const row of rows) {
     const isOwn = ownGroupName === "" ? row.clientId === clientId : groupNameOf(row, "color") === ownGroupName
     if (isOwn) continue
@@ -205,9 +205,9 @@ export function groupsOfGrid(rows: GmtCostingDetail[], kind: GroupKind) {
 export function emptyDetail(partial: Partial<GmtCostingDetail> = {}): GmtCostingDetail {
   return {
     clientId: newClientId(),
-    id: 0,
-    masterId: 0,
-    fabricItemId: 0,
+    id: "",
+    masterId: "",
+    fabricItemId: "",
     fabricItemName: "",
     uomId: null,
     uomName: "",
@@ -251,11 +251,11 @@ export function copyDetail(row: GmtCostingDetail, partial: Partial<GmtCostingDet
   return {
     ...row,
     clientId: newClientId(),
-    id: 0,
-    masterId: 0,
-    lstGMT_SIZEs: row.lstGMT_SIZEs.map((s) => ({ ...s, clientId: newClientId(), id: 0, detailsId: 0 })),
-    lstGMT_COLORs: row.lstGMT_COLORs.map((c) => ({ ...c, clientId: newClientId(), id: 0, detailsId: 0 })),
-    lstGMTWastage: row.lstGMTWastage.map((w) => ({ ...w, clientId: newClientId(), id: 0, detailsId: 0 })),
+    id: "",
+    masterId: "",
+    lstGMT_SIZEs: row.lstGMT_SIZEs.map((s) => ({ ...s, clientId: newClientId(), id: "", detailsId: "" })),
+    lstGMT_COLORs: row.lstGMT_COLORs.map((c) => ({ ...c, clientId: newClientId(), id: "", detailsId: "" })),
+    lstGMTWastage: row.lstGMTWastage.map((w) => ({ ...w, clientId: newClientId(), id: "", detailsId: "" })),
     FabricCost: row.FabricCost ? copyFabricCost(row.FabricCost) : null,
     ...partial,
   }
@@ -264,16 +264,16 @@ export function copyDetail(row: GmtCostingDetail, partial: Partial<GmtCostingDet
 export function copyFabricCost(cost: GmtFabricCost): GmtFabricCost {
   return {
     ...cost,
-    id: 0,
-    detailsId: 0,
+    id: "",
+    detailsId: "",
     lastYarnDtls: cost.lastYarnDtls.map((y) => ({
       ...y,
       clientId: newClientId(),
-      id: 0,
-      fabricCostMstId: 0,
-      lstYarnWiseProcessDtls: y.lstYarnWiseProcessDtls.map((p) => ({ ...p, clientId: newClientId(), id: 0, detailsFcYarnsTableId: 0 })),
+      id: "",
+      fabricCostMstId: "",
+      lstYarnWiseProcessDtls: y.lstYarnWiseProcessDtls.map((p) => ({ ...p, clientId: newClientId(), id: "", detailsFcYarnsTableId: "" })),
     })),
-    lstProcessDtls: cost.lstProcessDtls.map((p) => ({ ...p, clientId: newClientId(), id: 0, fabricCostMstId: 0 })),
+    lstProcessDtls: cost.lstProcessDtls.map((p) => ({ ...p, clientId: newClientId(), id: "", fabricCostMstId: "" })),
   }
 }
 
@@ -344,8 +344,8 @@ export const gmtWastageTotalOf = (lines: GmtDetailsWastage[]) =>
 
 // ---------- fabric costing ----------
 
-const sumWastage = (processes: Array<{ processId: number; wastagePercentage: number }>, exclude: number[] = []) =>
-  round6(processes.filter((p) => !exclude.includes(Number(p.processId))).reduce((total, p) => total + num(p.wastagePercentage), 0))
+const sumWastage = (processes: Array<{ processId: string; wastagePercentage: number }>, exclude: string[] = []) =>
+  round6(processes.filter((p) => !exclude.includes(p.processId)).reduce((total, p) => total + num(p.wastagePercentage), 0))
 
 /**
  * Every derived yarn field and the fabric cost per kg (desktop frmImportFabricCosting CalculateTotalQty /
@@ -396,9 +396,9 @@ export function fabricWastagePercent(yarns: GmtFabricCostYarn[], isForward: bool
 
 export const emptyYarn = (): GmtFabricCostYarn => ({
   clientId: newClientId(),
-  id: 0,
-  fabricCostMstId: 0,
-  yarnId: 0,
+  id: "",
+  fabricCostMstId: "",
+  yarnId: "",
   yarnName: "",
   uomId: null,
   uomName: "",
@@ -419,15 +419,15 @@ export const emptyYarn = (): GmtFabricCostYarn => ({
 })
 
 export const emptyProcess = (): GmtFabricCostProcess => ({
-  clientId: newClientId(), id: 0, fabricCostMstId: 0, processId: 0, processName: "", processRatePerKgFabric: 0, wastagePercentage: 0,
+  clientId: newClientId(), id: "", fabricCostMstId: "", processId: "", processName: "", processRatePerKgFabric: 0, wastagePercentage: 0,
 })
 
 export const emptyYarnProcess = (): GmtFabricCostYarnProcess => ({
-  clientId: newClientId(), id: 0, detailsFcYarnsTableId: 0, processId: 0, processName: "", processRatePerKgFabric: 0, wastagePercentage: 0,
+  clientId: newClientId(), id: "", detailsFcYarnsTableId: "", processId: "", processName: "", processRatePerKgFabric: 0, wastagePercentage: 0,
 })
 
 export const emptyFabricCost = (): GmtFabricCost => ({
-  id: 0, detailsId: 0, costTemplateName: "", fabricId: null, fabricName: "", totalFabricCost: 0, fabricWastagePercentage: null,
+  id: "", detailsId: "", costTemplateName: "", fabricId: null, fabricName: "", totalFabricCost: 0, fabricWastagePercentage: null,
   lastYarnDtls: [], lstProcessDtls: [],
 })
 
@@ -458,11 +458,11 @@ export function thisCostingItems(rows: GmtCostingDetail[], excludeClientId: stri
 // ---------- other cost / commission / price ----------
 
 export const emptyOtherCost = (scope?: CostScope): GmtOtherCost => ({
-  clientId: newClientId(), id: 0, masterId: 0, costId: scope?.id ?? 0, costName: scope?.name ?? "", costPerPcsGmt: 0, costPerDznGmt: 0, lstColors: [],
+  clientId: newClientId(), id: "", masterId: "", costId: scope?.id ?? "", costName: scope?.name ?? "", costPerPcsGmt: 0, costPerDznGmt: 0, lstColors: [],
 })
 
 export const emptyCommission = (scope?: CostScope): GmtCommission => ({
-  clientId: newClientId(), id: 0, masterId: 0, commissionId: scope?.id ?? 0, commissionName: scope?.name ?? "", commissionPercentage: 0, commissionValue: 0,
+  clientId: newClientId(), id: "", masterId: "", commissionId: scope?.id ?? "", commissionName: scope?.name ?? "", commissionPercentage: 0, commissionValue: 0,
 })
 
 const isAllGroup = (name: string, kind: GroupKind) =>
@@ -518,8 +518,8 @@ export function costPerPcsFromPrices(prices: PriceRow[], current: GmtCostPerPcs[
     const saved = current.find((c) => c.colorGroupName === price.colorGroupName && c.sizeGroupName === price.sizeGroupName)
     return {
       clientId: saved?.clientId ?? newClientId(),
-      id: saved?.id ?? 0,
-      masterId: saved?.masterId ?? 0,
+      id: saved?.id ?? "",
+      masterId: saved?.masterId ?? "",
       colorGroupName: price.colorGroupName,
       sizeGroupName: price.sizeGroupName,
       costingPricePerPcs: round(price.price, 4),
@@ -533,7 +533,7 @@ export function costPerPcsFromPrices(prices: PriceRow[], current: GmtCostPerPcs[
 export type WastageCombo = { key: string; fabric: string; color: string; part: string; isDoubleInPcsQty: boolean }
 
 export const comboKeyOf = (row: GmtCostingDetail) =>
-  [row.fabricItemId, groupDisplayNameOf(row, "color"), row.gmtPartsId ?? 0].join("|")
+  [row.fabricItemId, groupDisplayNameOf(row, "color"), row.gmtPartsId ?? ""].join("|")
 
 /** Each distinct fabric / color group / part of the details, in their order. */
 export function wastageCombos(rows: GmtCostingDetail[]): WastageCombo[] {
@@ -558,25 +558,25 @@ export function wastageCombos(rows: GmtCostingDetail[]): WastageCombo[] {
 
 /** Every yarn of the rows' fabric costs, plus the item of each row with no yarn; saved entries first. */
 export function itemWiseSupplierRows(saved: GmtItemSupplier[], details: GmtCostingDetail[]): GmtItemSupplier[] {
-  const items = new Map<number, string>()
-  const add = (id: number, name: string) => {
-    if (id > 0 && !items.has(id)) items.set(id, name)
+  const items = new Map<string, string>()
+  const add = (id: string, name: string) => {
+    if (id && !items.has(id)) items.set(id, name)
   }
   details.forEach((row) => row.FabricCost?.lastYarnDtls.forEach((y) => add(y.yarnId, y.yarnName)))
   details.forEach((row) => {
     if (!row.FabricCost?.lastYarnDtls.length) add(row.fabricItemId, row.fabricItemName)
   })
   const out: GmtItemSupplier[] = []
-  const seen = new Set<number>()
+  const seen = new Set<string>()
   for (const entry of saved) {
-    if (entry.itemId <= 0 || seen.has(entry.itemId)) continue
+    if (!entry.itemId || seen.has(entry.itemId)) continue
     if (!items.has(entry.itemId) && entry.lstSupplierDetails.length === 0) continue
     seen.add(entry.itemId)
     out.push({ ...entry, itemName: entry.itemName || items.get(entry.itemId) || "" })
   }
   items.forEach((itemName, itemId) => {
     if (seen.has(itemId)) return
-    out.push({ clientId: newClientId(), id: 0, masterId: 0, itemId, itemName, lstSupplierDetails: [] })
+    out.push({ clientId: newClientId(), id: "", masterId: "", itemId, itemName, lstSupplierDetails: [] })
   })
   return out
 }
@@ -588,11 +588,11 @@ const day = (value: unknown) => (typeof value === "string" ? value.slice(0, 10) 
 
 export function emptyCosting(): GmtCosting {
   return {
-    id: 0,
+    id: "",
     costName: "",
-    buyerId: 0,
+    buyerId: "",
     buyerName: "",
-    styleId: 0,
+    styleId: "",
     styleNo: "",
     styleName: "",
     costDate: today(),
@@ -624,8 +624,8 @@ export function fabricCostFromDto(raw: unknown): GmtFabricCost | null {
   if (!raw || typeof raw !== "object") return null
   const c = raw as Raw
   return {
-    id: num(c.id),
-    detailsId: num(c.detailsId),
+    id: text(c.id),
+    detailsId: text(c.detailsId),
     costTemplateName: text(c.costTemplateName),
     fabricId: optionalId(c.fabricId),
     fabricName: text(c.fabricName),
@@ -633,9 +633,9 @@ export function fabricCostFromDto(raw: unknown): GmtFabricCost | null {
     fabricWastagePercentage: c.fabricWastagePercentage === null || c.fabricWastagePercentage === undefined ? null : num(c.fabricWastagePercentage),
     lastYarnDtls: list<Raw>(c.lastYarnDtls).map((y) => ({
       ...emptyYarn(),
-      id: num(y.id),
-      fabricCostMstId: num(y.fabricCostMstId),
-      yarnId: num(y.yarnId),
+      id: text(y.id),
+      fabricCostMstId: text(y.fabricCostMstId),
+      yarnId: text(y.yarnId),
       yarnName: text(y.yarnName),
       uomId: optionalId(y.uomId),
       uomName: text(y.uomName),
@@ -654,9 +654,9 @@ export function fabricCostFromDto(raw: unknown): GmtFabricCost | null {
       yarnDyeingCost: num(y.yarnDyeingCost),
       lstYarnWiseProcessDtls: list<Raw>(y.lstYarnWiseProcessDtls).map((p) => ({
         clientId: newClientId(),
-        id: num(p.id),
-        detailsFcYarnsTableId: num(p.detailsFcYarnsTableId),
-        processId: num(p.processId),
+        id: text(p.id),
+        detailsFcYarnsTableId: text(p.detailsFcYarnsTableId),
+        processId: text(p.processId),
         processName: text(p.processName),
         processRatePerKgFabric: num(p.processRatePerKgFabric),
         wastagePercentage: num(p.wastagePercentage),
@@ -664,9 +664,9 @@ export function fabricCostFromDto(raw: unknown): GmtFabricCost | null {
     })),
     lstProcessDtls: list<Raw>(c.lstProcessDtls).map((p) => ({
       clientId: newClientId(),
-      id: num(p.id),
-      fabricCostMstId: num(p.fabricCostMstId),
-      processId: num(p.processId),
+      id: text(p.id),
+      fabricCostMstId: text(p.fabricCostMstId),
+      processId: text(p.processId),
       processName: text(p.processName),
       processRatePerKgFabric: num(p.processRatePerKgFabric),
       wastagePercentage: num(p.wastagePercentage),
@@ -676,9 +676,9 @@ export function fabricCostFromDto(raw: unknown): GmtFabricCost | null {
 
 export function detailFromDto(d: Raw): GmtCostingDetail {
   return emptyDetail({
-    id: num(d.id),
-    masterId: num(d.masterId),
-    fabricItemId: num(d.fabricItemId),
+    id: text(d.id),
+    masterId: text(d.masterId),
+    fabricItemId: text(d.fabricItemId),
     fabricItemName: text(d.fabricItemName),
     uomId: optionalId(d.uomId),
     uomName: text(d.uomName),
@@ -710,16 +710,16 @@ export function detailFromDto(d: Raw): GmtCostingDetail {
     collarQty: num(d.collarQty),
     isDoubleInPcsQty: Boolean(d.isDoubleInPcsQty),
     lstGMT_SIZEs: list<Raw>(d.lstGMT_SIZEs).map((s) => ({
-      clientId: newClientId(), id: num(s.id), detailsId: num(s.detailsId), sizeGroupName: text(s.sizeGroupName),
-      gmtSizeId: num(s.gmtSizeId), gmtSizeName: text(s.gmtSizeName),
+      clientId: newClientId(), id: text(s.id), detailsId: text(s.detailsId), sizeGroupName: text(s.sizeGroupName),
+      gmtSizeId: text(s.gmtSizeId), gmtSizeName: text(s.gmtSizeName),
     })),
     lstGMT_COLORs: list<Raw>(d.lstGMT_COLORs).map((c) => ({
-      clientId: newClientId(), id: num(c.id), detailsId: num(c.detailsId), colorGroupName: text(c.colorGroupName),
-      gmtColorId: num(c.gmtColorId), gmtColorName: text(c.gmtColorName),
+      clientId: newClientId(), id: text(c.id), detailsId: text(c.detailsId), colorGroupName: text(c.colorGroupName),
+      gmtColorId: text(c.gmtColorId), gmtColorName: text(c.gmtColorName),
     })),
     FabricCost: fabricCostFromDto(d.FabricCost),
     lstGMTWastage: list<Raw>(d.lstGMTWastage).map((w) => ({
-      clientId: newClientId(), id: num(w.id), detailsId: num(w.detailsId), gmtProcessId: num(w.gmtProcessId),
+      clientId: newClientId(), id: text(w.id), detailsId: text(w.detailsId), gmtProcessId: text(w.gmtProcessId),
       gmtProcessName: text(w.gmtProcessName), gmtWastagePercentage: num(w.gmtWastagePercentage),
     })),
   })
@@ -729,11 +729,11 @@ export function costingFromDto(raw: unknown): GmtCosting {
   const r = (raw ?? {}) as Raw
   return {
     ...emptyCosting(),
-    id: num(r.id),
+    id: text(r.id),
     costName: text(r.costName),
-    buyerId: num(r.buyerId),
+    buyerId: text(r.buyerId),
     buyerName: text(r.buyerName),
-    styleId: num(r.styleId),
+    styleId: text(r.styleId),
     styleNo: text(r.styleNo),
     styleName: text(r.styleName),
     costDate: day(r.costDate) || today(),
@@ -751,29 +751,29 @@ export function costingFromDto(raw: unknown): GmtCosting {
     ironMan: num(r.ironMan),
     isActive: r.isActive !== false,
     lstGMTCostPerPcs: list<Raw>(r.lstGMTCostPerPcs).map((c) => ({
-      clientId: newClientId(), id: num(c.id), masterId: num(c.masterId), colorGroupName: text(c.colorGroupName),
+      clientId: newClientId(), id: text(c.id), masterId: text(c.masterId), colorGroupName: text(c.colorGroupName),
       sizeGroupName: text(c.sizeGroupName), costingPricePerPcs: num(c.costingPricePerPcs), confirmPricePerPcs: num(c.confirmPricePerPcs),
     })),
     lstDetails: list<Raw>(r.lstDetails).map(detailFromDto),
     lstGMTOtherCost: list<Raw>(r.lstGMTOtherCost).map((o) => ({
-      clientId: newClientId(), id: num(o.id), masterId: num(o.masterId), costId: num(o.costId), costName: text(o.costName),
+      clientId: newClientId(), id: text(o.id), masterId: text(o.masterId), costId: text(o.costId), costName: text(o.costName),
       costPerPcsGmt: num(o.costPerPcsGmt), costPerDznGmt: num(o.costPerDznGmt),
       lstColors: list<Raw>(o.lstColors).map((c) => ({
-        clientId: newClientId(), id: num(c.id), otherCostDtlsId: num(c.otherCostDtlsId), gmtColorId: num(c.gmtColorId), gmtColorName: text(c.gmtColorName),
+        clientId: newClientId(), id: text(c.id), otherCostDtlsId: text(c.otherCostDtlsId), gmtColorId: text(c.gmtColorId), gmtColorName: text(c.gmtColorName),
       })),
     })),
     lstGMTCommission: list<Raw>(r.lstGMTCommission).map((c) => ({
-      clientId: newClientId(), id: num(c.id), masterId: num(c.masterId), commissionId: num(c.commissionId), commissionName: text(c.commissionName),
+      clientId: newClientId(), id: text(c.id), masterId: text(c.masterId), commissionId: text(c.commissionId), commissionName: text(c.commissionName),
       commissionPercentage: num(c.commissionPercentage), commissionValue: num(c.commissionValue),
     })),
     lstFile: list<Raw>(r.lstFile).map((f) => ({
-      clientId: newClientId(), id: num(f.id), masterId: num(f.masterId), fileAttachmentId: num(f.fileAttachmentId), fileName: text(f.fileName),
+      clientId: newClientId(), id: text(f.id), masterId: text(f.masterId), fileAttachmentId: text(f.fileAttachmentId), fileName: text(f.fileName),
     })),
     lstItemWiseSupplier: list<Raw>(r.lstItemWiseSupplier).map((s) => ({
-      clientId: newClientId(), id: num(s.id), masterId: num(s.masterId), itemId: num(s.itemId), itemName: text(s.itemName),
+      clientId: newClientId(), id: text(s.id), masterId: text(s.masterId), itemId: text(s.itemId), itemName: text(s.itemName),
       lstSupplierDetails: list<Raw>(s.lstSupplierDetails).map((d) => ({
-        clientId: newClientId(), id: num(d.id), itemWiseSupplierMasterId: num(d.itemWiseSupplierMasterId),
-        supplierId: num(d.supplierId), supplierName: text(d.supplierName),
+        clientId: newClientId(), id: text(d.id), itemWiseSupplierMasterId: text(d.itemWiseSupplierMasterId),
+        supplierId: text(d.supplierId), supplierName: text(d.supplierName),
       })),
     })),
     createdBy: (r.createdBy as string) ?? null,
@@ -815,21 +815,21 @@ export function costingToDto(costing: GmtCosting, settings: GmtCostingSettings) 
               ...row.FabricCost,
               fabricId: row.FabricCost.fabricId || row.fabricItemId || null,
               fabricWastagePercentage: fabricWastagePercent(row.FabricCost.lastYarnDtls, settings.isFabricForwardCalculation),
-              lastYarnDtls: row.FabricCost.lastYarnDtls.filter((y) => y.yarnId > 0).map((y) => ({
+              lastYarnDtls: row.FabricCost.lastYarnDtls.filter((y) => !!y.yarnId).map((y) => ({
                 ...y,
                 uomId: y.uomId || null,
                 yarnDyeingColorId: y.yarnDyeingColorId || null,
-                lstYarnWiseProcessDtls: y.lstYarnWiseProcessDtls.filter((p) => p.processId > 0),
+                lstYarnWiseProcessDtls: y.lstYarnWiseProcessDtls.filter((p) => !!p.processId),
               })),
-              lstProcessDtls: row.FabricCost.lstProcessDtls.filter((p) => p.processId > 0),
+              lstProcessDtls: row.FabricCost.lstProcessDtls.filter((p) => !!p.processId),
             }
           : null,
     })),
-    lstGMTOtherCost: costing.lstGMTOtherCost.filter((o) => o.costId > 0),
-    lstGMTCommission: costing.lstGMTCommission.filter((c) => c.commissionId > 0),
+    lstGMTOtherCost: costing.lstGMTOtherCost.filter((o) => !!o.costId),
+    lstGMTCommission: costing.lstGMTCommission.filter((c) => !!c.commissionId),
     lstItemWiseSupplier: costing.lstItemWiseSupplier
       .filter((s) => s.lstSupplierDetails.length > 0)
-      .map((s) => ({ ...s, lstSupplierDetails: s.lstSupplierDetails.filter((d) => d.supplierId > 0) })),
+      .map((s) => ({ ...s, lstSupplierDetails: s.lstSupplierDetails.filter((d) => !!d.supplierId) })),
   }
   delete (body as Partial<GmtCosting>).createdByName
   delete (body as Partial<GmtCosting>).updatedByName

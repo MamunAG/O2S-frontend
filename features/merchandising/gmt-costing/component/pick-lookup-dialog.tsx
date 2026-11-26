@@ -42,7 +42,7 @@ export function PickLookupDialog({
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
         <LookupCombobox
-          value={picked ? Number(picked.value) : null}
+          value={picked ? picked.value : null}
           label={picked?.label ?? ""}
           loadItems={loadItems}
           placeholder="Search..."

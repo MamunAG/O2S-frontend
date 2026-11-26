@@ -303,7 +303,7 @@ export const configurationRules: O2sRule[] = [
     handle: async (m, ctx) => {
       const stored = await findAccessRequest(ctx, m[1])
       const body = (ctx.body ?? {}) as Rec
-      const assignments = ((body.assignments as Rec[]) ?? []).map((a) => ({ companyId: Number(a.organizationId ?? a.companyId), role: a.role ?? "user" }))
+      const assignments = ((body.assignments as Rec[]) ?? []).map((a) => ({ companyId: String(a.organizationId ?? a.companyId), role: a.role ?? "user" }))
       const saved = (await ctx.call(`/api/v1/account/company-access-requests/${m[1]}/${m[2]}`, {
         method: "POST",
         body: { assignments, reviewNote: body.reviewNote ?? null, rowVersion: stored.rowVersion },

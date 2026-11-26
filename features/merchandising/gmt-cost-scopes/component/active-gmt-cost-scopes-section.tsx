@@ -35,7 +35,7 @@ type ActiveGmtCostScopesSectionProps = {
   onPageChange: (nextPage: number | ((current: number) => number)) => void
   onLimitChange: (nextPageSize: number) => void
   onCreateGmtCostScope: () => void
-  onEditGmtCostScope: (gmtCostScopeId: number) => void
+  onEditGmtCostScope: (gmtCostScopeId: string) => void
   onDeleteGmtCostScope: (gmtCostScope: GmtCostScopeRecord) => void
   onResetFilters: () => void
   canCreateGmtCostScope: boolean

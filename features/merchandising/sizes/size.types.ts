@@ -27,7 +27,7 @@ export type PaginatedResponse<T> = {
 }
 
 export type SizeRecord = {
-  id: number
+  id: string
   sizeName: string
   isActive?: boolean
   created_by_id?: string | null

@@ -27,7 +27,7 @@ export type PaginatedResponse<T> = {
 }
 
 export type UnitRecord = {
-  id: number
+  id: string
   name: string
   isActive?: boolean | null
   created_by_id?: string | null

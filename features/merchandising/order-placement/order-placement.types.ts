@@ -30,7 +30,7 @@ export type PaginatedResponse<T> = {
 }
 
 export type CurrencySummary = {
-  id?: number | null
+  id?: string | null
   currencyName?: string | null
   currencyCode?: string | null
   symbol?: string | null
@@ -51,9 +51,9 @@ export type OrderPlacementDetailRecord = {
   purchaseOrder?: PurchaseOrderSummary | null
   styleId: string
   style?: StyleSummary | null
-  sizeId: number
+  sizeId: string
   size?: SizeSummary | null
-  colorId: number
+  colorId: string
   color?: ColorSummary | null
   quantity?: number | null
   fob?: number | null
@@ -74,7 +74,7 @@ export type OrderPlacementRecord = {
   buyer?: BuyerSummary | null
   jobId: string
   job?: JobRecord | null
-  currencyId: number
+  currencyId: string
   currency?: CurrencySummary | null
   placementDate?: string | null
   exchangeRateBDT?: number | null

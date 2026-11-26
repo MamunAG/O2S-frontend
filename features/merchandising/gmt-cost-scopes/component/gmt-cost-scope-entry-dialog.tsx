@@ -62,7 +62,7 @@ export function GmtCostScopeEntryDialog({
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState("")
   const [formValues, setFormValues] = useState(EMPTY_FORM)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<GmtCostScopeRecord | null>(null)
 
   const resetForm = useCallback(() => {

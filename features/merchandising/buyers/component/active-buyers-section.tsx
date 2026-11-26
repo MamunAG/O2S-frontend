@@ -86,7 +86,7 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(parsed)
 }
 
-function getCountryLabel(country?: CountrySummary | null, countryId?: number | null) {
+function getCountryLabel(country?: CountrySummary | null, countryId?: string | null) {
   return country?.name?.trim() || (countryId ? `Country #${countryId}` : "No country")
 }
 

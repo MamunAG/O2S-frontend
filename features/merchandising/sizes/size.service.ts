@@ -112,7 +112,7 @@ export async function fetchSize({
   apiUrl: string
   accessToken: string
   organizationId?: string
-  id: number
+  id: string
 }): Promise<SizeRecord> {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/size/${id}`), {
     method: "GET",
@@ -172,7 +172,7 @@ export async function updateSize({
   apiUrl: string
   accessToken: string
   organizationId?: string
-  id: number
+  id: string
   payload: SizeFormValues
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/size/${id}`), {
@@ -206,7 +206,7 @@ export async function softDeleteSize({
   apiUrl: string
   accessToken: string
   organizationId?: string
-  id: number
+  id: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/size/${id}`), {
     method: "DELETE",
@@ -225,7 +225,7 @@ export async function restoreSize({
   apiUrl: string
   accessToken: string
   organizationId?: string
-  id: number
+  id: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/size/${id}/restore`), {
     method: "POST",
@@ -244,7 +244,7 @@ export async function permanentlyDeleteSize({
   apiUrl: string
   accessToken: string
   organizationId?: string
-  id: number
+  id: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/size/${id}/permanent`), {
     method: "DELETE",

@@ -1,7 +1,6 @@
 // O2S calls of the GMT Costing screen. These are O2S routes (/api/v1/{companyId}/merchandising/...), not
 // code-crafter paths, so lib/o2s passes them through unchanged; it still turns the answer into
-// { success, message, data }, a page into { items, meta } and every id into a string. `numberIds` undoes
-// the last one, so the screen works with the API's numbers.
+// { success, message, data } and a page into { items, meta }. Ids are GUID strings, as the API sends them.
 
 import { requireSelectedOrganizationId } from "@/lib/organization-selection"
 
@@ -24,19 +23,6 @@ export type ApiContext = { apiUrl: string; organizationId: string }
 type Envelope<T> = { success?: boolean; message?: string | string[]; data?: T }
 export type Query = Record<string, string | number | boolean | null | undefined>
 export type Page<T> = { items: T[]; meta: PageMeta & { hasNextPage?: boolean } }
-
-const ID_KEY = /^(id|.*Id)$/
-
-/** The bridge's string ids back to numbers (deep). Only keys named `id` / `...Id` holding a numeric text. */
-export function numberIds<T>(value: unknown): T {
-  if (Array.isArray(value)) return value.map((item) => numberIds(item)) as T
-  if (!value || typeof value !== "object") return value as T
-  const out: Record<string, unknown> = {}
-  for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
-    out[key] = typeof v === "string" && ID_KEY.test(key) && /^-?\d+$/.test(v) ? Number(v) : numberIds(v)
-  }
-  return out as T
-}
 
 function token() {
   const value = typeof window === "undefined" ? null : window.localStorage.getItem("access_token")
@@ -92,7 +78,7 @@ export async function request<T>(
   if (!response.ok || payload?.success === false) {
     throw new Error(messageOf(payload, options.fallback ?? "The request could not be completed."))
   }
-  return numberIds<T>(payload?.data)
+  return payload?.data as T
 }
 
 export async function downloadFile(ctx: ApiContext, path: string) {
@@ -138,19 +124,19 @@ export async function fetchGmtCostings(
   })
 }
 
-export const fetchGmtCosting = (ctx: ApiContext, id: number) =>
+export const fetchGmtCosting = (ctx: ApiContext, id: string) =>
   request<GmtCosting>(ctx, `${COSTING}/${id}`, { fallback: "Unable to load the GMT costing." })
 
 export const createGmtCosting = (ctx: ApiContext, body: unknown) =>
   request<GmtCosting>(ctx, `${COSTING}/`, { method: "POST", body, fallback: "Unable to save the GMT costing." })
 
-export const updateGmtCosting = (ctx: ApiContext, id: number, body: unknown) =>
+export const updateGmtCosting = (ctx: ApiContext, id: string, body: unknown) =>
   request<unknown>(ctx, `${COSTING}/${id}`, { method: "PUT", body, fallback: "Unable to update the GMT costing." })
 
-export const deleteGmtCosting = (ctx: ApiContext, id: number) =>
+export const deleteGmtCosting = (ctx: ApiContext, id: string) =>
   request<unknown>(ctx, `${COSTING}/${id}`, { method: "DELETE", fallback: "Unable to delete the GMT costing." })
 
-export const fetchGmtCostingSheet = (ctx: ApiContext, id: number) =>
+export const fetchGmtCostingSheet = (ctx: ApiContext, id: string) =>
   request<GmtCostingSheet>(ctx, `${COSTING}/${id}/costing-sheet`, { fallback: "Unable to load the costing sheet." })
 
 export async function searchFabricCosts(ctx: ApiContext, searchText: string, page: number, limit = 20) {
@@ -219,7 +205,7 @@ export const loadMaterialOptions = (ctx: ApiContext, p: LoadParams) =>
   })
 
 /** A material's unit and group (the group decides Is Color Wise). Null when it cannot be read. */
-export async function fetchMaterialInfo(ctx: ApiContext, id: number): Promise<MaterialInfo | null> {
+export async function fetchMaterialInfo(ctx: ApiContext, id: string): Promise<MaterialInfo | null> {
   try {
     const row = await request<Record<string, unknown>>(ctx, `/configuration/material/${id}`)
     const unit = (row.units ?? row.unit) as Record<string, unknown> | null | undefined
@@ -227,7 +213,7 @@ export async function fetchMaterialInfo(ctx: ApiContext, id: number): Promise<Ma
     return {
       id,
       name: String(row.name ?? ""),
-      unitId: typeof row.unitId === "number" ? row.unitId : null,
+      unitId: row.unitId ? String(row.unitId) : null,
       unitName: String(unit?.name ?? ""),
       materialGroupName: String(group?.name ?? ""),
     }
@@ -243,7 +229,7 @@ export async function fetchCostScopes(ctx: ApiContext): Promise<CostScope[]> {
     fallback: "Unable to load the GMT cost scopes.",
   })
   return (page?.items ?? []).map((r) => ({
-    id: Number(r.id),
+    id: String(r.id ?? ""),
     name: String(r.name ?? ""),
     isProcessCost: Boolean(r.isProcessCost),
     isGmtProcess: Boolean(r.isGmtProcess),
@@ -255,21 +241,21 @@ export async function fetchCostScopes(ctx: ApiContext): Promise<CostScope[]> {
 }
 
 /** The style with its colors and sizes (the group dialogs offer these). */
-export async function fetchStyleInfo(ctx: ApiContext, id: number): Promise<StyleInfo> {
+export async function fetchStyleInfo(ctx: ApiContext, id: string): Promise<StyleInfo> {
   const row = await request<Record<string, unknown>>(ctx, `${MERCH}/style/${id}`, { fallback: "Unable to load the style." })
   const maps = (value: unknown) => (Array.isArray(value) ? (value as Record<string, unknown>[]) : [])
   return {
     id,
     styleNo: String(row.styleNo ?? ""),
     styleName: String(row.styleName ?? ""),
-    buyerId: Number(row.buyerId ?? 0),
+    buyerId: String(row.buyerId ?? ""),
     colors: maps(row.colorMaps).map((m) => {
       const color = (m.colors ?? m.color) as Record<string, unknown> | undefined
-      return { id: Number(m.colorId), name: String(color?.colorName ?? m.colorId) }
+      return { id: String(m.colorId ?? ""), name: String(color?.colorName ?? m.colorId) }
     }),
     sizes: maps(row.sizeMaps).map((m) => {
       const size = (m.sizes ?? m.size) as Record<string, unknown> | undefined
-      return { id: Number(m.sizeId), name: String(size?.sizeName ?? m.sizeId) }
+      return { id: String(m.sizeId ?? ""), name: String(size?.sizeName ?? m.sizeId) }
     }),
   }
 }
@@ -277,11 +263,11 @@ export async function fetchStyleInfo(ctx: ApiContext, id: number): Promise<Style
 export async function uploadFile(ctx: ApiContext, file: File) {
   const form = new FormData()
   form.append("file", file)
-  return request<{ id: number; fileName: string }>(ctx, "/support/file/", {
+  return request<{ id: string; fileName: string }>(ctx, "/support/file/", {
     method: "POST",
     body: form,
     fallback: "Unable to upload the file.",
   })
 }
 
-export const downloadAttachment = (ctx: ApiContext, id: number) => downloadFile(ctx, `/support/file/${id}/download`)
+export const downloadAttachment = (ctx: ApiContext, id: string) => downloadFile(ctx, `/support/file/${id}/download`)

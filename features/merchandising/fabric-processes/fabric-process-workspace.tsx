@@ -216,7 +216,7 @@ export function FabricProcessWorkspace({ apiUrl }: { apiUrl: string }) {
   const [editorSubmitting, setEditorSubmitting] = useState(false)
   const [editorError, setEditorError] = useState("")
   const [editorInitialValues, setEditorInitialValues] = useState<FabricProcessFormValues>(DEFAULT_FORM_VALUES)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const [deleteTarget, setDeleteTarget] = useState<FabricProcessRecord | null>(null)
   const [deleteWorking, setDeleteWorking] = useState(false)
@@ -299,7 +299,7 @@ export function FabricProcessWorkspace({ apiUrl }: { apiUrl: string }) {
     return () => { active = false }
   }, [apiUrl, handleAuthFailure, refreshVersion, selectedOrganizationId])
 
-  const openEditDialog = useCallback(async (fabricProcessId: number) => {
+  const openEditDialog = useCallback(async (fabricProcessId: string) => {
     if (!accessRules?.canUpdate) {
       toast.error("You do not have permission to update fabric processes.")
       return

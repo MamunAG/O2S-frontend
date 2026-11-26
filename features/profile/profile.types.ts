@@ -1,5 +1,5 @@
 export type BackendProfilePicture = {
-  id?: number
+  id?: string
   file_name?: string
   original_name?: string
   file_path?: string
@@ -12,7 +12,7 @@ export type BackendProfilePicture = {
 
 export type BackendFileRecord = {
   success?: boolean
-  file_id: number
+  file_id: string
   file_url: string
   thumbnail_url?: string
   original_name: string
@@ -61,7 +61,7 @@ export type BackendProfileUser = {
   deleted_at?: string
   created_by_id?: string
   updated_by_id?: string
-  profile_pic_id?: number | null
+  profile_pic_id?: string | null
   profile_pic?: BackendProfilePicture | null
   location?: BackendProfileLocation | null
   likes?: number
@@ -80,7 +80,7 @@ export type ProfileUpdatePayload = {
   bio?: string
   role: string
   status: string
-  profile_pic_id?: number | null
+  profile_pic_id?: string | null
 }
 
 export type BackendProfileResponse = {

@@ -52,7 +52,7 @@ export function ScopePicker({
   placeholder,
   onChange,
 }: {
-  value: number
+  value: string
   label: string
   options: AppComboboxOption[]
   disabled: boolean
@@ -145,7 +145,7 @@ export function OtherCostSection({
                 options={options}
                 disabled={readOnly}
                 placeholder="Cost"
-                onChange={(o) => patch(row.clientId, { costId: o ? Number(o.value) : 0, costName: o?.label ?? "" })}
+                onChange={(o) => patch(row.clientId, { costId: o ? String(o.value) : "", costName: o?.label ?? "" })}
               />
             </td>
             <td className={TD_CLASS}>
@@ -169,7 +169,7 @@ export function OtherCostSection({
                   patch(row.clientId, {
                     lstColors: colors.map((c) => {
                       const kept = row.lstColors.find((x) => x.gmtColorId === c.id)
-                      return kept ?? { clientId: newClientId(), id: 0, otherCostDtlsId: 0, gmtColorId: c.id, gmtColorName: c.name }
+                      return kept ?? { clientId: newClientId(), id: "", otherCostDtlsId: "", gmtColorId: c.id, gmtColorName: c.name }
                     }),
                   })
                 }
@@ -202,10 +202,10 @@ export function ColorPicker({
   readOnly,
   onChange,
 }: {
-  selected: Array<{ id: number; name: string }>
-  options: Array<{ id: number; name: string }>
+  selected: Array<{ id: string; name: string }>
+  options: Array<{ id: string; name: string }>
   readOnly: boolean
-  onChange: (colors: Array<{ id: number; name: string }>) => void
+  onChange: (colors: Array<{ id: string; name: string }>) => void
 }) {
   const label = selected.length ? selected.map((c) => c.name).join(", ") : "All colors"
   if (readOnly) return <span className="block truncate" title={label}>{label}</span>
@@ -277,7 +277,7 @@ export function CommissionSection({
                 options={options}
                 disabled={readOnly}
                 placeholder="Commission"
-                onChange={(o) => patch(row.clientId, { commissionId: o ? Number(o.value) : 0, commissionName: o?.label ?? "" })}
+                onChange={(o) => patch(row.clientId, { commissionId: o ? String(o.value) : "", commissionName: o?.label ?? "" })}
               />
             </td>
             <td className={TD_CLASS}>
@@ -346,13 +346,13 @@ export function WastageSection({
     onChange(rows.map((r) => (comboKeyOf(r) === current.key ? change(r) : r)))
   }
 
-  function setPercent(processId: number, processName: string, value: number) {
+  function setPercent(processId: string, processName: string, value: number) {
     applyToCombo((row) => {
       const others = row.lstGMTWastage.filter((w) => w.gmtProcessId !== processId)
       const existing = row.lstGMTWastage.find((w) => w.gmtProcessId === processId)
       const lines: GmtDetailsWastage[] =
         value > 0
-          ? [...others, { ...(existing ?? { clientId: newClientId(), id: 0, detailsId: 0 }), gmtProcessId: processId, gmtProcessName: processName, gmtWastagePercentage: value }]
+          ? [...others, { ...(existing ?? { clientId: newClientId(), id: "", detailsId: "" }), gmtProcessId: processId, gmtProcessName: processName, gmtWastagePercentage: value }]
           : others
       return recalcRow({ ...row, lstGMTWastage: lines, gmtWastagePercentage: gmtWastageTotalOf(lines) }, isGmtForward)
     })
@@ -592,7 +592,7 @@ export function SupplierSection({
                     loadItems={loadSuppliers}
                     placeholder="Add supplier"
                     onChange={(o) => {
-                      if (!o || row.lstSupplierDetails.some((s) => s.supplierId === Number(o.value))) return
+                      if (!o || row.lstSupplierDetails.some((s) => s.supplierId === String(o.value))) return
                       onChange(
                         rows.map((r) =>
                           r.clientId === row.clientId
@@ -600,7 +600,7 @@ export function SupplierSection({
                                 ...r,
                                 lstSupplierDetails: [
                                   ...r.lstSupplierDetails,
-                                  { clientId: newClientId(), id: 0, itemWiseSupplierMasterId: r.id, supplierId: Number(o.value), supplierName: o.label },
+                                  { clientId: newClientId(), id: "", itemWiseSupplierMasterId: r.id, supplierId: String(o.value ?? ""), supplierName: o.label },
                                 ],
                               }
                             : r,
@@ -632,8 +632,8 @@ export function FilesSection({
 }: {
   files: GmtCosting["lstFile"]
   readOnly: boolean
-  onUpload: (file: File) => Promise<{ id: number; fileName: string }>
-  onDownload: (id: number, fileName: string) => void
+  onUpload: (file: File) => Promise<{ id: string; fileName: string }>
+  onDownload: (id: string, fileName: string) => void
   onChange: (files: GmtCosting["lstFile"]) => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -646,7 +646,7 @@ export function FilesSection({
     for (const file of Array.from(list)) {
       try {
         const saved = await onUpload(file)
-        added.push({ clientId: newClientId(), id: 0, masterId: 0, fileAttachmentId: saved.id, fileName: saved.fileName || file.name })
+        added.push({ clientId: newClientId(), id: "", masterId: "", fileAttachmentId: saved.id, fileName: saved.fileName || file.name })
       } catch (caught) {
         toast.error(`${file.name}: ${caught instanceof Error ? caught.message : "upload failed"}`)
       }

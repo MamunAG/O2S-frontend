@@ -88,7 +88,7 @@ export function applyCellEdit(
   const sameItemFrom = (start: number) => next.map((r, j) => ({ r, j })).filter(({ r, j }) => j >= start && r.fabricItemId === row.fabricItemId)
   const fillTargets = (start: number) => {
     if (fillDown === "all") return next.map((r, j) => ({ r, j })).filter(({ j }) => j >= start)
-    if (fillDown === "fabric" && row.fabricItemId > 0) return sameItemFrom(start)
+    if (fillDown === "fabric" && !!row.fabricItemId) return sameItemFrom(start)
     return start <= index ? [{ r: row, j: index }] : []
   }
   const patch = (j: number, change: Partial<BudgetDetail>) => {
@@ -171,7 +171,7 @@ export function GmtBudgetDetailsGrid({
   loadMaterials: Load
   loadParts: Load
   loadColors: Load
-  resolveMaterial: (id: number) => Promise<{ unitId: number | null; unitName: string; isColorWise: boolean } | null>
+  resolveMaterial: (id: string) => Promise<{ unitId: string | null; unitName: string; isColorWise: boolean } | null>
   onOpenFabricCost: (clientId: string) => void
   onOpenGroup: (clientId: string, kind: "size" | "color") => void
 }) {
@@ -193,7 +193,7 @@ export function GmtBudgetDetailsGrid({
   const insertAt = (at: number, added: BudgetDetail[]) => {
     const next = [...rows]
     next.splice(at, 0, ...added)
-    onRowsChange(next.map((r) => recalcBudgetRow(r, po, r.id === 0 && added.includes(r))))
+    onRowsChange(next.map((r) => recalcBudgetRow(r, po, !r.id && added.includes(r))))
   }
   const removeRows = (ids: Set<string>) => {
     onRowsChange(rows.filter((r) => !ids.has(r.clientId)))
@@ -201,7 +201,7 @@ export function GmtBudgetDetailsGrid({
   }
 
   async function pickMaterial(clientId: string, option: AppComboboxOption | null) {
-    const id = option ? Number(option.value) : 0
+    const id = option ? String(option.value) : ""
     const info = id ? await resolveMaterial(id) : null
     patch(clientId, (r) => ({
       ...r,
@@ -214,11 +214,11 @@ export function GmtBudgetDetailsGrid({
   }
 
   async function changeFabricOfSelected(option: AppComboboxOption) {
-    const info = await resolveMaterial(Number(option.value))
+    const info = await resolveMaterial(String(option.value))
     onRowsChange(
       rows.map((r) =>
         selected.has(r.clientId)
-          ? { ...r, fabricItemId: Number(option.value), fabricItemName: option.label, uomId: info?.unitId ?? r.uomId, uomName: info?.unitName ?? r.uomName, isColorWise: info?.isColorWise ?? r.isColorWise }
+          ? { ...r, fabricItemId: String(option.value ?? ""), fabricItemName: option.label, uomId: info?.unitId ?? r.uomId, uomName: info?.unitName ?? r.uomName, isColorWise: info?.isColorWise ?? r.isColorWise }
           : r,
       ),
     )
@@ -415,7 +415,7 @@ export function GmtBudgetDetailsGrid({
                       loadItems={loadColors}
                       placeholder="Fabric color"
                       disabled={readOnly}
-                      onChange={(o) => patch(row.clientId, (r) => ({ ...r, fabricColorId: o ? Number(o.value) : null, fabricColorName: o?.label ?? "" }))}
+                      onChange={(o) => patch(row.clientId, (r) => ({ ...r, fabricColorId: o ? String(o.value) : null, fabricColorName: o?.label ?? "" }))}
                     />
                   </td>
                   <td className={TD_CLASS}>
@@ -425,7 +425,7 @@ export function GmtBudgetDetailsGrid({
                       loadItems={loadParts}
                       placeholder="Part"
                       disabled={readOnly}
-                      onChange={(o) => patch(row.clientId, (r) => ({ ...r, gmtPartsId: o ? Number(o.value) : null, gmtPartsName: o?.label ?? "" }))}
+                      onChange={(o) => patch(row.clientId, (r) => ({ ...r, gmtPartsId: o ? String(o.value) : null, gmtPartsName: o?.label ?? "" }))}
                     />
                   </td>
                   {(["fabricGsm", "finishDia", "fabricForm"] as const).map((field) => (
@@ -552,7 +552,7 @@ export function GmtBudgetDetailsGrid({
         onPick={(option) => {
           if (picker === "fabric") void changeFabricOfSelected(option)
           else {
-            onRowsChange(rows.map((r) => (selected.has(r.clientId) ? { ...r, gmtPartsId: Number(option.value), gmtPartsName: option.label } : r)))
+            onRowsChange(rows.map((r) => (selected.has(r.clientId) ? { ...r, gmtPartsId: String(option.value ?? ""), gmtPartsName: option.label } : r)))
             toast.success(`GMT parts changed on ${selected.size} row(s).`)
           }
           setPicker(null)

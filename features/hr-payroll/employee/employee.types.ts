@@ -27,8 +27,8 @@ export type PaginatedResponse<T> = {
 }
 
 export type FileSummary = {
-  id?: number | null
-  file_id?: number | null
+  id?: string | null
+  file_id?: string | null
   file_name?: string | null
   original_name?: string | null
   file_path?: string | null
@@ -86,7 +86,7 @@ export type EmployeeRecord = {
   id: string
   organizationId?: string | null
   factoryId: string
-  imageId?: number | null
+  imageId?: string | null
   employeeCode: string
   employeeName: string
   designationId?: string | null

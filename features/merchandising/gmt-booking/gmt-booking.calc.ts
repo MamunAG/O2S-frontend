@@ -26,26 +26,26 @@ function shape<T extends object>(template: T, raw: Raw, nullable: string[] = [])
 }
 
 const FABRIC_TEMPLATE: BookingFabricRow = {
-  clientId: "", id: 0, masterId: 0, fabricOrMtlId: 0, fabricItem: "", gmtColorId: null, gmtColor: "", gmtSizeId: null, gmtSize: "",
+  clientId: "", id: "", masterId: "", fabricOrMtlId: "", fabricItem: "", gmtColorId: null, gmtColor: "", gmtSizeId: null, gmtSize: "",
   mtlColorId: null, materialColor: "", poQty: 0, bomQty: 0, totalBomReqQty: 0, costingConPerPcs: 0, extraPer: 0, bookingConPerPcs: 0,
   fabricBookingConPerPcs: 0, totalBookingQty: 0, totalFabricBookingQty: 0, uomId: null, uom: "", totalPricePerPcs: 0, useAreaId: null,
   gmtParts: "", comBomParentMtlConPerPcs: 0, factoryPricePerUnitMtl: 0, totalComBomProcessWastage: 0, factoryGmtWastagePer: 0,
-  customConsumptionPerPcs: 0, finishDia: "", fabricGsm: "", fabricForm: "", yarnTableAddIds: 0, pcsQty: 0, sampleFabricQty: 0,
+  customConsumptionPerPcs: 0, finishDia: "", fabricGsm: "", fabricForm: "", yarnTableAddIds: "", pcsQty: 0, sampleFabricQty: 0,
   fabricReqQtyPerPcsGmtInitial: 0, fabricReqQtyPerDznGmtInitial: 0, remarks: "", knitMcDia: "", totalFabricBookingQtyLength: 0, materialGroup: "",
 }
 
 const YARN_TEMPLATE: BookingYarnRow = {
-  clientId: "", id: 0, masterId: 0, materialId: 0, yarn: "", comBomParentsMtlId: null, fabricItem: "", gmtColorId: null, gmtColor: "",
+  clientId: "", id: "", masterId: "", materialId: "", yarn: "", comBomParentsMtlId: null, fabricItem: "", gmtColorId: null, gmtColor: "",
   gmtSizeId: null, gmtSize: "", mtlColorId: null, materialColor: "", poQty: 0, bomQty: 0, totalBomReqQty: 0, costingConPerPcs: 0, extraPer: 0,
   bookingConPerPcs: 0, fabricBookingConPerPcs: 0, totalBookingQty: 0, totalFabricBookingQty: 0, uomId: null, uom: "", totalPricePerPcs: 0,
   useAreaId: null, gmtParts: "", comBomParentMtlConPerPcs: 0, factoryPricePerUnitMtl: 0, totalComBomProcessWastage: 0, factoryGmtWastagePer: 0,
-  customConsumptionPerPcs: 0, finishDia: "", fabricGsm: "", fabricForm: "", yarnTableAddId: 0, yarnDyeingColorId: null, yarnDyeingColor: "",
+  customConsumptionPerPcs: 0, finishDia: "", fabricGsm: "", fabricForm: "", yarnTableAddId: "", yarnDyeingColorId: null, yarnDyeingColor: "",
   budgetTotalGreyQtyPerPcsGmt: 0, factoryTotalGreyBookingConPerpcsGmt: 0, factoryTotalGreyBookingQuantity: 0, budgetTotalDyedYarnQtyPerPcsGmt: 0,
   factoryTotalDyedYarnBookingConPerpcsGmt: 0, factoryTotalDyedYarnBookingQuantity: 0, stripMeasurement: "",
 }
 
 const WASTAGE_TEMPLATE: BookingWastage = {
-  clientId: "", id: 0, masterId: 0, parentsMtlId: null, fabricItem: "", colorGroupId: null, gmtColor: "", useAreaId: null, gmtParts: "",
+  clientId: "", id: "", masterId: "", parentsMtlId: null, fabricItem: "", colorGroupId: null, gmtColor: "", useAreaId: null, gmtParts: "",
   costId: null, costName: "", factoryWastagePercentage: 0, momWastage: 0, finishDia: "", finishGsm: "", gmtSizeId: null, wastageType: "",
   isWastageDouble: false, materialColorId: null, materialColor: "",
 }
@@ -58,7 +58,7 @@ export const wastageFromDto = (r: Raw) => shape(WASTAGE_TEMPLATE, r, IDS)
 
 export function emptyBooking(): GmtBooking {
   return {
-    id: 0, bomNo: "", buyerId: 0, buyer: "", poId: 0, poNo: "", styleId: 0, style: "", styleName: "", budgetId: null, budgetName: "",
+    id: "", bomNo: "", buyerId: "", buyer: "", poId: "", poNo: "", styleId: "", style: "", styleName: "", budgetId: null, budgetName: "",
     fabricSourceId: null, fabricSource: "", isApproved: false, isOpenDia: false, revisedNo: 0, bookingReleaseDate: null,
     details: [], fabricDetails: [], wastages: [], comments: [], specialTreatments: [], revises: [],
   }
@@ -68,16 +68,16 @@ export function bookingFromDto(raw: unknown): GmtBooking {
   const r = (raw ?? {}) as Raw
   return {
     ...emptyBooking(),
-    id: n(r.id), bomNo: s(r.bomNo), buyerId: n(r.buyerId), buyer: s(r.buyer), poId: n(r.poId), poNo: s(r.poNo),
-    styleId: n(r.styleId), style: s(r.style), styleName: s(r.styleName), budgetId: Number(r.budgetId) > 0 ? n(r.budgetId) : null,
-    budgetName: s(r.budgetName), fabricSourceId: Number(r.fabricSourceId) > 0 ? n(r.fabricSourceId) : null, fabricSource: s(r.fabricSource),
+    id: s(r.id), bomNo: s(r.bomNo), buyerId: s(r.buyerId), buyer: s(r.buyer), poId: s(r.poId), poNo: s(r.poNo),
+    styleId: s(r.styleId), style: s(r.style), styleName: s(r.styleName), budgetId: r.budgetId ? s(r.budgetId) : null,
+    budgetName: s(r.budgetName), fabricSourceId: r.fabricSourceId ? s(r.fabricSourceId) : null, fabricSource: s(r.fabricSource),
     isApproved: Boolean(r.isApproved), isOpenDia: Boolean(r.isOpenDia), revisedNo: n(r.revisedNo), bookingReleaseDate: day(r.bookingReleaseDate),
     details: list<Raw>(r.details).map(yarnRowFromDto),
     fabricDetails: list<Raw>(r.fabricDetails).map(fabricRowFromDto),
     wastages: list<Raw>(r.wastages).map(wastageFromDto),
-    comments: list<Raw>(r.comments).map((c) => ({ clientId: newClientId(), id: n(c.id), masterId: n(c.masterId), comments: s(c.comments) })),
-    specialTreatments: list<Raw>(r.specialTreatments).map((t) => ({ clientId: newClientId(), id: n(t.id), masterId: n(t.masterId), specialTreatmId: n(t.specialTreatmId), treatment: s(t.treatment) })),
-    revises: list<Raw>(r.revises).map((v) => ({ clientId: newClientId(), id: n(v.id), masterId: n(v.masterId), reviceNo: n(v.reviceNo), reviceDate: day(v.reviceDate) ?? "", reviceReason: s(v.reviceReason), revisedByName: s(v.revisedByName || v.revisedBy) })),
+    comments: list<Raw>(r.comments).map((c) => ({ clientId: newClientId(), id: s(c.id), masterId: s(c.masterId), comments: s(c.comments) })),
+    specialTreatments: list<Raw>(r.specialTreatments).map((t) => ({ clientId: newClientId(), id: s(t.id), masterId: s(t.masterId), specialTreatmId: s(t.specialTreatmId), treatment: s(t.treatment) })),
+    revises: list<Raw>(r.revises).map((v) => ({ clientId: newClientId(), id: s(v.id), masterId: s(v.masterId), reviceNo: n(v.reviceNo), reviceDate: day(v.reviceDate) ?? "", reviceReason: s(v.reviceReason), revisedByName: s(v.revisedByName || v.revisedBy) })),
     createdByName: (r.createdByName as string) ?? null, createdDate: (r.createdDate as string) ?? null,
     updatedByName: (r.updatedByName as string) ?? null, updatedDate: (r.updatedDate as string) ?? null,
   }
@@ -100,7 +100,7 @@ export function bookingToDto(b: GmtBooking) {
     budgetId: b.budgetId || null,
     fabricSourceId: b.fabricSourceId || null,
     comments: b.comments.filter((c) => c.comments.trim()),
-    specialTreatments: b.specialTreatments.filter((t) => t.specialTreatmId > 0),
+    specialTreatments: b.specialTreatments.filter((t) => !!t.specialTreatmId),
     revises: b.revises.map((v) => ({ ...v, reviceDate: v.reviceDate || new Date().toISOString().slice(0, 10) })),
   })
 }
@@ -113,7 +113,7 @@ export const isFabricRow = (row: BookingFabricRow, groupNames: string[]) =>
 
 /** A fabric row's yarn rows share its budget details row (yarnTableAddIds / yarnTableAddId) and GMT colour. */
 export const isYarnOfFabric = (yarn: BookingYarnRow, fabric: BookingFabricRow) =>
-  fabric.yarnTableAddIds > 0 && yarn.yarnTableAddId === fabric.yarnTableAddIds && (yarn.gmtColorId ?? 0) === (fabric.gmtColorId ?? 0)
+  !!fabric.yarnTableAddIds && yarn.yarnTableAddId === fabric.yarnTableAddIds && (yarn.gmtColorId ?? "") === (fabric.gmtColorId ?? "")
 
 export type YarnGridRow = BookingYarnRow & { yarnRatio: number; yarnPerKg: number; greyPerKg: number; dyedPerKg: number }
 
@@ -143,8 +143,8 @@ export type FabricSummary = Sliced & { key: string; item: string; uom: string; g
 export type YarnSummary = Sliced & { key: string; yarn: string; uom: string; yarnQty: number }
 export type OtherSummary = Sliced & { key: string; item: string; materialGroup: string; uom: string; qty: number }
 
-const addSlice = (g: Sliced, r: { gmtColorId: number | null; gmtSizeId: number | null; poQty: number }) => {
-  g.poQtyBySlice[`${r.gmtColorId ?? 0}|${r.gmtSizeId ?? 0}`] = n(r.poQty)
+const addSlice = (g: Sliced, r: { gmtColorId: string | null; gmtSizeId: string | null; poQty: number }) => {
+  g.poQtyBySlice[`${r.gmtColorId ?? ""}|${r.gmtSizeId ?? ""}`] = n(r.poQty)
 }
 
 export const poQtyOf = (rows: Sliced[]) =>

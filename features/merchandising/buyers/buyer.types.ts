@@ -27,7 +27,7 @@ export type PaginatedResponse<T> = {
 }
 
 export type CountrySummary = {
-  id?: number | null
+  id?: string | null
   name?: string | null
 }
 
@@ -37,7 +37,7 @@ export type BuyerRecord = {
   displayName: string
   contact?: string | null
   email?: string | null
-  countryId?: number | null
+  countryId?: string | null
   address?: string | null
   remarks?: string | null
   isActive?: boolean

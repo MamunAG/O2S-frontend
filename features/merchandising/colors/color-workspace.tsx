@@ -279,7 +279,7 @@ export function ColorWorkspace({ apiUrl }: { apiUrl: string }) {
   const [editorSubmitting, setEditorSubmitting] = useState(false)
   const [editorError, setEditorError] = useState("")
   const [editorInitialValues, setEditorInitialValues] = useState<ColorFormValues>(DEFAULT_FORM_VALUES)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const [deleteTarget, setDeleteTarget] = useState<ColorRecord | null>(null)
   const [deleteWorking, setDeleteWorking] = useState(false)
@@ -403,7 +403,7 @@ export function ColorWorkspace({ apiUrl }: { apiUrl: string }) {
     }
   }, [apiUrl, handleAuthFailure, refreshVersion, selectedOrganizationId])
 
-  const openEditDialog = useCallback(async (colorId: number) => {
+  const openEditDialog = useCallback(async (colorId: string) => {
     if (!accessRules?.canUpdate) {
       toast.error("You do not have permission to update colors.")
       return

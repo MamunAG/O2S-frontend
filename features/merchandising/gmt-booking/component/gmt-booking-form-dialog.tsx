@@ -196,13 +196,13 @@ export function GmtBookingFormDialog({
   onOpenBooking,
 }: {
   mode: GmtBookingDialogMode
-  bookingId: number | null
+  bookingId: string | null
   ctx: ApiContext
   access: AccessRules
   onAuthFailure: (message: string) => boolean
   onOpenChange: (open: boolean) => void
-  onSaved: (id: number) => void
-  onOpenBooking: (id: number) => void
+  onSaved: (id: string) => void
+  onOpenBooking: (id: string) => void
 }) {
   const [mode, setMode] = useState(initialMode)
   const readOnly = mode === "view"
@@ -319,7 +319,7 @@ export function GmtBookingFormDialog({
   function pickPoStyle(value: string | null) {
     const row = poStyles.find((r) => `${r.poId}|${r.styleId}` === value)
     if (!row) {
-      update({ poId: 0, poNo: "", styleId: 0, style: "", styleName: "", budgetId: null, fabricDetails: [], details: [], wastages: [] })
+      update({ poId: "", poNo: "", styleId: "", style: "", styleName: "", budgetId: null, fabricDetails: [], details: [], wastages: [] })
       return
     }
     if (row.bookingId) {
@@ -492,9 +492,9 @@ export function GmtBookingFormDialog({
                               label={booking.buyer}
                               loadItems={loadBuyers}
                               placeholder="Buyer"
-                              disabled={readOnly || booking.id > 0}
+                              disabled={readOnly || !!booking.id}
                               inputClassName={INPUT_CLASS}
-                              onChange={(o) => update({ buyerId: o ? Number(o.value) : 0, buyer: o?.label ?? "", poId: 0, poNo: "", styleId: 0, style: "", budgetId: null, fabricDetails: [], details: [], wastages: [] })}
+                              onChange={(o) => update({ buyerId: o ? String(o.value) : "", buyer: o?.label ?? "", poId: "", poNo: "", styleId: "", style: "", budgetId: null, fabricDetails: [], details: [], wastages: [] })}
                             />
                           </div>
                           <div className={cn(FIELD_CLASS, "xl:col-span-2")}>
@@ -505,7 +505,7 @@ export function GmtBookingFormDialog({
                               value={poStyleValue}
                               onValueChange={(o) => pickPoStyle(o?.value ?? null)}
                               placeholder={booking.buyerId ? (poStyles.length ? "PO · style" : "No PO of this buyer has a budget") : "Pick a buyer first"}
-                              disabled={readOnly || booking.id > 0 || !booking.buyerId}
+                              disabled={readOnly || !!booking.id || !booking.buyerId}
                               inputClassName={INPUT_CLASS}
                               contentClassName={COMBO_CONTENT_CLASS}
                             />
@@ -517,7 +517,7 @@ export function GmtBookingFormDialog({
                           </div>
                           <div className={FIELD_CLASS}>
                             <FieldLabel>Fabric Source</FieldLabel>
-                            <LookupCombobox value={booking.fabricSourceId} label={booking.fabricSource} loadItems={loadSources} placeholder="Fabric source" disabled={readOnly} inputClassName={INPUT_CLASS} onChange={(o) => update({ fabricSourceId: o ? Number(o.value) : null, fabricSource: o?.label ?? "" })} />
+                            <LookupCombobox value={booking.fabricSourceId} label={booking.fabricSource} loadItems={loadSources} placeholder="Fabric source" disabled={readOnly} inputClassName={INPUT_CLASS} onChange={(o) => update({ fabricSourceId: o ? String(o.value) : null, fabricSource: o?.label ?? "" })} />
                           </div>
                           <label className="flex items-end gap-2 pb-1 text-xs font-semibold text-slate-700 dark:text-slate-300" title="The release date is stamped by the server on the first release">
                             <Checkbox checked={booking.isApproved} disabled={readOnly} onCheckedChange={(v) => update({ isApproved: Boolean(v) })} /> Released
@@ -619,7 +619,7 @@ export function GmtBookingFormDialog({
                         </div>,
                       )}
 
-                      {section("revisions", "Revisions", <RevisionSection rows={booking.revises} readOnly={readOnly} isSaved={booking.id > 0} onChange={(revises) => update({ revises })} />)}
+                      {section("revisions", "Revisions", <RevisionSection rows={booking.revises} readOnly={readOnly} isSaved={!!booking.id} onChange={(revises) => update({ revises })} />)}
                     </>
                   )}
                 </div>

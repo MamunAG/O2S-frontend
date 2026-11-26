@@ -457,7 +457,7 @@ export function OrderPlacementWorkspace({ apiUrl }: { apiUrl: string }) {
         const currency = await fetchCurrency({
           apiUrl,
           accessToken,
-          id: Number(currencyId),
+          id: currencyId,
           organizationId: selectedOrganizationId || undefined,
         })
 

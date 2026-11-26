@@ -48,7 +48,7 @@ type UnitTableSectionProps = {
   onPageChange: (nextPage: number | ((current: number) => number)) => void
   onLimitChange: (nextPageSize: number) => void
   onCreateUnit: () => void
-  onEditUnit: (unitId: number) => void
+  onEditUnit: (unitId: string) => void
   onDeleteUnit: (unit: UnitRecord) => void
   onResetFilters: () => void
   onDownloadTemplate: () => void

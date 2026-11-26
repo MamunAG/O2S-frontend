@@ -51,12 +51,12 @@ export type StyleSummary = {
 }
 
 export type SizeSummary = {
-  id?: number | null
+  id?: string | null
   sizeName?: string | null
 }
 
 export type ColorSummary = {
-  id?: number | null
+  id?: string | null
   colorName?: string | null
   colorDisplayName?: string | null
 }
@@ -75,9 +75,9 @@ export type JobDetailRecord = {
   purchaseOrder?: PurchaseOrderSummary | null
   styleId: string
   style?: StyleSummary | null
-  sizeId: number
+  sizeId: string
   size?: SizeSummary | null
-  colorId: number
+  colorId: string
   color?: ColorSummary | null
   quantity?: number | null
   fob?: number | null

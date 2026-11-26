@@ -27,7 +27,7 @@ export type PaginatedResponse<T> = {
 }
 
 export type ColorRecord = {
-  id: number
+  id: string
   colorName: string
   colorDisplayName?: string | null
   colorDescription?: string | null

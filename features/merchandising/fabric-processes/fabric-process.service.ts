@@ -105,7 +105,7 @@ export async function fetchFabricProcess({
   apiUrl: string
   accessToken: string
   organizationId?: string
-  id: number
+  id: string
 }): Promise<FabricProcessRecord> {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/fabric-process/${id}`), {
     method: "GET",
@@ -163,7 +163,7 @@ export async function updateFabricProcess({
   apiUrl: string
   accessToken: string
   organizationId?: string
-  id: number
+  id: string
   payload: FabricProcessFormValues
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/fabric-process/${id}`), {
@@ -186,7 +186,7 @@ export async function updateFabricProcess({
   return payloadData.data
 }
 
-export async function softDeleteFabricProcess({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: number }) {
+export async function softDeleteFabricProcess({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/fabric-process/${id}`), {
     method: "DELETE",
     headers: buildRequestHeaders({ accessToken, organizationId }),
@@ -195,7 +195,7 @@ export async function softDeleteFabricProcess({ apiUrl, accessToken, organizatio
   await readJsonResponse(response)
 }
 
-export async function restoreFabricProcess({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: number }) {
+export async function restoreFabricProcess({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/fabric-process/${id}/restore`), {
     method: "POST",
     headers: buildRequestHeaders({ accessToken, organizationId }),
@@ -204,7 +204,7 @@ export async function restoreFabricProcess({ apiUrl, accessToken, organizationId
   await readJsonResponse(response)
 }
 
-export async function permanentlyDeleteFabricProcess({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: number }) {
+export async function permanentlyDeleteFabricProcess({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/fabric-process/${id}/permanent`), {
     method: "DELETE",
     headers: buildRequestHeaders({ accessToken, organizationId }),

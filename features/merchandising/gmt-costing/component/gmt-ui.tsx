@@ -92,7 +92,7 @@ export function LookupCombobox({
   inputClassName = CELL_INPUT_CLASS,
   id,
 }: {
-  value: number | null | undefined
+  value: string | null | undefined
   label: string
   onChange: (option: AppComboboxOption | null) => void
   loadItems: (params: AppComboboxLoadParams) => Promise<{ items: AppComboboxOption[]; hasNextPage: boolean }>

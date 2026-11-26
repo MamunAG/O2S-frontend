@@ -27,7 +27,7 @@ export type PaginatedResponse<T> = {
 }
 
 export type GmtCostScopeRecord = {
-  id: number
+  id: string
   name: string
   isActive?: boolean
   created_by_id?: string | null

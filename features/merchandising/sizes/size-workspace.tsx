@@ -237,7 +237,7 @@ export function SizeWorkspace({ apiUrl }: { apiUrl: string }) {
   const [editorSubmitting, setEditorSubmitting] = useState(false)
   const [editorError, setEditorError] = useState("")
   const [editorInitialValues, setEditorInitialValues] = useState<SizeFormValues>(DEFAULT_FORM_VALUES)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const [deleteTarget, setDeleteTarget] = useState<SizeRecord | null>(null)
   const [deleteWorking, setDeleteWorking] = useState(false)
@@ -361,7 +361,7 @@ export function SizeWorkspace({ apiUrl }: { apiUrl: string }) {
     }
   }, [apiUrl, handleAuthFailure, refreshVersion, selectedOrganizationId])
 
-  const openEditDialog = useCallback(async (sizeId: number) => {
+  const openEditDialog = useCallback(async (sizeId: string) => {
     if (!accessRules?.canUpdate) {
       toast.error("You do not have permission to update sizes.")
       return

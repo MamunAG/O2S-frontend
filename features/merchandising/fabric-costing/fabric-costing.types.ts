@@ -33,33 +33,33 @@ export type MaterialSummary = {
 }
 
 export type UnitSummary = {
-  id?: number | null
+  id?: string | null
   name?: string | null
 }
 
 export type CurrencySummary = {
-  id?: number | null
+  id?: string | null
   currencyName?: string | null
   currencyCode?: string | null
   symbol?: string | null
 }
 
 export type FabricProcessSummary = {
-  id?: number | null
+  id?: string | null
   name?: string | null
   stage?: "YARN_PREPARATION" | "YARN_TO_GREY" | "GREY_TO_FINISHED"
   sortOrder?: number | null
 }
 
 export type GmtCostScopeSummary = {
-  id?: number | null
+  id?: string | null
   name?: string | null
 }
 
 export type FabricCostingYarnProcessRecord = {
   id: string
   fabricCostingYarnId?: string
-  processId?: number | null
+  processId?: string | null
   process?: FabricProcessSummary | null
   rateUnitFabric?: number | string | null
   wastagePercentage?: number | string | null
@@ -83,7 +83,7 @@ export type FabricCostingYarnRecord = {
 export type FabricCostingYarnAdditionalCostRecord = {
   id: string
   fabricCostingYarnId?: string
-  gmtCostScopeId?: number | null
+  gmtCostScopeId?: string | null
   gmtCostScope?: GmtCostScopeSummary | null
   percentage?: number | string | null
   directCost?: number | string | null
@@ -92,7 +92,7 @@ export type FabricCostingYarnAdditionalCostRecord = {
 export type FabricCostingCommonProcessRecord = {
   id: string
   fabricCostingId?: string
-  processId?: number | null
+  processId?: string | null
   process?: FabricProcessSummary | null
   ratePerUnitFabric?: number | string | null
   wastagePercentage?: number | string | null
@@ -104,9 +104,9 @@ export type FabricCostingRecord = {
   fabric?: MaterialSummary | null
   qty?: number | string | null
   finishedFabricCost?: number | string | null
-  unitId?: number | null
+  unitId?: string | null
   unit?: UnitSummary | null
-  currencyId?: number | null
+  currencyId?: string | null
   currency?: CurrencySummary | null
   costName?: string | null
   organizationId?: string | null

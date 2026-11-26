@@ -22,8 +22,8 @@ export type UserSummary = {
 }
 
 export type FileSummary = {
-    id?: number | null
-    file_id?: number | null
+    id?: string | null
+    file_id?: string | null
     file_name?: string | null
     original_name?: string | null
     file_path?: string | null
@@ -46,7 +46,7 @@ export type FactoryRecord = {
     contact?: string | null
     email?: string | null
     organizationId?: string | null
-    imageId?: number | null
+    imageId?: string | null
     image?: FileSummary | null
     address?: string | null
     remarks?: string | null

@@ -214,7 +214,7 @@ export function GmtCostScopeWorkspace({ apiUrl }: { apiUrl: string }) {
   const [editorSubmitting, setEditorSubmitting] = useState(false)
   const [editorError, setEditorError] = useState("")
   const [editorInitialValues, setEditorInitialValues] = useState<GmtCostScopeFormValues>(DEFAULT_FORM_VALUES)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const [deleteTarget, setDeleteTarget] = useState<GmtCostScopeRecord | null>(null)
   const [deleteWorking, setDeleteWorking] = useState(false)
@@ -297,7 +297,7 @@ export function GmtCostScopeWorkspace({ apiUrl }: { apiUrl: string }) {
     return () => { active = false }
   }, [apiUrl, handleAuthFailure, refreshVersion, selectedOrganizationId])
 
-  const openEditDialog = useCallback(async (gmtCostScopeId: number) => {
+  const openEditDialog = useCallback(async (gmtCostScopeId: string) => {
     if (!accessRules?.canUpdate) {
       toast.error("You do not have permission to update GMT cost scopes.")
       return

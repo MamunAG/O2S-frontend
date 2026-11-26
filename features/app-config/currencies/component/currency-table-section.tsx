@@ -27,7 +27,7 @@ type CurrencyTableSectionProps = {
   onPageChange: (nextPage: number | ((current: number) => number)) => void
   onLimitChange: (nextPageSize: number) => void
   onCreateCurrency: () => void
-  onEditCurrency: (currencyId: number) => void
+  onEditCurrency: (currencyId: string) => void
   onDeleteCurrency: (currency: CurrencyRecord) => void
   onResetFilters: () => void
   onDownloadTemplate: () => void

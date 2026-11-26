@@ -33,15 +33,15 @@ export type BuyerSummary = {
 }
 
 export type CurrencySummary = {
-  id?: number | null
+  id?: string | null
   currencyName?: string | null
   currencyCode?: string | null
   symbol?: string | null
 }
 
 export type FileSummary = {
-  id?: number | null
-  file_id?: number | null
+  id?: string | null
+  file_id?: string | null
   file_name?: string | null
   original_name?: string | null
   file_path?: string | null
@@ -52,37 +52,37 @@ export type FileSummary = {
 }
 
 export type ColorSummary = {
-  id?: number | null
+  id?: string | null
   colorName?: string | null
   colorDisplayName?: string | null
   colorHexCode?: string | null
 }
 
 export type SizeSummary = {
-  id?: number | null
+  id?: string | null
   sizeName?: string | null
 }
 
 export type EmbellishmentSummary = {
-  id?: number | null
+  id?: string | null
   name?: string | null
 }
 
 export type StyleToColorMapRecord = {
-  id?: number
-  colorId: number
+  id?: string
+  colorId: string
   color?: ColorSummary | null
 }
 
 export type StyleToSizeMapRecord = {
-  id?: number
-  sizeId: number
+  id?: string
+  sizeId: string
   size?: SizeSummary | null
 }
 
 export type StyleToEmbellishmentMapRecord = {
-  id?: number
-  embellishmentId: number
+  id?: string
+  embellishmentId: string
   embellishment?: EmbellishmentSummary | null
 }
 
@@ -97,9 +97,9 @@ export type StyleRecord = {
   itemType?: string | null
   productDepartment?: string | null
   cmSewing?: number | null
-  currencyId: number
+  currencyId: string
   currency?: CurrencySummary | null
-  imageId?: number | null
+  imageId?: string | null
   image?: FileSummary | null
   smvSewing?: number | null
   smvSewingSideSeam?: number | null

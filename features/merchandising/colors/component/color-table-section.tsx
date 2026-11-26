@@ -51,7 +51,7 @@ type ColorTableSectionProps = {
   onPageChange: (nextPage: number | ((current: number) => number)) => void
   onLimitChange: (nextPageSize: number) => void
   onCreateColor: () => void
-  onEditColor: (colorId: number) => void
+  onEditColor: (colorId: string) => void
   onDeleteColor: (color: ColorRecord) => void
   onResetFilters: () => void
   canCreateColor: boolean

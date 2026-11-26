@@ -29,7 +29,7 @@ export type PaginatedResponse<T> = {
 export type FabricProcessStage = "YARN_PREPARATION" | "YARN_TO_GREY" | "GREY_TO_FINISHED"
 
 export type FabricProcessRecord = {
-  id: number
+  id: string
   name: string
   stage: FabricProcessStage
   sortOrder: number

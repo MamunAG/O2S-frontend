@@ -105,7 +105,7 @@ export async function fetchGmtCostScope({
   apiUrl: string
   accessToken: string
   organizationId?: string
-  id: number
+  id: string
 }): Promise<GmtCostScopeRecord> {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/gmt-cost-scope/${id}`), {
     method: "GET",
@@ -158,7 +158,7 @@ export async function updateGmtCostScope({
   apiUrl: string
   accessToken: string
   organizationId?: string
-  id: number
+  id: string
   payload: GmtCostScopeFormValues
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/gmt-cost-scope/${id}`), {
@@ -176,7 +176,7 @@ export async function updateGmtCostScope({
   return payloadData.data
 }
 
-export async function softDeleteGmtCostScope({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: number }) {
+export async function softDeleteGmtCostScope({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/gmt-cost-scope/${id}`), {
     method: "DELETE",
     headers: buildRequestHeaders({ accessToken, organizationId }),
@@ -185,7 +185,7 @@ export async function softDeleteGmtCostScope({ apiUrl, accessToken, organization
   await readJsonResponse(response)
 }
 
-export async function restoreGmtCostScope({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: number }) {
+export async function restoreGmtCostScope({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/gmt-cost-scope/${id}/restore`), {
     method: "POST",
     headers: buildRequestHeaders({ accessToken, organizationId }),
@@ -194,7 +194,7 @@ export async function restoreGmtCostScope({ apiUrl, accessToken, organizationId,
   await readJsonResponse(response)
 }
 
-export async function permanentlyDeleteGmtCostScope({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: number }) {
+export async function permanentlyDeleteGmtCostScope({ apiUrl, accessToken, organizationId, id }: { apiUrl: string; accessToken: string; organizationId?: string; id: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/gmt-cost-scope/${id}/permanent`), {
     method: "DELETE",
     headers: buildRequestHeaders({ accessToken, organizationId }),

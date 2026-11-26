@@ -58,7 +58,7 @@ function keepLineIds(lines: Rec[], stored: Rec[] | undefined, key: (line: Rec) =
   const free = new Map<string, Rec[]>()
   for (const s of stored) free.set(key(s), [...(free.get(key(s)) ?? []), s])
   return lines.map((line) => {
-    if (Number(line.id) > 0) return line
+    if (line.id) return line
     const match = free.get(key(line))?.shift()
     return match ? { ...line, id: match.id } : line
   })

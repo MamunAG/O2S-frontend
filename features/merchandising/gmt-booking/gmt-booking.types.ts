@@ -5,15 +5,15 @@
 /** A fabric (or other item) row: MER_MATERIAL_ORDE_MAS_DET_FABRIC_VIEW. */
 export type BookingFabricRow = {
   clientId: string
-  id: number
-  masterId: number
-  fabricOrMtlId: number
+  id: string
+  masterId: string
+  fabricOrMtlId: string
   fabricItem: string
-  gmtColorId: number | null
+  gmtColorId: string | null
   gmtColor: string
-  gmtSizeId: number | null
+  gmtSizeId: string | null
   gmtSize: string
-  mtlColorId: number | null
+  mtlColorId: string | null
   materialColor: string
   poQty: number
   bomQty: number
@@ -24,10 +24,10 @@ export type BookingFabricRow = {
   fabricBookingConPerPcs: number
   totalBookingQty: number
   totalFabricBookingQty: number
-  uomId: number | null
+  uomId: string | null
   uom: string
   totalPricePerPcs: number
-  useAreaId: number | null
+  useAreaId: string | null
   gmtParts: string
   comBomParentMtlConPerPcs: number
   factoryPricePerUnitMtl: number
@@ -37,7 +37,7 @@ export type BookingFabricRow = {
   finishDia: string
   fabricGsm: string
   fabricForm: string
-  yarnTableAddIds: number
+  yarnTableAddIds: string
   pcsQty: number
   sampleFabricQty: number
   fabricReqQtyPerPcsGmtInitial: number
@@ -52,17 +52,17 @@ export type BookingFabricRow = {
 /** A yarn row: MER_MATERIAL_ORDE_MAS_DET_VIEW. */
 export type BookingYarnRow = {
   clientId: string
-  id: number
-  masterId: number
-  materialId: number
+  id: string
+  masterId: string
+  materialId: string
   yarn: string
-  comBomParentsMtlId: number | null
+  comBomParentsMtlId: string | null
   fabricItem: string
-  gmtColorId: number | null
+  gmtColorId: string | null
   gmtColor: string
-  gmtSizeId: number | null
+  gmtSizeId: string | null
   gmtSize: string
-  mtlColorId: number | null
+  mtlColorId: string | null
   materialColor: string
   poQty: number
   bomQty: number
@@ -73,10 +73,10 @@ export type BookingYarnRow = {
   fabricBookingConPerPcs: number
   totalBookingQty: number
   totalFabricBookingQty: number
-  uomId: number | null
+  uomId: string | null
   uom: string
   totalPricePerPcs: number
-  useAreaId: number | null
+  useAreaId: string | null
   gmtParts: string
   comBomParentMtlConPerPcs: number
   factoryPricePerUnitMtl: number
@@ -86,8 +86,8 @@ export type BookingYarnRow = {
   finishDia: string
   fabricGsm: string
   fabricForm: string
-  yarnTableAddId: number
-  yarnDyeingColorId: number | null
+  yarnTableAddId: string
+  yarnDyeingColorId: string | null
   yarnDyeingColor: string
   budgetTotalGreyQtyPerPcsGmt: number
   factoryTotalGreyBookingConPerpcsGmt: number
@@ -100,33 +100,33 @@ export type BookingYarnRow = {
 
 export type BookingWastage = {
   clientId: string
-  id: number
-  masterId: number
-  parentsMtlId: number | null
+  id: string
+  masterId: string
+  parentsMtlId: string | null
   fabricItem: string
-  colorGroupId: number | null
+  colorGroupId: string | null
   gmtColor: string
-  useAreaId: number | null
+  useAreaId: string | null
   gmtParts: string
-  costId: number | null
+  costId: string | null
   costName: string
   factoryWastagePercentage: number
   momWastage: number
   finishDia: string
   finishGsm: string
-  gmtSizeId: number | null
+  gmtSizeId: string | null
   wastageType: string
   isWastageDouble: boolean
-  materialColorId: number | null
+  materialColorId: string | null
   materialColor: string
 }
 
-export type BookingComment = { clientId: string; id: number; masterId: number; comments: string }
-export type BookingSpecialTreatment = { clientId: string; id: number; masterId: number; specialTreatmId: number; treatment: string }
+export type BookingComment = { clientId: string; id: string; masterId: string; comments: string }
+export type BookingSpecialTreatment = { clientId: string; id: string; masterId: string; specialTreatmId: string; treatment: string }
 export type BookingRevise = {
   clientId: string
-  id: number
-  masterId: number
+  id: string
+  masterId: string
   reviceNo: number
   reviceDate: string
   reviceReason: string
@@ -134,18 +134,18 @@ export type BookingRevise = {
 }
 
 export type GmtBooking = {
-  id: number
+  id: string
   bomNo: string
-  buyerId: number
+  buyerId: string
   buyer: string
-  poId: number
+  poId: string
   poNo: string
-  styleId: number
+  styleId: string
   style: string
   styleName: string
-  budgetId: number | null
+  budgetId: string | null
   budgetName: string
-  fabricSourceId: number | null
+  fabricSourceId: string | null
   fabricSource: string
   isApproved: boolean
   isOpenDia: boolean
@@ -165,15 +165,15 @@ export type GmtBooking = {
 
 /** A PO + style with a budget (GET budgeted-po-styles), and its booking if it has one. */
 export type BudgetedPoStyle = {
-  budgetId: number
-  buyerId: number
+  budgetId: string
+  buyerId: string
   buyer: string
-  poId: number
+  poId: string
   poNo: string
-  styleId: number
+  styleId: string
   style: string
   styleName: string
-  bookingId: number
+  bookingId: string
   isApproved: boolean
 }
 

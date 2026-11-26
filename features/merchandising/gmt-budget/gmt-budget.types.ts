@@ -1,16 +1,16 @@
 // GMT Budget, as O2S's /{companyId}/merchandising/gmt-budget serves it (GmtBudgetDto and its children).
 // Property names are the API's verbatim; most figures come in pairs, the costing's value and its budgeted
 // copy (`...Budget`; the fabric costing's processes spell it `...Buget`, as ClickERP's columns do). Ids are
-// numbers; every list row also has a `clientId` (the screen's row identity), dropped before a save.
+// GUID strings; every list row also has a `clientId` (the screen's row identity), dropped before a save.
 
-export type BudgetColor = { clientId: string; id: number; detailsId: number; colorGroupName: string; gmtColorId: number; gmtColorName: string }
-export type BudgetSize = { clientId: string; id: number; detailsId: number; sizeGroupName: string; gmtSizeId: number; gmtSizeName: string }
+export type BudgetColor = { clientId: string; id: string; detailsId: string; colorGroupName: string; gmtColorId: string; gmtColorName: string }
+export type BudgetSize = { clientId: string; id: string; detailsId: string; sizeGroupName: string; gmtSizeId: string; gmtSizeName: string }
 
 export type BudgetWastage = {
   clientId: string
-  id: number
-  detailsId: number
-  gmtProcessId: number
+  id: string
+  detailsId: string
+  gmtProcessId: string
   gmtProcessName: string
   gmtWastagePercentage: number
   gmtWastagePercentageBudget: number
@@ -19,9 +19,9 @@ export type BudgetWastage = {
 
 export type BudgetFabricProcess = {
   clientId: string
-  id: number
-  fabricCostMstId: number
-  processId: number
+  id: string
+  fabricCostMstId: string
+  processId: string
   processName: string
   processRatePerKgFabric: number
   processRatePerKgFabricBuget: number
@@ -29,15 +29,15 @@ export type BudgetFabricProcess = {
   wastagePercentageBuget: number
 }
 
-export type BudgetYarnProcess = Omit<BudgetFabricProcess, "fabricCostMstId"> & { detailsFcYarnsTableId: number }
+export type BudgetYarnProcess = Omit<BudgetFabricProcess, "fabricCostMstId"> & { detailsFcYarnsTableId: string }
 
 export type BudgetYarn = {
   clientId: string
-  id: number
-  fabricCostMstId: number
-  yarnId: number
+  id: string
+  fabricCostMstId: string
+  yarnId: string
   yarnName: string
-  uomId: number | null
+  uomId: string | null
   uomName: string
   yarnReqQtyPerKgFabric: number
   rowYarnPricePerKg: number
@@ -52,7 +52,7 @@ export type BudgetYarn = {
   totalYarnReqQtyPerKgFabric: number
   totalYarnPricePerKgFabric: number
   totalYarnPricePerKgFabricBudget: number
-  yarnDyeingColorId: number | null
+  yarnDyeingColorId: string | null
   yarnDyeingColorName: string
   totalGreyReqQtyPerKgFabric: number
   totalDyedYarnReqQtyPerKgFabric: number
@@ -62,10 +62,10 @@ export type BudgetYarn = {
 }
 
 export type BudgetFabricCost = {
-  id: number
-  detailsId: number
+  id: string
+  detailsId: string
   costTemplateName: string
-  fabricId: number
+  fabricId: string
   fabricName: string
   totalFabricCost: number
   totalFabricCostBudget: number
@@ -76,15 +76,15 @@ export type BudgetFabricCost = {
 
 export type BudgetDetail = {
   clientId: string
-  id: number
-  masterId: number
-  fabricItemId: number
+  id: string
+  masterId: string
+  fabricItemId: string
   fabricItemName: string
-  uomId: number | null
+  uomId: string | null
   uomName: string
-  gmtPartsId: number | null
+  gmtPartsId: string | null
   gmtPartsName: string
-  fabricColorId: number | null
+  fabricColorId: string | null
   fabricColorName: string
   colorGroupName: string
   sizeGroupName: string
@@ -140,13 +140,13 @@ export type BudgetDetail = {
   fabricCost: BudgetFabricCost | null
 }
 
-export type BudgetOtherCostColor = { clientId: string; id: number; otherCostDtlsId: number; gmtColorId: number; gmtColorName: string }
+export type BudgetOtherCostColor = { clientId: string; id: string; otherCostDtlsId: string; gmtColorId: string; gmtColorName: string }
 
 export type BudgetOtherCost = {
   clientId: string
-  id: number
-  masterId: number
-  costId: number
+  id: string
+  masterId: string
+  costId: string
   costName: string
   costPerPcsGmt: number
   costPerDznGmt: number
@@ -157,9 +157,9 @@ export type BudgetOtherCost = {
 
 export type BudgetCommission = {
   clientId: string
-  id: number
-  masterId: number
-  commissionId: number
+  id: string
+  masterId: string
+  commissionId: string
   commissionName: string
   commissionPercentage: number
   commissionPercentageBudget: number
@@ -169,8 +169,8 @@ export type BudgetCommission = {
 
 export type BudgetCostPerPcs = {
   clientId: string
-  id: number
-  masterId: number
+  id: string
+  masterId: string
   colorGroupName: string
   sizeGroupName: string
   costingPricePerPcs: number
@@ -179,39 +179,39 @@ export type BudgetCostPerPcs = {
 
 export type BudgetRevise = {
   clientId: string
-  id: number
-  masterId: number
+  id: string
+  masterId: string
   reviceNo: number
   reviceDate: string
   reviceReason: string
   revisedByName: string
 }
 
-export type BudgetComment = { clientId: string; id: number; masterId: number; comments: string }
-export type BudgetFile = { clientId: string; id: number; masterId: number; fileAttachmentId: number; fileName: string }
-export type BudgetSpecialTreatment = { clientId: string; id: number; masterId: number; specialTreatmentId: number; treatment: string }
+export type BudgetComment = { clientId: string; id: string; masterId: string; comments: string }
+export type BudgetFile = { clientId: string; id: string; masterId: string; fileAttachmentId: string; fileName: string }
+export type BudgetSpecialTreatment = { clientId: string; id: string; masterId: string; specialTreatmentId: string; treatment: string }
 
 export type GmtBudget = {
-  id: number
+  id: string
   budgetName: string
   budgetDate: string
-  buyerId: number
+  buyerId: string
   buyer: string
-  styleId: number
+  styleId: string
   style: string
   styleName: string
-  poId: number
+  poId: string
   po: string
-  costId: number
+  costId: string
   costingNo: string
   totalFob: number
   buyingCommission: number
   balanceValue: number
-  techSheetId: number | null
+  techSheetId: string | null
   techSheet: string
-  fabricSourceId: number | null
+  fabricSourceId: string | null
   fabricSource: string
-  commercialFactoryId: number | null
+  commercialFactoryId: string | null
   commercialFactory: string
   details: BudgetDetail[]
   specialTreatments: BudgetSpecialTreatment[]
@@ -230,18 +230,18 @@ export type GmtBudget = {
 
 /** One row of GET /po-style-list: a PO + style of the company's jobs, with its budget if it has one. */
 export type PoStyleRow = {
-  budgetId: number
-  poId: number
+  budgetId: string
+  poId: string
   po: string
-  buyerId: number
+  buyerId: string
   buyer: string
-  styleId: number
+  styleId: string
   style: string
   styleName: string
   firstDeliveryDate: string | null
   budgetName: string
   budgetDate: string | null
-  costId: number
+  costId: string
   costingNo: string
   totalFob: number
   buyingCommission: number
@@ -253,7 +253,7 @@ export type PoStyleRow = {
 
 /** The PO's job lines of the budget's style: what PO qty, colours and Total FOB come from. */
 export type PoStyleContext = {
-  lines: Array<{ colorId: number; colorName: string; sizeId: number; sizeName: string; qty: number; fob: number }>
-  colors: Array<{ id: number; name: string }>
-  sizes: Array<{ id: number; name: string }>
+  lines: Array<{ colorId: string; colorName: string; sizeId: string; sizeName: string; qty: number; fob: number }>
+  colors: Array<{ id: string; name: string }>
+  sizes: Array<{ id: string; name: string }>
 }

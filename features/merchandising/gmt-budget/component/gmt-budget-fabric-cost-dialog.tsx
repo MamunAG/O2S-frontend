@@ -41,7 +41,7 @@ function fromCostingFabricCost(fc: GmtFabricCost): BudgetFabricCost {
   return {
     ...emptyBudgetFabricCost(),
     costTemplateName: fc.costTemplateName,
-    fabricId: fc.fabricId ?? 0,
+    fabricId: fc.fabricId ?? "",
     fabricName: fc.fabricName,
     totalFabricCost: fc.totalFabricCost,
     totalFabricCostBudget: fc.totalFabricCost,
@@ -186,7 +186,7 @@ export function GmtBudgetFabricCostDialog({
                       {cost.yarns.map((y) => (
                         <tr key={y.clientId} className="border-b">
                           <td className={TD_CLASS}>
-                            <LookupCombobox value={y.yarnId} label={y.yarnName} loadItems={loadMaterials} placeholder="Yarn" disabled={readOnly} onChange={(o) => patchYarn(y.clientId, { yarnId: o ? Number(o.value) : 0, yarnName: o?.label ?? "" })} />
+                            <LookupCombobox value={y.yarnId} label={y.yarnName} loadItems={loadMaterials} placeholder="Yarn" disabled={readOnly} onChange={(o) => patchYarn(y.clientId, { yarnId: o ? String(o.value) : "", yarnName: o?.label ?? "" })} />
                           </td>
                           <td className={TD_CLASS}>
                             <NumInput value={y.yarnReqQtyPerKgFabric} onValueChange={readOnly ? undefined : (v) => patchYarn(y.clientId, { yarnReqQtyPerKgFabric: v })} />
@@ -203,7 +203,7 @@ export function GmtBudgetFabricCostDialog({
                           <td className={TD_CLASS}><NumInput value={y.totalGreyReqQtyPerKgFabric} /></td>
                           <td className={TD_CLASS}><NumInput value={y.totalDyedYarnReqQtyPerKgFabric} /></td>
                           <td className={TD_CLASS}>
-                            <LookupCombobox value={y.yarnDyeingColorId} label={y.yarnDyeingColorName} loadItems={loadColors} placeholder="Color" disabled={readOnly} onChange={(o) => patchYarn(y.clientId, { yarnDyeingColorId: o ? Number(o.value) : null, yarnDyeingColorName: o?.label ?? "" })} />
+                            <LookupCombobox value={y.yarnDyeingColorId} label={y.yarnDyeingColorName} loadItems={loadColors} placeholder="Color" disabled={readOnly} onChange={(o) => patchYarn(y.clientId, { yarnDyeingColorId: o ? String(o.value) : null, yarnDyeingColorName: o?.label ?? "" })} />
                           </td>
                           <td className={TD_CLASS}>
                             <Input value={y.stripMeasurement} readOnly={readOnly} maxLength={100} className={CELL_INPUT_CLASS} onChange={(e) => patchYarn(y.clientId, { stripMeasurement: e.target.value })} />
@@ -265,7 +265,7 @@ export function GmtBudgetFabricCostDialog({
                           </div>
                           <ProcessGrid
                             rows={y.yarnWiseProcesses}
-                            options={options.filter((o) => !commonIds.has(Number(o.value)))}
+                            options={options.filter((o) => !commonIds.has(String(o.value)))}
                             readOnly={readOnly}
                             onPatch={(id, change) => own(y.yarnWiseProcesses.map((p) => (p.clientId === id ? { ...p, ...change } : p)))}
                             onRemove={(id) => own(y.yarnWiseProcesses.filter((p) => p.clientId !== id))}
@@ -301,7 +301,7 @@ export function GmtBudgetFabricCostDialog({
               type="button"
               className="rounded-xl"
               onClick={() => {
-                const clean = { ...cost, yarns: cost.yarns.filter((y) => y.yarnId > 0), processes: cost.processes.filter((p) => p.processId > 0) }
+                const clean = { ...cost, yarns: cost.yarns.filter((y) => !!y.yarnId), processes: cost.processes.filter((p) => !!p.processId) }
                 onSet(clean.yarns.length || clean.processes.length ? clean : null)
                 onClose()
               }}
@@ -315,7 +315,7 @@ export function GmtBudgetFabricCostDialog({
   )
 }
 
-function ProcessGrid<T extends { clientId: string; processId: number; processName: string; processRatePerKgFabric: number; processRatePerKgFabricBuget: number; wastagePercentage: number; wastagePercentageBuget: number }>({
+function ProcessGrid<T extends { clientId: string; processId: string; processName: string; processRatePerKgFabric: number; processRatePerKgFabricBuget: number; wastagePercentage: number; wastagePercentageBuget: number }>({
   rows,
   options,
   readOnly,
@@ -350,7 +350,7 @@ function ProcessGrid<T extends { clientId: string; processId: number; processNam
           {rows.map((p) => (
             <tr key={p.clientId} className="border-b">
               <td className={TD_CLASS}>
-                <ScopePicker value={p.processId} label={p.processName} options={options} disabled={readOnly} placeholder="Process" onChange={(o) => onPatch(p.clientId, { processId: o ? Number(o.value) : 0, processName: o?.label ?? "" } as Partial<T>)} />
+                <ScopePicker value={p.processId} label={p.processName} options={options} disabled={readOnly} placeholder="Process" onChange={(o) => onPatch(p.clientId, { processId: o ? String(o.value) : "", processName: o?.label ?? "" } as Partial<T>)} />
               </td>
               <td className={TD_CLASS}><NumInput value={p.processRatePerKgFabric} /></td>
               <td className={TD_CLASS}>

@@ -51,7 +51,7 @@ type SizeTableSectionProps = {
   onPageChange: (nextPage: number | ((current: number) => number)) => void
   onLimitChange: (nextPageSize: number) => void
   onCreateSize: () => void
-  onEditSize: (sizeId: number) => void
+  onEditSize: (sizeId: string) => void
   onDeleteSize: (size: SizeRecord) => void
   onResetFilters: () => void
   canCreateSize: boolean

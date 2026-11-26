@@ -131,7 +131,7 @@ function getBuyerLabel(buyer?: BuyerSummary | null, buyerId?: string | null) {
   )
 }
 
-function getCurrencyLabel(currency?: CurrencySummary | null, currencyId?: number | null) {
+function getCurrencyLabel(currency?: CurrencySummary | null, currencyId?: string | null) {
   return (
     currency?.currencyName?.trim() ||
     currency?.currencyCode?.trim() ||

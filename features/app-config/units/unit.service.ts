@@ -122,7 +122,7 @@ export async function fetchUnit({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }): Promise<UnitRecord> {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/unit/${id}`), {
@@ -236,7 +236,7 @@ export async function updateUnit({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   payload: UnitFormValues
   organizationId?: string
 }) {
@@ -266,7 +266,7 @@ export async function softDeleteUnit({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/unit/${id}`), {
@@ -285,7 +285,7 @@ export async function restoreUnit({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/unit/${id}/restore`), {
@@ -304,7 +304,7 @@ export async function permanentlyDeleteUnit({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/unit/${id}/permanent`), {

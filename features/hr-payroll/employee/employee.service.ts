@@ -11,7 +11,7 @@ import type {
 
 type BackendFileRecord = {
   success?: boolean
-  file_id: number
+  file_id: string
   file_url: string
   thumbnail_url?: string
   original_name: string
@@ -215,7 +215,7 @@ function optionalNumber(value: string) {
 function buildEmployeePayload(payload: EmployeeFormValues) {
   return {
     factoryId: payload.factoryId.trim(),
-    imageId: optionalNumber(payload.imageId),
+    imageId: (payload.imageId ? String(payload.imageId) : null),
     employeeCode: payload.employeeCode.trim(),
     employeeName: payload.employeeName.trim(),
     designationId: optionalString(payload.designationId),

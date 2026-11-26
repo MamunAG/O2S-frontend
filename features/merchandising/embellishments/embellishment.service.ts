@@ -124,7 +124,7 @@ export async function fetchEmbellishment({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }): Promise<EmbellishmentRecord> {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/embellishment/${id}`), {
@@ -185,7 +185,7 @@ export async function updateEmbellishment({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   payload: EmbellishmentFormValues
   organizationId?: string
 }) {
@@ -220,7 +220,7 @@ export async function softDeleteEmbellishment({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/embellishment/${id}`), {
@@ -239,7 +239,7 @@ export async function restoreEmbellishment({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/embellishment/${id}/restore`), {
@@ -258,7 +258,7 @@ export async function permanentlyDeleteEmbellishment({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/embellishment/${id}/permanent`), {

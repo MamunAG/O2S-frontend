@@ -134,14 +134,27 @@ export function stringifyIds(value: unknown): unknown {
   return out
 }
 
-/** Before a body reaches O2S: a new row's "" / null `id` -> 0, a "" `<thing>Id` -> null (ints there). */
+const IDS_KEY = /^(ids|.*Ids)$/
+
+/** One id for O2S: a GUID string; "" / null / 0 -> null (a new row, or no selection), a number -> its text. */
+function normalizeId(v: unknown): unknown {
+  if (v === "" || v === null || v === undefined || v === 0) return null
+  return typeof v === "number" ? String(v) : v
+}
+
+/**
+ * Before a body reaches O2S, whose ids are GUID strings: an empty `id` / `<thing>Id` ("" / null / 0, a new
+ * row or a cleared picker) -> null, so the server makes the row's id; a number left in one -> its text;
+ * `<thing>Ids` lists the same way.
+ */
 export function normalizeRequestBody(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(normalizeRequestBody)
   if (!isRecord(value)) return value
   const out: Record<string, unknown> = {}
   for (const [key, v] of Object.entries(value)) {
-    if (key === "id" && (v === "" || v === null || v === undefined)) out[key] = 0
-    else out[key] = v === "" && ID_KEY.test(key) ? null : normalizeRequestBody(v)
+    if (ID_KEY.test(key) && (v === null || v === undefined || typeof v !== "object")) out[key] = normalizeId(v)
+    else if (IDS_KEY.test(key) && Array.isArray(v)) out[key] = v.map(normalizeId).filter((id) => id !== null)
+    else out[key] = normalizeRequestBody(v)
   }
   return out
 }

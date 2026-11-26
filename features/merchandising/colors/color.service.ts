@@ -135,7 +135,7 @@ export async function fetchColor({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }): Promise<ColorRecord> {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/color/${id}`), {
@@ -198,7 +198,7 @@ export async function updateColor({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   payload: ColorFormValues
   organizationId?: string
 }) {
@@ -235,7 +235,7 @@ export async function softDeleteColor({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/color/${id}`), {
@@ -254,7 +254,7 @@ export async function restoreColor({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/color/${id}/restore`), {
@@ -273,7 +273,7 @@ export async function permanentlyDeleteColor({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/color/${id}/permanent`), {

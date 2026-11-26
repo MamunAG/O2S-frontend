@@ -54,7 +54,7 @@ function toO2sUserFields(body: Rec): Rec {
   if ("gender" in body) out.gender = body.gender || null
   if ("bio" in body) out.bio = body.bio || null
   if ("is_enable_notifications" in body) out.isEnableNotifications = body.is_enable_notifications
-  if ("profile_pic_id" in body) out.profilePictureFileId = body.profile_pic_id ? Number(body.profile_pic_id) : null
+  if ("profile_pic_id" in body) out.profilePictureFileId = body.profile_pic_id ? String(body.profile_pic_id) : null
   if ("password" in body) out.password = body.password
   return out
 }

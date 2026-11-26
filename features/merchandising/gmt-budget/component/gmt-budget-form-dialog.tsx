@@ -82,7 +82,7 @@ import {
 export type GmtBudgetDialogMode = "create" | "edit" | "view"
 
 /** A new budget handed over from the list: its PO + style. */
-export type BudgetSeed = { buyerId: number; buyer: string; styleId: number; style: string; poId: number; po: string }
+export type BudgetSeed = { buyerId: string; buyer: string; styleId: string; style: string; poId: string; po: string }
 
 type SectionId = "master" | "details" | "wastage" | "other-cost" | "commission" | "price" | "notes" | "revisions" | "files"
 
@@ -110,15 +110,15 @@ export function GmtBudgetFormDialog({
   onOpenBudget,
 }: {
   mode: GmtBudgetDialogMode
-  budgetId: number | null
+  budgetId: string | null
   seed: BudgetSeed | null
   ctx: ApiContext
   access: AccessRules
   onAuthFailure: (message: string) => boolean
   onOpenChange: (open: boolean) => void
-  onSaved: (id: number) => void
+  onSaved: (id: string) => void
   /** The PO + style already has a budget: open that one instead. */
-  onOpenBudget: (id: number) => void
+  onOpenBudget: (id: string) => void
 }) {
   const [mode, setMode] = useState<GmtBudgetDialogMode>(initialMode)
   const readOnly = mode === "view"
@@ -154,7 +154,7 @@ export function GmtBudgetFormDialog({
 
   /** The PO's job lines of the style; every row's PO qty and Total Req. Qty follow them (desktop UpdatePOQty). */
   const loadPo = useCallback(
-    async (poNo: string, poId: number, styleId: number, refreshRows: boolean) => {
+    async (poNo: string, poId: string, styleId: string, refreshRows: boolean) => {
       setPoKey(`${poId}|${styleId}`)
       try {
         const context = poContextOf(await fetchPoStyleLines(ctx, poNo, poId, styleId))
@@ -245,7 +245,7 @@ export function GmtBudgetFormDialog({
   const loadParts = useCallback((p: AppComboboxLoadParams) => loadPartOptions(ctx, p), [ctx])
   const loadColors = useCallback((p: AppComboboxLoadParams) => loadColorOptions(ctx, p), [ctx])
   const resolveMaterial = useCallback(
-    async (id: number) => {
+    async (id: string) => {
       const info = await fetchMaterialInfo(ctx, id)
       return info ? { unitId: info.unitId, unitName: info.unitName, isColorWise: isFabricGroup(info.materialGroupName, settings) } : null
     },
@@ -254,11 +254,11 @@ export function GmtBudgetFormDialog({
 
   async function pickPo(option: AppComboboxOption | null) {
     if (!option) {
-      update({ poId: 0, po: "", totalFob: 0, balanceValue: 0 })
+      update({ poId: "", po: "", totalFob: 0, balanceValue: 0 })
       setPo(null)
       return
     }
-    const poId = Number(option.value)
+    const poId = String(option.value)
     update({ poId, po: option.label })
     const existing = await findPoStyle(ctx, poId, budget.styleId).catch(() => null)
     if (existing?.budgetId && existing.budgetId !== budget.id) {
@@ -276,7 +276,7 @@ export function GmtBudgetFormDialog({
       return
     }
     try {
-      const costing = costingFromDto(await fetchGmtCosting(ctx, Number(option.value)))
+      const costing = costingFromDto(await fetchGmtCosting(ctx, String(option.value)))
       const built = costingToBudget(costing, po)
       setBudget((b) => ({
         ...b,
@@ -462,10 +462,10 @@ export function GmtBudgetFormDialog({
                               label={budget.buyer}
                               loadItems={loadBuyers}
                               placeholder="Buyer"
-                              disabled={readOnly || budget.id > 0}
+                              disabled={readOnly || !!budget.id}
                               inputClassName={INPUT_CLASS}
                               onChange={(o) => {
-                                update({ buyerId: o ? Number(o.value) : 0, buyer: o?.label ?? "", styleId: 0, style: "", poId: 0, po: "", costId: 0, costingNo: "", details: [] })
+                                update({ buyerId: o ? String(o.value) : "", buyer: o?.label ?? "", styleId: "", style: "", poId: "", po: "", costId: "", costingNo: "", details: [] })
                                 setPo(null)
                               }}
                             />
@@ -478,10 +478,10 @@ export function GmtBudgetFormDialog({
                               label={budget.style}
                               loadItems={loadStyles}
                               placeholder={budget.buyerId ? "Style" : "Pick a buyer first"}
-                              disabled={readOnly || budget.id > 0 || !budget.buyerId}
+                              disabled={readOnly || !!budget.id || !budget.buyerId}
                               inputClassName={INPUT_CLASS}
                               onChange={(o) => {
-                                update({ styleId: o ? Number(o.value) : 0, style: o?.label ?? "", poId: 0, po: "", costId: 0, costingNo: "", details: [] })
+                                update({ styleId: o ? String(o.value) : "", style: o?.label ?? "", poId: "", po: "", costId: "", costingNo: "", details: [] })
                                 setPo(null)
                               }}
                             />
@@ -494,7 +494,7 @@ export function GmtBudgetFormDialog({
                               label={budget.po}
                               loadItems={loadPos}
                               placeholder={budget.styleId ? "PO without a budget" : "Pick a style first"}
-                              disabled={readOnly || budget.id > 0 || !budget.styleId}
+                              disabled={readOnly || !!budget.id || !budget.styleId}
                               inputClassName={INPUT_CLASS}
                               onChange={(o) => void pickPo(o)}
                             />
@@ -512,7 +512,7 @@ export function GmtBudgetFormDialog({
                               disabled={readOnly || !budget.styleId}
                               inputClassName={INPUT_CLASS}
                               onChange={(o) => {
-                                if (!o || Number(o.value) === budget.costId) return
+                                if (!o || String(o.value) === budget.costId) return
                                 if (budget.details.length) setPendingCosting(o)
                                 else void applyCosting(o)
                               }}
@@ -528,11 +528,11 @@ export function GmtBudgetFormDialog({
                           </div>
                           <div className={FIELD_CLASS}>
                             <FieldLabel>Fabric Source</FieldLabel>
-                            <LookupCombobox value={budget.fabricSourceId} label={budget.fabricSource} loadItems={loadSources} placeholder="Fabric source" disabled={readOnly} inputClassName={INPUT_CLASS} onChange={(o) => update({ fabricSourceId: o ? Number(o.value) : null, fabricSource: o?.label ?? "" })} />
+                            <LookupCombobox value={budget.fabricSourceId} label={budget.fabricSource} loadItems={loadSources} placeholder="Fabric source" disabled={readOnly} inputClassName={INPUT_CLASS} onChange={(o) => update({ fabricSourceId: o ? String(o.value) : null, fabricSource: o?.label ?? "" })} />
                           </div>
                           <div className={FIELD_CLASS}>
                             <FieldLabel>Commercial Factory</FieldLabel>
-                            <LookupCombobox value={budget.commercialFactoryId} label={budget.commercialFactory} loadItems={loadFactories} placeholder="Factory" disabled={readOnly} inputClassName={INPUT_CLASS} onChange={(o) => update({ commercialFactoryId: o ? Number(o.value) : null, commercialFactory: o?.label ?? "" })} />
+                            <LookupCombobox value={budget.commercialFactoryId} label={budget.commercialFactory} loadItems={loadFactories} placeholder="Factory" disabled={readOnly} inputClassName={INPUT_CLASS} onChange={(o) => update({ commercialFactoryId: o ? String(o.value) : null, commercialFactory: o?.label ?? "" })} />
                           </div>
                           <div className={FIELD_CLASS}>
                             <FieldLabel>Total FOB ($)</FieldLabel>
@@ -596,7 +596,7 @@ export function GmtBudgetFormDialog({
                         </div>,
                       )}
 
-                      {section("revisions", "Revisions", <RevisionSection rows={budget.revises} readOnly={readOnly} isSaved={budget.id > 0} onChange={(revises) => update({ revises })} />)}
+                      {section("revisions", "Revisions", <RevisionSection rows={budget.revises} readOnly={readOnly} isSaved={!!budget.id} onChange={(revises) => update({ revises })} />)}
 
                       {section(
                         "files",

@@ -108,7 +108,7 @@ export async function fetchCountry({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }): Promise<CountryRecord> {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/country/${id}`), {
@@ -222,7 +222,7 @@ export async function updateCountry({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   payload: CountryFormValues
   organizationId?: string
 }) {
@@ -252,7 +252,7 @@ export async function softDeleteCountry({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/country/${id}`), {
@@ -271,7 +271,7 @@ export async function restoreCountry({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/country/${id}/restore`), {
@@ -290,7 +290,7 @@ export async function permanentlyDeleteCountry({
 }: {
   apiUrl: string
   accessToken: string
-  id: number
+  id: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/country/${id}/permanent`), {

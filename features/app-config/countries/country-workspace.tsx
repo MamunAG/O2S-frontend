@@ -189,7 +189,7 @@ export function CountryWorkspace({ apiUrl }: { apiUrl: string }) {
   const [editorSubmitting, setEditorSubmitting] = useState(false)
   const [editorError, setEditorError] = useState("")
   const [editorInitialValues, setEditorInitialValues] = useState<CountryFormValues>(DEFAULT_FORM_VALUES)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [uploadingTemplate, setUploadingTemplate] = useState(false)
   const [downloadingTemplate, setDownloadingTemplate] = useState(false)
 
@@ -267,7 +267,7 @@ export function CountryWorkspace({ apiUrl }: { apiUrl: string }) {
     }
   }, [apiUrl, handleAuthFailure, refreshVersion, selectedOrganizationId])
 
-  const openEditDialog = useCallback(async (countryId: number) => {
+  const openEditDialog = useCallback(async (countryId: string) => {
     if (!accessRules?.canUpdate) {
       toast.error("You do not have permission to update countries.")
       return

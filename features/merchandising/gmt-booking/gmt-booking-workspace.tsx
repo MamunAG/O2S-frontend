@@ -40,7 +40,7 @@ const ALL = "__all__"
 type Filters = { bomNo: string; buyer: Option | null; po: Option | null; released: "" | "true" | "false"; from: string; to: string }
 const DEFAULT_FILTERS: Filters = { bomNo: "", buyer: null, po: null, released: "", from: "", to: "" }
 
-type Editor = { mode: GmtBookingDialogMode; id: number | null; key: number }
+type Editor = { mode: GmtBookingDialogMode; id: string | null; key: number }
 
 export function GmtBookingWorkspace({ apiUrl }: { apiUrl: string }) {
   const router = useRouter()
@@ -150,7 +150,7 @@ export function GmtBookingWorkspace({ apiUrl }: { apiUrl: string }) {
   }, [access?.canView, ctx, filters, limit, organizationId, page, reportError, requestKey])
 
   const refresh = useCallback(() => setRefreshVersion((v) => v + 1), [])
-  const open = useCallback((mode: GmtBookingDialogMode, id: number | null) => setEditor({ mode, id, key: Date.now() }), [])
+  const open = useCallback((mode: GmtBookingDialogMode, id: string | null) => setEditor({ mode, id, key: Date.now() }), [])
   const canCreate = Boolean(access?.canCreate)
   const canUpdate = Boolean(access?.canUpdate)
   const canDelete = Boolean(access?.canDelete)
@@ -344,11 +344,11 @@ export function GmtBookingWorkspace({ apiUrl }: { apiUrl: string }) {
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="bookingFilterBuyer">Buyer</FieldLabel>
-                    <LookupCombobox id="bookingFilterBuyer" value={draft.buyer ? Number(draft.buyer.value) : null} label={draft.buyer?.label ?? ""} loadItems={loadBuyers} placeholder="All buyers" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, buyer: o, po: null })} />
+                    <LookupCombobox id="bookingFilterBuyer" value={draft.buyer ? draft.buyer.value : null} label={draft.buyer?.label ?? ""} loadItems={loadBuyers} placeholder="All buyers" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, buyer: o, po: null })} />
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="bookingFilterPo">PO</FieldLabel>
-                    <LookupCombobox key={draft.buyer?.value ?? "any"} id="bookingFilterPo" value={draft.po ? Number(draft.po.value) : null} label={draft.po?.label ?? ""} loadItems={loadPos} placeholder="All POs" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, po: o })} />
+                    <LookupCombobox key={draft.buyer?.value ?? "any"} id="bookingFilterPo" value={draft.po ? draft.po.value : null} label={draft.po?.label ?? ""} loadItems={loadPos} placeholder="All POs" inputClassName={INPUT_CLASS} onChange={(o) => setDraft({ ...draft, po: o })} />
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="bookingFilterReleased">Released</FieldLabel>

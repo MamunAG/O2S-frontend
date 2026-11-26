@@ -56,7 +56,7 @@ export async function fetchCurrencies({ apiUrl, accessToken, page, limit, filter
   return payload.data
 }
 
-export async function fetchCurrency({ apiUrl, accessToken, id, organizationId }: { apiUrl: string; accessToken: string; id: number; organizationId?: string }): Promise<CurrencyRecord> {
+export async function fetchCurrency({ apiUrl, accessToken, id, organizationId }: { apiUrl: string; accessToken: string; id: string; organizationId?: string }): Promise<CurrencyRecord> {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/currency/${id}`), { method: "GET", headers: buildRequestHeaders({ accessToken, organizationId }), cache: "no-store" })
   const payload = await readJsonResponse<CurrencyRecord>(response)
   if (!payload.data) throw new Error("The currency record was returned without data.")
@@ -146,7 +146,7 @@ export async function uploadCurrencyTemplate({
   return payload.data
 }
 
-export async function updateCurrency({ apiUrl, accessToken, id, payload, organizationId }: { apiUrl: string; accessToken: string; id: number; payload: CurrencyFormValues; organizationId?: string }) {
+export async function updateCurrency({ apiUrl, accessToken, id, payload, organizationId }: { apiUrl: string; accessToken: string; id: string; payload: CurrencyFormValues; organizationId?: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/currency/${id}`), {
     method: "PATCH",
     headers: buildRequestHeaders({ accessToken, organizationId, contentType: "application/json" }),
@@ -157,17 +157,17 @@ export async function updateCurrency({ apiUrl, accessToken, id, payload, organiz
   return payloadData.data
 }
 
-export async function softDeleteCurrency({ apiUrl, accessToken, id, organizationId }: { apiUrl: string; accessToken: string; id: number; organizationId?: string }) {
+export async function softDeleteCurrency({ apiUrl, accessToken, id, organizationId }: { apiUrl: string; accessToken: string; id: string; organizationId?: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/currency/${id}`), { method: "DELETE", headers: buildRequestHeaders({ accessToken, organizationId }) })
   await readJsonResponse(response)
 }
 
-export async function restoreCurrency({ apiUrl, accessToken, id, organizationId }: { apiUrl: string; accessToken: string; id: number; organizationId?: string }) {
+export async function restoreCurrency({ apiUrl, accessToken, id, organizationId }: { apiUrl: string; accessToken: string; id: string; organizationId?: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/currency/${id}/restore`), { method: "POST", headers: buildRequestHeaders({ accessToken, organizationId }) })
   await readJsonResponse(response)
 }
 
-export async function permanentlyDeleteCurrency({ apiUrl, accessToken, id, organizationId }: { apiUrl: string; accessToken: string; id: number; organizationId?: string }) {
+export async function permanentlyDeleteCurrency({ apiUrl, accessToken, id, organizationId }: { apiUrl: string; accessToken: string; id: string; organizationId?: string }) {
   const response = await fetch(buildApiUrl(apiUrl, `/api/v1/currency/${id}/permanent`), { method: "DELETE", headers: buildRequestHeaders({ accessToken, organizationId }) })
   await readJsonResponse(response)
 }

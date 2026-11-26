@@ -32,8 +32,8 @@ export type MaterialLookupRecord = {
 }
 
 export type FileSummary = {
-  id?: number | null
-  file_id?: number | null
+  id?: string | null
+  file_id?: string | null
   file_name?: string | null
   original_name?: string | null
   file_path?: string | null
@@ -48,9 +48,9 @@ export type MaterialRecord = {
   name: string
   code?: string | null
   description?: string | null
-  unitId?: number | null
+  unitId?: string | null
   materialGroupId?: string | null
-  imageId?: number | null
+  imageId?: string | null
   unit?: MaterialLookupRecord | null
   materialGroup?: MaterialLookupRecord | null
   image?: FileSummary | null

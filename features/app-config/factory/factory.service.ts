@@ -8,7 +8,7 @@ import type {
 
 type BackendFileRecord = {
     success?: boolean
-    file_id: number
+    file_id: string
     file_url: string
     thumbnail_url?: string
     original_name: string
@@ -100,7 +100,7 @@ function buildFactoryPayload(payload: FactoryFormValues) {
         code: optionalString(payload.code),
         contact: optionalString(payload.contact),
         email: optionalString(payload.email),
-        imageId: optionalNumber(payload.imageId),
+        imageId: (payload.imageId ? String(payload.imageId) : null),
         address: optionalString(payload.address),
         remarks: optionalString(payload.remarks),
         isActive: payload.isActive,

@@ -1,14 +1,13 @@
 // GMT Costing, as O2S's /{companyId}/merchandising/gmt-costing serves it (GmtCostingDto and its children).
 // Property names are the API's, verbatim (ClickERP's: lstDetails, FabricCost, lastYarnDtls,
-// totalFaricPricePerPcsGmt, ...). Ids are numbers here; the O2S bridge turns them into strings on the way
-// in, and gmt-costing.api.ts turns them back. Every list row also carries a `clientId`, the screen's own
-// row identity (a new row's id is 0 until it is saved); it is dropped before a save.
+// totalFaricPricePerPcsGmt, ...). Ids are the API's GUID strings ("" for a new row, until it is saved). Every list row also carries a `clientId`, the screen's own
+// row identity; it is dropped before a save.
 
 export type GmtFabricCostYarnProcess = {
   clientId: string
-  id: number
-  detailsFcYarnsTableId: number
-  processId: number
+  id: string
+  detailsFcYarnsTableId: string
+  processId: string
   processName: string
   processRatePerKgFabric: number
   wastagePercentage: number
@@ -16,11 +15,11 @@ export type GmtFabricCostYarnProcess = {
 
 export type GmtFabricCostYarn = {
   clientId: string
-  id: number
-  fabricCostMstId: number
-  yarnId: number
+  id: string
+  fabricCostMstId: string
+  yarnId: string
   yarnName: string
-  uomId: number | null
+  uomId: string | null
   uomName: string
   yarnReqQtyPerKgFabric: number
   rowYarnPricePerKg: number
@@ -29,7 +28,7 @@ export type GmtFabricCostYarn = {
   totalYarnPricePerKg: number
   totalYarnReqQtyPerKgFabric: number
   totalYarnPricePerKgFabric: number
-  yarnDyeingColorId: number | null
+  yarnDyeingColorId: string | null
   yarnDyeingColorName: string
   totalGreyReqQtyPerKgFabric: number
   totalDyedYarnReqQtyPerKgFabric: number
@@ -40,19 +39,19 @@ export type GmtFabricCostYarn = {
 
 export type GmtFabricCostProcess = {
   clientId: string
-  id: number
-  fabricCostMstId: number
-  processId: number
+  id: string
+  fabricCostMstId: string
+  processId: string
   processName: string
   processRatePerKgFabric: number
   wastagePercentage: number
 }
 
 export type GmtFabricCost = {
-  id: number
-  detailsId: number
+  id: string
+  detailsId: string
   costTemplateName: string
-  fabricId: number | null
+  fabricId: string | null
   fabricName: string
   totalFabricCost: number
   fabricWastagePercentage: number | null
@@ -62,42 +61,42 @@ export type GmtFabricCost = {
 
 export type GmtDetailsSize = {
   clientId: string
-  id: number
-  detailsId: number
+  id: string
+  detailsId: string
   sizeGroupName: string
-  gmtSizeId: number
+  gmtSizeId: string
   gmtSizeName: string
 }
 
 export type GmtDetailsColor = {
   clientId: string
-  id: number
-  detailsId: number
+  id: string
+  detailsId: string
   colorGroupName: string
-  gmtColorId: number
+  gmtColorId: string
   gmtColorName: string
 }
 
 export type GmtDetailsWastage = {
   clientId: string
-  id: number
-  detailsId: number
-  gmtProcessId: number
+  id: string
+  detailsId: string
+  gmtProcessId: string
   gmtProcessName: string
   gmtWastagePercentage: number
 }
 
 export type GmtCostingDetail = {
   clientId: string
-  id: number
-  masterId: number
-  fabricItemId: number
+  id: string
+  masterId: string
+  fabricItemId: string
   fabricItemName: string
-  uomId: number | null
+  uomId: string | null
   uomName: string
-  gmtPartsId: number | null
+  gmtPartsId: string | null
   gmtPartsName: string
-  fabricColorId: number | null
+  fabricColorId: string | null
   fabricColorName: string
   fabricCostPerKg: number
   colorGroupName: string
@@ -130,8 +129,8 @@ export type GmtCostingDetail = {
 
 export type GmtCostPerPcs = {
   clientId: string
-  id: number
-  masterId: number
+  id: string
+  masterId: string
   colorGroupName: string
   sizeGroupName: string
   costingPricePerPcs: number
@@ -140,17 +139,17 @@ export type GmtCostPerPcs = {
 
 export type GmtOtherCostColor = {
   clientId: string
-  id: number
-  otherCostDtlsId: number
-  gmtColorId: number
+  id: string
+  otherCostDtlsId: string
+  gmtColorId: string
   gmtColorName: string
 }
 
 export type GmtOtherCost = {
   clientId: string
-  id: number
-  masterId: number
-  costId: number
+  id: string
+  masterId: string
+  costId: string
   costName: string
   costPerPcsGmt: number
   costPerDznGmt: number
@@ -159,9 +158,9 @@ export type GmtOtherCost = {
 
 export type GmtCommission = {
   clientId: string
-  id: number
-  masterId: number
-  commissionId: number
+  id: string
+  masterId: string
+  commissionId: string
   commissionName: string
   commissionPercentage: number
   commissionValue: number
@@ -169,42 +168,42 @@ export type GmtCommission = {
 
 export type GmtCostingFile = {
   clientId: string
-  id: number
-  masterId: number
-  fileAttachmentId: number
+  id: string
+  masterId: string
+  fileAttachmentId: string
   fileName: string
 }
 
 export type GmtSupplierDetail = {
   clientId: string
-  id: number
-  itemWiseSupplierMasterId: number
-  supplierId: number
+  id: string
+  itemWiseSupplierMasterId: string
+  supplierId: string
   supplierName: string
 }
 
 export type GmtItemSupplier = {
   clientId: string
-  id: number
-  masterId: number
-  itemId: number
+  id: string
+  masterId: string
+  itemId: string
   itemName: string
   lstSupplierDetails: GmtSupplierDetail[]
 }
 
 export type GmtCosting = {
-  id: number
+  id: string
   costName: string
-  buyerId: number
+  buyerId: string
   buyerName: string
-  styleId: number
+  styleId: string
   styleNo: string
   styleName: string
   costDate: string
   shipDate: string
   confirmDate: string
   leadTime: number
-  techSheetId: number | null
+  techSheetId: string | null
   technicalSheetNo: string
   gmtTotalCostFob: number
   expectedOrderQty: number
@@ -271,7 +270,7 @@ export type Option = { value: string; label: string }
 
 /** A cost scope with the role flags that decide which picker it belongs to. */
 export type CostScope = {
-  id: number
+  id: string
   name: string
   isProcessCost: boolean
   isGmtProcess: boolean
@@ -282,24 +281,24 @@ export type CostScope = {
 }
 
 export type MaterialInfo = {
-  id: number
+  id: string
   name: string
-  unitId: number | null
+  unitId: string | null
   unitName: string
   materialGroupName: string
 }
 
 export type StyleInfo = {
-  id: number
+  id: string
   styleNo: string
   styleName: string
-  buyerId: number
-  colors: Array<{ id: number; name: string }>
-  sizes: Array<{ id: number; name: string }>
+  buyerId: string
+  colors: Array<{ id: string; name: string }>
+  sizes: Array<{ id: string; name: string }>
 }
 
 export type FabricCostSearchItem = {
-  gmtCostingId: number
+  gmtCostingId: string
   costName: string
   buyerName: string
   styleNo: string
@@ -307,7 +306,7 @@ export type FabricCostSearchItem = {
 }
 
 export type GmtCostingSheet = {
-  costId: number
+  costId: string
   costName: string
   costDate: string
   buyer: string
@@ -315,7 +314,7 @@ export type GmtCostingSheet = {
   styleName: string
   technicalSheetNo: string
   gsm: string
-  sizes: Array<{ sizeId: number; sizeName: string }>
+  sizes: Array<{ sizeId: string; sizeName: string }>
   colorGroups: Array<{
     colorGroupName: string
     consumptionPerPcs: Array<{ name: string; values: Array<number | null> }>

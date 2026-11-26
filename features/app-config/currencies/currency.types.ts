@@ -27,7 +27,7 @@ export type PaginatedResponse<T> = {
 }
 
 export type CurrencyRecord = {
-  id: number
+  id: string
   currencyName: string
   currencyCode: string
   rate: number
@@ -46,7 +46,7 @@ export type CurrencyRecord = {
 }
 
 export type CurrencyExchangeRateRecord = {
-  id: number
+  id: string
   currency_date: string
   currency_code: string
   rate_in_bdt: number | string

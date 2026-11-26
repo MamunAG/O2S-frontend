@@ -37,7 +37,7 @@ const n = (v: unknown) => Number(v ?? 0) || 0
 
 // ---------- GMT wastage ----------
 
-const comboKey = (r: BudgetDetail) => [r.fabricItemId, r.colors.length ? r.colorGroupName : "All Color", r.gmtPartsId ?? 0].join("|")
+const comboKey = (r: BudgetDetail) => [r.fabricItemId, r.colors.length ? r.colorGroupName : "All Color", r.gmtPartsId ?? ""].join("|")
 
 /**
  * Per fabric / colour group / part and per GMT process (cost scopes marked GMT process), the budgeted
@@ -70,13 +70,13 @@ export function BudgetWastageSection({
   const apply = (key: string, change: (r: BudgetDetail) => BudgetDetail) =>
     onChange(rows.map((r) => (comboKey(r) === key ? recalcBudgetRow(syncGmtWastageTotal(change(r)), po, false) : r)))
 
-  function setPercent(processId: number, processName: string, value: number) {
+  function setPercent(processId: string, processName: string, value: number) {
     if (!current) return
     apply(current.key, (row) => {
       const existing = row.wastages.find((w) => w.gmtProcessId === processId)
       const others = row.wastages.filter((w) => w.gmtProcessId !== processId)
       const line: BudgetWastage = {
-        ...(existing ?? { clientId: newClientId(), id: 0, detailsId: 0, gmtWastagePercentage: 0 }),
+        ...(existing ?? { clientId: newClientId(), id: "", detailsId: "", gmtWastagePercentage: 0 }),
         gmtProcessId: processId,
         gmtProcessName: processName,
         gmtWastagePercentageBudget: value,
@@ -92,7 +92,7 @@ export function BudgetWastageSection({
     apply(key, (row) => {
       let wastages = row.wastages.map((w) => ({ ...w, isWastageDouble: isDouble }))
       if (isDouble && wastages.length === 0 && processes[0]) {
-        wastages = [{ clientId: newClientId(), id: 0, detailsId: 0, gmtProcessId: processes[0].id, gmtProcessName: processes[0].name, gmtWastagePercentage: 0, gmtWastagePercentageBudget: 0, isWastageDouble: true }]
+        wastages = [{ clientId: newClientId(), id: "", detailsId: "", gmtProcessId: processes[0].id, gmtProcessName: processes[0].name, gmtWastagePercentage: 0, gmtWastagePercentageBudget: 0, isWastageDouble: true }]
       }
       return { ...row, isDoubleInPcsQty: isDouble, wastages }
     })
@@ -172,7 +172,7 @@ export function BudgetOtherCostSection({
 }: {
   rows: BudgetOtherCost[]
   scopes: CostScope[]
-  colors: Array<{ id: number; name: string }>
+  colors: Array<{ id: string; name: string }>
   readOnly: boolean
   onChange: (rows: BudgetOtherCost[]) => void
 }) {
@@ -199,7 +199,7 @@ export function BudgetOtherCostSection({
           <tr key={row.clientId} className="border-b">
             <td className={TD_CLASS}>{i + 1}</td>
             <td className={TD_CLASS}>
-              <ScopePicker value={row.costId} label={row.costName} options={options} disabled={readOnly} placeholder="Cost" onChange={(o) => patch(row.clientId, { costId: o ? Number(o.value) : 0, costName: o?.label ?? "" })} />
+              <ScopePicker value={row.costId} label={row.costName} options={options} disabled={readOnly} placeholder="Cost" onChange={(o) => patch(row.clientId, { costId: o ? String(o.value) : "", costName: o?.label ?? "" })} />
             </td>
             <td className={TD_CLASS}><NumInput value={row.costPerPcsGmt} /></td>
             <td className={TD_CLASS}>
@@ -215,7 +215,7 @@ export function BudgetOtherCostSection({
                 readOnly={readOnly}
                 onChange={(picked) =>
                   patch(row.clientId, {
-                    lstColors: picked.map((c) => row.lstColors.find((x) => x.gmtColorId === c.id) ?? { clientId: newClientId(), id: 0, otherCostDtlsId: row.id, gmtColorId: c.id, gmtColorName: c.name }),
+                    lstColors: picked.map((c) => row.lstColors.find((x) => x.gmtColorId === c.id) ?? { clientId: newClientId(), id: "", otherCostDtlsId: row.id, gmtColorId: c.id, gmtColorName: c.name }),
                   })
                 }
               />
@@ -236,7 +236,7 @@ export function BudgetOtherCostSection({
             size="sm"
             variant="outline"
             className="rounded-lg"
-            onClick={() => onChange([...rows, { clientId: newClientId(), id: 0, masterId: 0, costId: 0, costName: "", costPerPcsGmt: 0, costPerDznGmt: 0, costPerPcsGmtBudget: 0, costPerDznGmtBudget: 0, lstColors: [] }])}
+            onClick={() => onChange([...rows, { clientId: newClientId(), id: "", masterId: "", costId: "", costName: "", costPerPcsGmt: 0, costPerDznGmt: 0, costPerPcsGmtBudget: 0, costPerDznGmtBudget: 0, lstColors: [] }])}
           >
             <Plus className="size-3" /> Add cost
           </Button>
@@ -282,7 +282,7 @@ export function BudgetCommissionSection({
           <tr key={row.clientId} className="border-b">
             <td className={TD_CLASS}>{i + 1}</td>
             <td className={TD_CLASS}>
-              <ScopePicker value={row.commissionId} label={row.commissionName} options={options} disabled={readOnly} placeholder="Commission" onChange={(o) => patch(row.clientId, { commissionId: o ? Number(o.value) : 0, commissionName: o?.label ?? "" })} />
+              <ScopePicker value={row.commissionId} label={row.commissionName} options={options} disabled={readOnly} placeholder="Commission" onChange={(o) => patch(row.clientId, { commissionId: o ? String(o.value) : "", commissionName: o?.label ?? "" })} />
             </td>
             <td className={TD_CLASS}><NumInput value={row.commissionPercentage} /></td>
             <td className={TD_CLASS}>
@@ -305,7 +305,7 @@ export function BudgetCommissionSection({
             size="sm"
             variant="outline"
             className="rounded-lg"
-            onClick={() => onChange([...rows, { clientId: newClientId(), id: 0, masterId: 0, commissionId: 0, commissionName: "", commissionPercentage: 0, commissionPercentageBudget: 0, commissionValue: 0, commissionValueBudget: 0 }])}
+            onClick={() => onChange([...rows, { clientId: newClientId(), id: "", masterId: "", commissionId: "", commissionName: "", commissionPercentage: 0, commissionPercentageBudget: 0, commissionValue: 0, commissionValueBudget: 0 }])}
           >
             <Plus className="size-3" /> Add commission
           </Button>
@@ -385,8 +385,8 @@ export function SpecialTreatmentSection({
           loadItems={loadOptions}
           placeholder="Add special treatment"
           onChange={(o) => {
-            if (!o || rows.some((r) => r.specialTreatmentId === Number(o.value))) return
-            onChange([...rows, { clientId: newClientId(), id: 0, masterId: 0, specialTreatmentId: Number(o.value), treatment: o.label }])
+            if (!o || rows.some((r) => r.specialTreatmentId === String(o.value))) return
+            onChange([...rows, { clientId: newClientId(), id: "", masterId: "", specialTreatmentId: String(o.value ?? ""), treatment: o.label }])
           }}
         />
       ) : null}
@@ -398,7 +398,7 @@ export function SpecialTreatmentSection({
 
 /** Saved revisions are read-only (the API numbers, dates and stamps a new one). Edit adds one, with a reason. */
 export function RevisionSection({ rows, readOnly, isSaved, onChange }: { rows: BudgetRevise[]; readOnly: boolean; isSaved: boolean; onChange: (rows: BudgetRevise[]) => void }) {
-  const pending = rows.find((r) => r.id === 0)
+  const pending = rows.find((r) => !r.id)
   return (
     <div className="space-y-2">
       <Table
@@ -438,7 +438,7 @@ export function RevisionSection({ rows, readOnly, isSaved, onChange }: { rows: B
           size="sm"
           variant="outline"
           className="rounded-lg"
-          onClick={() => onChange([...rows, { clientId: newClientId(), id: 0, masterId: 0, reviceNo: 0, reviceDate: "", reviceReason: "", revisedByName: "" }])}
+          onClick={() => onChange([...rows, { clientId: newClientId(), id: "", masterId: "", reviceNo: 0, reviceDate: "", reviceReason: "", revisedByName: "" }])}
         >
           <Plus className="size-3" /> Add revision
         </Button>
@@ -468,7 +468,7 @@ export function CommentsSection({ label, rows, readOnly, onChange }: { label: st
         </div>
       ))}
       {!readOnly ? (
-        <Button type="button" size="sm" variant="outline" className="rounded-lg" onClick={() => onChange([...rows, { clientId: newClientId(), id: 0, masterId: 0, comments: "" }])}>
+        <Button type="button" size="sm" variant="outline" className="rounded-lg" onClick={() => onChange([...rows, { clientId: newClientId(), id: "", masterId: "", comments: "" }])}>
           <Plus className="size-3" /> Add comment
         </Button>
       ) : null}

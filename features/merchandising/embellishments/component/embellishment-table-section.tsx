@@ -55,7 +55,7 @@ type EmbellishmentTableSectionProps = {
   onPageChange: (nextPage: number | ((current: number) => number)) => void
   onLimitChange: (nextPageSize: number) => void
   onCreateEmbellishment: () => void
-  onEditEmbellishment: (embellishmentId: number) => void
+  onEditEmbellishment: (embellishmentId: string) => void
   onDeleteEmbellishment: (embellishment: EmbellishmentRecord) => void
   onResetFilters: () => void
   canCreateEmbellishment: boolean

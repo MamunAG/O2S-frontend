@@ -64,7 +64,7 @@ export type DetailsGridProps = {
   loadParts: Load
   loadColors: Load
   /** The item's unit and whether it is a fabric (Is Color Wise). */
-  resolveMaterial: (id: number) => Promise<{ unitId: number | null; unitName: string; isColorWise: boolean } | null>
+  resolveMaterial: (id: string) => Promise<{ unitId: string | null; unitName: string; isColorWise: boolean } | null>
   onOpenFabricCost: (clientId: string) => void
   onOpenGroup: (clientId: string, kind: GroupKind) => void
 }
@@ -122,10 +122,10 @@ export function GmtDetailsGrid({
 
   async function pickMaterial(clientId: string, option: AppComboboxOption | null) {
     if (!option) {
-      patch(clientId, (r) => ({ ...r, fabricItemId: 0, fabricItemName: "", uomId: null, uomName: "" }))
+      patch(clientId, (r) => ({ ...r, fabricItemId: "", fabricItemName: "", uomId: null, uomName: "" }))
       return
     }
-    const id = Number(option.value)
+    const id = String(option.value)
     patch(clientId, (r) => ({ ...r, fabricItemId: id, fabricItemName: option.label }))
     const info = await resolveMaterial(id)
     if (!info) return
@@ -140,7 +140,7 @@ export function GmtDetailsGrid({
 
   /** Change Fabric on the checked rows: the item, its unit and Is Color Wise; nothing else changes. */
   async function changeFabricOfSelected(option: AppComboboxOption) {
-    const id = Number(option.value)
+    const id = String(option.value)
     const info = await resolveMaterial(id)
     onRowsChange(
       rows.map((r) =>
@@ -160,7 +160,7 @@ export function GmtDetailsGrid({
   }
 
   function changePartOfSelected(option: AppComboboxOption) {
-    onRowsChange(rows.map((r) => (selected.has(r.clientId) ? { ...r, gmtPartsId: Number(option.value), gmtPartsName: option.label } : r)))
+    onRowsChange(rows.map((r) => (selected.has(r.clientId) ? { ...r, gmtPartsId: String(option.value ?? ""), gmtPartsName: option.label } : r)))
     toast.success(`GMT parts changed on ${selected.size} row(s).`)
   }
 
@@ -380,7 +380,7 @@ export function GmtDetailsGrid({
                       placeholder="Fabric color"
                       disabled={readOnly}
                       onChange={(option) =>
-                        patch(row.clientId, (r) => ({ ...r, fabricColorId: option ? Number(option.value) : null, fabricColorName: option?.label ?? "" }))
+                        patch(row.clientId, (r) => ({ ...r, fabricColorId: option ? String(option.value) : null, fabricColorName: option?.label ?? "" }))
                       }
                     />
                   </td>
@@ -392,7 +392,7 @@ export function GmtDetailsGrid({
                       placeholder="Part"
                       disabled={readOnly}
                       onChange={(option) =>
-                        patch(row.clientId, (r) => ({ ...r, gmtPartsId: option ? Number(option.value) : null, gmtPartsName: option?.label ?? "" }))
+                        patch(row.clientId, (r) => ({ ...r, gmtPartsId: option ? String(option.value) : null, gmtPartsName: option?.label ?? "" }))
                       }
                     />
                   </td>

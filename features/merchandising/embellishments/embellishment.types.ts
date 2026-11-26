@@ -27,7 +27,7 @@ export type PaginatedResponse<T> = {
 }
 
 export type EmbellishmentRecord = {
-  id: number
+  id: string
   name: string
   remarks?: string | null
   isActive?: "Y" | "N" | string | null
