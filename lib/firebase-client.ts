@@ -6,6 +6,7 @@ import { getMessaging, getToken, isSupported, onMessage, type MessagePayload } f
 type ForegroundMessageHandler = (payload: MessagePayload) => void
 export const FCM_TOKEN_STORAGE_KEY = "fcm_web_token"
 
+// Set from the o2s_fb_* variables (or NEXT_PUBLIC_FIREBASE_*) by next.config.mjs.
 function getFirebaseConfig() {
   const config = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -14,12 +15,17 @@ function getFirebaseConfig() {
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   }
+  // optional: messaging works without them
+  const optional = {
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || undefined,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || undefined,
+  }
 
   const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
   const configured = Object.values(config).every(Boolean) && Boolean(vapidKey)
 
   return {
-    config,
+    config: { ...config, ...optional },
     vapidKey,
     configured,
   }
