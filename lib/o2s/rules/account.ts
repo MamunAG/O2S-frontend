@@ -1,7 +1,7 @@
 // Step 1: sign-in and account flows, the user's own profile, organizations (O2S companies), the current
 // user's menu permissions, notifications and file uploads.
 
-import { apiBase, companyPath, isRecord, type O2sContext, type O2sRule } from "../adapter"
+import { companyPath, sendBase, isRecord, type O2sContext, type O2sRule } from "../adapter"
 import { fromO2sMenuName, fromO2sModuleName, toO2sMenuName } from "../menus"
 
 type Rec = Record<string, unknown>
@@ -63,7 +63,7 @@ function toO2sUserFields(body: Rec): Rec {
 
 /** An O2S file attachment as code-crafter's file record. Images are viewed through /support/file/{id}/view. */
 function fileRecord(id: unknown, file: Rec | null, companyId?: string): Rec {
-  const view = companyId ? `${apiBase()}/api/v1/${companyId}/support/file/${id}/view` : ""
+  const view = companyId ? `${sendBase()}/api/v1/${companyId}/support/file/${id}/view` : ""
   return {
     success: true,
     id,

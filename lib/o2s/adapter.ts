@@ -64,6 +64,21 @@ export function apiBase() {
   return (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "")
 }
 
+/** The same-origin path next.config.mjs rewrites to the API (see sendBase). */
+export const API_PROXY_PATH = "/o2s-api"
+
+/**
+ * Where requests are actually sent. A page served over https may not call an http API (mixed content), so
+ * then the request goes to this site's own /o2s-api, which next.config.mjs forwards to the API server-side.
+ */
+export function sendBase() {
+  const base = apiBase()
+  if (typeof window !== "undefined" && window.location.protocol === "https:" && base.startsWith("http:")) {
+    return `${window.location.origin}${API_PROXY_PATH}`
+  }
+  return base
+}
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
@@ -210,7 +225,7 @@ async function refreshAccessToken(original: FetchFn): Promise<boolean> {
   if (!refreshToken) return false
   refreshing ??= (async () => {
     try {
-      const response = await original(`${apiBase()}/api/v1/account/refresh`, {
+      const response = await original(`${sendBase()}/api/v1/account/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ refreshToken }),
@@ -235,7 +250,7 @@ async function sendToO2s(original: FetchFn, path: string, init: RequestInit, all
   headers.delete("x-organization-id")
   const token = window.localStorage.getItem("access_token")
   if (headers.has("Authorization") && token) headers.set("Authorization", `Bearer ${token}`)
-  const response = await original(`${apiBase()}${path}`, { ...init, headers })
+  const response = await original(`${sendBase()}${path}`, { ...init, headers })
   if (response.status === 401 && allowRefresh && headers.has("Authorization") && (await refreshAccessToken(original))) {
     return sendToO2s(original, path, init, false)
   }
