@@ -124,8 +124,18 @@ const [unitOpen, setUnitOpen] = useState(false)
 </div>
 ```
 
-Table cell: `row.original.unit?.name ?? "-"`. A lookup filter, if `<Thing>Params` has `unitId`, uses the
-same `AppCombobox` in the filter grid and sets `filters.unitId`.
+Table cell: `row.original.unit?.name ?? "-"`. A lookup filter, if `<Thing>Params` has `unitId`, is an
+`AppDataFilterForm` field of kind `"custom"` whose `control` is the same `AppCombobox` (with `filterUnit`
+state in the section). It applies **at once on selection** — no debounce (rule R1a):
+
+```tsx
+onValueChange={(option) => {
+  setFilterUnit(option)
+  onFilterChange({ ...filters, unitId: option?.value ?? "" })
+}}
+```
+
+Reset must clear `filterUnit` as well as the filters.
 
 ---
 
@@ -165,5 +175,6 @@ error. Don't add the bulk-actions dropdown by default.
 Only if the backend slice has these routes: add an `extra` rule in `crudRules` options that sends them to
 the O2S paths (see the `job/po-details/upload` rules in `lib/o2s/rules/merchandising.ts`; set `file: true`
 on the template download), then copy the Factory pieces: `downloadFactoryTemplate` / `uploadFactoryTemplate`
-in the service, the hidden CSV `<input>` and the two callbacks in the workspace, and the `MoreHorizontal`
-dropdown ("Download template" / "Upload …") in the active section's header.
+in the service, the hidden CSV `<input>` and the two callbacks in the workspace. The `MoreHorizontal`
+dropdown ("Download template" / "Upload …") goes in the active `AppDataSection`'s `headerActions` — copy it
+from `features/app-config/designations/component/active-designation-section.tsx`.

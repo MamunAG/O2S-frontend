@@ -2,32 +2,13 @@
 
 import { useMemo } from "react"
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  MoreHorizontal,
-  Search,
-  Trash2,
-} from "lucide-react"
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
+import { MoreHorizontal, Trash2 } from "lucide-react"
+import type { ColumnDef } from "@tanstack/react-table"
 
-import { AppDataTable } from "@/components/app-data-table"
-import { AppSelect } from "@/components/app-select"
+import { AppDataFilterForm, FILTER_DEBOUNCE_MS } from "@/components/app-data-filter-form"
+import { AppDataSection } from "@/components/app-data-section"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,12 +16,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
 
 import type { FactoryFilterValues, FactoryRecord, PaginationMeta } from "../factory.types"
 
 const ALL_STATUS_VALUE = "__all_deleted_statuses__"
+
+const EMPTY_FILTERS: FactoryFilterValues = {
+  name: "",
+  displayName: "",
+  code: "",
+  contact: "",
+  email: "",
+  address: "",
+  isActive: "",
+}
 
 type DeletedFactoryActionMode = "restore" | "permanent"
 
@@ -73,6 +62,32 @@ function getStatusTone(factory: FactoryRecord) {
   return factory.isActive === false ? "outline" as const : "secondary" as const
 }
 
+function RowActions({
+  factory,
+  onOpenAction,
+}: {
+  factory: FactoryRecord
+  onOpenAction: (factory: FactoryRecord, mode: DeletedFactoryActionMode) => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="ghost" size="icon-sm" className="rounded-full">
+          <MoreHorizontal className="size-3.5" />
+          <span className="sr-only">Open deleted item actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onSelect={() => onOpenAction(factory, "restore")}>Restore factory</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onSelect={() => onOpenAction(factory, "permanent")}>
+          Delete permanently
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function EmptyState({
   title,
   description,
@@ -91,8 +106,6 @@ function EmptyState({
   )
 }
 
-const MOBILE_SKELETONS = Array.from({ length: 5 })
-
 export function DeletedFactorySection({
   data,
   meta,
@@ -106,16 +119,7 @@ export function DeletedFactorySection({
   onOpenAction,
 }: DeletedFactorySectionProps) {
   const deletedFilterCount = useMemo(
-    () =>
-      [
-        filters.name,
-        filters.displayName,
-        filters.code,
-        filters.contact,
-        filters.email,
-        filters.address,
-        filters.isActive,
-      ].filter((value) => value.trim()).length,
+    () => Object.values(filters).filter((value) => value.trim()).length,
     [filters],
   )
 
@@ -162,262 +166,143 @@ export function DeletedFactorySection({
     {
       id: "deleted",
       header: "Deleted",
-      cell: ({ row }) => (
-        <div className="space-y-1">
-          <p className="text-xs text-slate-700 dark:text-slate-200">{formatDate(row.original.deleted_at)}</p>
-        </div>
-      ),
+      cell: ({ row }) => <p className="text-xs text-slate-700 dark:text-slate-200">{formatDate(row.original.deleted_at)}</p>,
     },
     {
       id: "actions",
       header: () => <span className="pr-4">Actions</span>,
       cell: ({ row }) => (
         <div className="pr-4 text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon-sm" className="rounded-full">
-                <MoreHorizontal className="size-3.5" />
-                <span className="sr-only">Open actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onSelect={() => onOpenAction(row.original, "restore")}>
-                Restore factory
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => onOpenAction(row.original, "permanent")}>
-                Delete permanently
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <RowActions factory={row.original} onOpenAction={onOpenAction} />
         </div>
       ),
     },
   ], [onOpenAction])
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  })
-
   const clearFilters = () => {
-    onFilterChange({
-      name: "",
-      displayName: "",
-      code: "",
-      contact: "",
-      email: "",
-      address: "",
-      isActive: "",
-    })
+    onFilterChange(EMPTY_FILTERS)
     onPageChange(1)
   }
 
-  return (
-    <Card className="overflow-hidden border-white/60 bg-white/80 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
-      <CardHeader className="border-b border-slate-200/70 py-0 dark:border-white/10">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <CardTitle className="text-base">Deleted factories</CardTitle>
-            <CardDescription>{deletedPageSummary}</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-              {meta?.total ?? data.length} deleted
-            </Badge>
-            <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-              {deletedFilterCount} active filter{deletedFilterCount === 1 ? "" : "s"}
-            </Badge>
-          </div>
-        </div>
-      </CardHeader>
+  const emptyState = (
+    <EmptyState
+      title="No deleted factories found"
+      description="Try clearing or relaxing the current filters."
+    />
+  )
 
-      <CardContent className="p-3 sm:p-0 sm:px-2">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            onPageChange(1)
-          }}
-          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
-        >
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="deletedFactoryName" className="text-xs font-medium text-slate-700 dark:text-slate-300">Factory name</label>
-            <Input
-              id="deletedFactoryName"
-              value={filters.name}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, name: event.target.value })}
-              placeholder="Input factory name"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="deletedFactoryDisplayName" className="text-xs font-medium text-slate-700 dark:text-slate-300">Display name</label>
-            <Input
-              id="deletedFactoryDisplayName"
-              value={filters.displayName}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, displayName: event.target.value })}
-              placeholder="Input display name"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="deletedFactoryCode" className="text-xs font-medium text-slate-700 dark:text-slate-300">Code</label>
-            <Input
-              id="deletedFactoryCode"
-              value={filters.code}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, code: event.target.value })}
-              placeholder="Input code"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="deletedFactoryContact" className="text-xs font-medium text-slate-700 dark:text-slate-300">Contact</label>
-            <Input
-              id="deletedFactoryContact"
-              value={filters.contact}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, contact: event.target.value })}
-              placeholder="Input contact"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="deletedFactoryEmail" className="text-xs font-medium text-slate-700 dark:text-slate-300">Email</label>
-            <Input
-              id="deletedFactoryEmail"
-              value={filters.email}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, email: event.target.value })}
-              placeholder="Input email"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="deletedFactoryStatus" className="text-xs font-medium text-slate-700 dark:text-slate-300">Status</label>
-            <AppSelect
-              triggerId="deletedFactoryStatus"
-              value={filters.isActive || ALL_STATUS_VALUE}
-              onValueChange={(value) => onFilterChange({ ...filters, isActive: value === ALL_STATUS_VALUE ? "" : value })}
-              placeholder="All statuses"
-              options={[
+  return (
+    <AppDataSection
+      title="Deleted factories"
+      description={deletedPageSummary}
+      data={data}
+      columns={columns}
+      loading={loading}
+      pageSummary={deletedPageSummary}
+      page={page}
+      totalPages={meta?.totalPages ?? 1}
+      pageSize={limit}
+      pageSizeOptions={[5, 10, 25, 50]}
+      onPageChange={(nextPage) => onPageChange(nextPage)}
+      onPageSizeChange={(nextPageSize) => {
+        onLimitChange(nextPageSize)
+        onPageChange(1)
+      }}
+      getRowId={(factory) => factory.id}
+      emptyState={emptyState}
+      mobileSkeletonClassName="h-28 rounded-2xl"
+      headerBadges={
+        <>
+          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+            {meta?.total ?? data.length} deleted
+          </Badge>
+          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
+            {deletedFilterCount} active filter{deletedFilterCount === 1 ? "" : "s"}
+          </Badge>
+        </>
+      }
+      filters={
+        <AppDataFilterForm
+          fields={[
+            {
+              id: "deletedFactoryName",
+              label: "Factory name",
+              kind: "text",
+              value: filters.name,
+              placeholder: "Input factory name",
+              onValueChange: (name) => onFilterChange({ ...filters, name }),
+            },
+            {
+              id: "deletedFactoryDisplayName",
+              label: "Display name",
+              kind: "text",
+              value: filters.displayName,
+              placeholder: "Input display name",
+              onValueChange: (displayName) => onFilterChange({ ...filters, displayName }),
+            },
+            {
+              id: "deletedFactoryCode",
+              label: "Code",
+              kind: "text",
+              value: filters.code,
+              placeholder: "Input code",
+              onValueChange: (code) => onFilterChange({ ...filters, code }),
+            },
+            {
+              id: "deletedFactoryContact",
+              label: "Contact",
+              kind: "text",
+              value: filters.contact,
+              placeholder: "Input contact",
+              onValueChange: (contact) => onFilterChange({ ...filters, contact }),
+            },
+            {
+              id: "deletedFactoryEmail",
+              label: "Email",
+              kind: "text",
+              value: filters.email,
+              placeholder: "Input email",
+              onValueChange: (email) => onFilterChange({ ...filters, email }),
+            },
+            {
+              id: "deletedFactoryStatus",
+              label: "Status",
+              kind: "select",
+              value: filters.isActive || ALL_STATUS_VALUE,
+              placeholder: "All statuses",
+              options: [
                 { value: ALL_STATUS_VALUE, label: "All statuses" },
                 { value: "true", label: "Active" },
                 { value: "false", label: "Inactive" },
-              ]}
-            />
+              ],
+              onValueChange: (value) => onFilterChange({ ...filters, isActive: value === ALL_STATUS_VALUE ? "" : value }),
+            },
+          ]}
+          debounceMs={FILTER_DEBOUNCE_MS}
+          onReset={clearFilters}
+        />
+      }
+      renderMobileItem={(factory) => (
+        <article className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-white/3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{factory.name}</p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{factory.displayName}</p>
+            </div>
+            <RowActions factory={factory} onOpenAction={onOpenAction} />
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-end">
-            <Button type="submit" className="w-full rounded-xl sm:w-auto">
-              <Search className="size-3.5" />
-              Search
-            </Button>
-            <Button type="button" variant="outline" className="w-full rounded-xl sm:w-auto" onClick={clearFilters}>
-              Reset
-            </Button>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge variant={getStatusTone(factory)} className="rounded-full px-3 py-1">{getStatusLabel(factory)}</Badge>
+            <Badge variant="outline" className="rounded-full px-3 py-1">{factory.code || "No code"}</Badge>
           </div>
-        </form>
-      </CardContent>
 
-      <CardContent className="border-t border-slate-200/70 p-0 dark:border-white/10">
-        <div className="lg:hidden">
-          {loading ? (
-            <div className="space-y-3 p-4">
-              {MOBILE_SKELETONS.map((_, index) => (
-                <Skeleton key={index} className="h-28 rounded-2xl" />
-              ))}
-            </div>
-          ) : data.length > 0 ? (
-            <div className="space-y-3 p-4">
-              {data.map((factory) => (
-                <article
-                  key={factory.id}
-                  className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{factory.name}</p>
-                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">{factory.displayName}</p>
-                    </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon-sm" className="rounded-full">
-                          <MoreHorizontal className="size-3.5" />
-                          <span className="sr-only">Open deleted item actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onSelect={() => onOpenAction(factory, "restore")}>Restore factory</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onSelect={() => onOpenAction(factory, "permanent")}>
-                          Delete permanently
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge variant={getStatusTone(factory)} className="rounded-full px-3 py-1">{getStatusLabel(factory)}</Badge>
-                    <Badge variant="outline" className="rounded-full px-3 py-1">{factory.code || "No code"}</Badge>
-                  </div>
-
-                  <div className="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
-                    <p>Deleted: {formatDate(factory.deleted_at)}</p>
-                    <p>Email: {factory.email || "-"}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4">
-              <EmptyState
-                title="No deleted factories found"
-                description="Try clearing or relaxing the current filters."
-              />
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3 border-t border-slate-200/70 px-4 py-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-slate-500 dark:text-slate-400">{deletedPageSummary}</p>
-            <div className="flex items-center justify-between gap-2">
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(1)} disabled={loading || page <= 1}>
-                <ChevronsLeft className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={loading || page <= 1}>
-                <ChevronLeft className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(Math.min(meta?.totalPages ?? 1, page + 1))} disabled={loading || page >= (meta?.totalPages ?? 1)}>
-                <ChevronRight className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(meta?.totalPages ?? 1)} disabled={loading || page >= (meta?.totalPages ?? 1)}>
-                <ChevronsRight className="size-3.5" />
-              </Button>
-            </div>
+          <div className="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+            <p>Deleted: {formatDate(factory.deleted_at)}</p>
+            <p>Email: {factory.email || "-"}</p>
           </div>
-        </div>
-
-        <div className="hidden lg:block">
-          <AppDataTable
-            table={table}
-            pageSummary={deletedPageSummary}
-            page={page}
-            totalPages={meta?.totalPages ?? 1}
-            pageSize={limit}
-            isLoading={loading}
-            pageSizeOptions={[5, 10, 25, 50]}
-            onPageChange={(nextPage) => onPageChange(nextPage)}
-            onPageSizeChange={(nextPageSize) => {
-              onLimitChange(nextPageSize)
-              onPageChange(1)
-            }}
-            emptyState={
-              <EmptyState
-                title="No deleted factories found"
-                description="Try clearing or relaxing the current filters."
-              />
-            }
-          />
-        </div>
-      </CardContent>
-    </Card>
+        </article>
+      )}
+    />
   )
 }

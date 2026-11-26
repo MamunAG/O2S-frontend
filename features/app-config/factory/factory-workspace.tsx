@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Plus, RefreshCcw, Trash2, Undo2 } from "lucide-react"
+import { Loader2, Plus, Trash2, Undo2 } from "lucide-react"
 import { toast } from "sonner"
 
+import { ModulePageHeader } from "@/components/module-page-header"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -189,7 +189,7 @@ function WorkspaceSkeleton() {
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
             <ScrollArea className="h-full">
-                <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+                <div className="space-y-4 p-2 sm:p-3 lg:p-4">
                     <Card className="overflow-hidden border-white/60 bg-white/85 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/75">
                         <CardContent className="p-6 sm:p-8">
                             <div className="space-y-3">
@@ -762,28 +762,13 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
 
     if (error) {
         return (
-            <div className="space-y-6">
-                <Card className="border-white/60 bg-white/80 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
-                    <CardContent className="p-6 sm:p-8">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                            <div>
-                                <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                                    App configuration
-                                </p>
-                                <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-                                    Factory Setup
-                                </h1>
-                                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                    Manage factory master data.
-                                </p>
-                            </div>
-                            <Button type="button" variant="outline" onClick={triggerRefresh} className="rounded-xl">
-                                <RefreshCcw className="size-3.5" />
-                                Retry
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="space-y-4 p-2 sm:p-3 lg:p-4">
+                <ModulePageHeader
+                    eyebrow="App configuration"
+                    title="Factory Setup"
+                    description="Manage factory master data."
+                    onRefresh={triggerRefresh}
+                />
 
                 <EmptyState
                     title="Unable to load factories"
@@ -798,52 +783,21 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
             <ScrollArea className="h-full">
-                <div className="space-y-6 p-4 sm:p-6 lg:p-8">
-                    <Card className="overflow-hidden border-white/60 bg-white/85 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/75">
-                        <CardContent className="p-4 sm:p-8 sm:py-2">
-                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                                <div className="space-y-1.5">
-                                    <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                                        App configuration
-                                    </p>
-                                    <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
-                                        Factory Setup
-                                    </h1>
-                                    <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                        Create, review, and maintain factory records.
-                                    </p>
-
-                                    <div className="flex flex-wrap gap-2 pt-2">
-                                        <Badge variant="secondary" className="rounded-full px-3 py-1">
-                                            Total {activeTotal}
-                                        </Badge>
-                                        <Badge variant="outline" className="rounded-full px-3 py-1">
-                                            Active {activeCount}
-                                        </Badge>
-                                        <Badge variant="outline" className="rounded-full px-3 py-1">
-                                            Deleted {deletedTotal}
-                                        </Badge>
-                                        {recentlyDeletedFactory ? (
-                                            <Badge variant="destructive" className="rounded-full px-3 py-1">
-                                                Recently deleted
-                                            </Badge>
-                                        ) : null}
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col gap-3 sm:flex-row">
-                                    <Button type="button" variant="outline" onClick={triggerRefresh} className="rounded-xl">
-                                        <RefreshCcw className="size-3.5" />
-                                        Refresh
-                                    </Button>
-                                    <Button type="button" onClick={openCreateDialog} className="rounded-xl">
-                                        <Plus className="size-3.5" />
-                                        New factory
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                <div className="space-y-4 p-2 sm:p-3 lg:p-4">
+                    <ModulePageHeader
+                        eyebrow="App configuration"
+                        title="Factory Setup"
+                        description="Create, review, and maintain factory records."
+                        badges={[
+                            { label: `Total ${activeTotal}`, variant: "secondary" },
+                            { label: `Active ${activeCount}` },
+                            { label: `Deleted ${deletedTotal}` },
+                            ...(recentlyDeletedFactory ? [{ label: "Recently deleted", variant: "destructive" as const }] : []),
+                        ]}
+                        onRefresh={triggerRefresh}
+                        onCreate={openCreateDialog}
+                        createLabel="New factory"
+                    />
 
                     {recentlyDeletedFactory ? (
                         <Card className="border-amber-200 bg-amber-50/80 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10">
@@ -889,10 +843,12 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
                         page={page}
                         limit={limit}
                         filters={activeFilters}
-                        onFilterChange={setActiveFilters}
+                        onFilterChange={(next) => {
+                            setActiveFilters(next)
+                            setPage(1)
+                        }}
                         onPageChange={setPage}
                         onLimitChange={setLimit}
-                        onCreate={openCreateDialog}
                         onEdit={openEditDialog}
                         onDelete={requestSoftDelete}
                         onDownloadTemplate={downloadTemplateFile}
@@ -914,7 +870,10 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
                         page={deletedPage}
                         limit={deletedLimit}
                         filters={deletedFilters}
-                        onFilterChange={setDeletedFilters}
+                        onFilterChange={(next) => {
+                            setDeletedFilters(next)
+                            setDeletedPage(1)
+                        }}
                         onPageChange={setDeletedPage}
                         onLimitChange={setDeletedLimit}
                         onOpenAction={(factory: FactoryRecord, mode) => openPendingActionDialog(factory, mode)}

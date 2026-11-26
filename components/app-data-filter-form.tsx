@@ -1,6 +1,6 @@
 "use client"
 
-import { type FormEvent, type ReactNode } from "react"
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react"
 import { Plus, Search } from "lucide-react"
 
 import { AppSelect } from "@/components/app-select"
@@ -40,7 +40,13 @@ export type AppDataFilterField =
 
 type AppDataFilterFormProps = {
   fields: AppDataFilterField[]
-  onSubmit: () => void
+  /**
+   * When set, text fields report a change only after typing has paused this long (ms); select and custom
+   * fields (comboboxes) still report at once. Use with no `onSubmit`: the filters then apply on their own.
+   */
+  debounceMs?: number
+  /** Shows a Search button. Leave out when the filters apply on their own. */
+  onSubmit?: () => void
   onReset: () => void
   onCreate?: () => void
   createLabel?: string
@@ -49,8 +55,57 @@ type AppDataFilterFormProps = {
   actions?: ReactNode
 }
 
+/** The standard pause (ms) before a typed filter applies. */
+export const FILTER_DEBOUNCE_MS = 400
+
+/** A text filter that keeps what is typed locally and reports it once typing pauses. */
+function DebouncedTextInput({
+  id,
+  value,
+  placeholder,
+  delayMs,
+  onValueChange,
+}: {
+  id: string
+  value: string
+  placeholder?: string
+  delayMs: number
+  onValueChange: (value: string) => void
+}) {
+  const [draft, setDraft] = useState(value)
+  const [reportedValue, setReportedValue] = useState(value)
+  const onValueChangeRef = useRef(onValueChange)
+
+  useEffect(() => {
+    onValueChangeRef.current = onValueChange
+  })
+
+  // The value changed from outside (Reset, or our own report coming back): show it.
+  if (value !== reportedValue) {
+    setReportedValue(value)
+    setDraft(value)
+  }
+
+  useEffect(() => {
+    if (draft === value) return
+    const timer = window.setTimeout(() => onValueChangeRef.current(draft), delayMs)
+    return () => window.clearTimeout(timer)
+  }, [delayMs, draft, value])
+
+  return (
+    <Input
+      id={id}
+      value={draft}
+      className="h-7 rounded-md px-2 text-xs"
+      placeholder={placeholder}
+      onChange={(event) => setDraft(event.target.value)}
+    />
+  )
+}
+
 export function AppDataFilterForm({
   fields,
+  debounceMs,
   onSubmit,
   onReset,
   onCreate,
@@ -61,7 +116,7 @@ export function AppDataFilterForm({
 }: AppDataFilterFormProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    onSubmit()
+    onSubmit?.()
   }
 
   return (
@@ -77,7 +132,15 @@ export function AppDataFilterForm({
           >
             {field.label}
           </label>
-          {field.kind === "text" ? (
+          {field.kind === "text" && debounceMs ? (
+            <DebouncedTextInput
+              id={field.id}
+              value={field.value}
+              placeholder={field.placeholder}
+              delayMs={debounceMs}
+              onValueChange={field.onValueChange}
+            />
+          ) : field.kind === "text" ? (
             <Input
               id={field.id}
               value={field.value}
@@ -99,11 +162,16 @@ export function AppDataFilterForm({
         </div>
       ))}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-end">
-        <Button type="submit" className="w-full rounded-xl sm:w-auto">
-          <Search className="size-3.5" />
-          {submitLabel}
-        </Button>
+      {/* Auto-applying filters (no Search): Reset sits right after the last filter. */}
+      <div
+        className={`flex flex-col gap-2 sm:flex-row sm:items-end ${onSubmit ? "sm:justify-end" : "sm:justify-start"}`}
+      >
+        {onSubmit ? (
+          <Button type="submit" className="w-full rounded-xl sm:w-auto">
+            <Search className="size-3.5" />
+            {submitLabel}
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="outline"

@@ -8,13 +8,18 @@ description: >
   the user asks to add, scaffold, create or wire up a new page, screen, setup page, entry
   page, master-data page, list/table page, or CRUD UI for an entity in O2S-frontend — even if
   they only say "make a page for X", "frontend for the new X endpoints" or "add X setup to
-  the sidebar". Also use when adding filters, columns, form fields, a lookup combobox or an
-  image upload to an existing page built this way.
+  the sidebar". Also use for ANY change to an existing CRUD page in O2S-frontend (Factory,
+  Designation, Materials, Units, Buyers, HR masters, …) — adding filters, columns, form
+  fields, a lookup combobox or an image upload, restyling, fixing a bug, or refactoring —
+  because the same rules apply to existing pages and must be brought in when a page is touched.
 ---
 
-# New CRUD page in O2S-frontend
+# CRUD pages in O2S-frontend (new and existing)
 
-Creates one screen: **1 route file + 6 feature files**, and **2–3 edits** to shared files.
+A new page is **1 route file + 6 feature files**, and **2–3 edits** to shared files.
+
+**The rules in "Rules (R1–R10)" below are mandatory for every page — new pages are written to them, and an
+existing page is brought into line with them whenever it is touched** (see "Existing pages").
 
 The live reference is the Factory Setup page — when this document and that code disagree, read both and ask:
 
@@ -26,6 +31,7 @@ The live reference is the Factory Setup page — when this document and that cod
 | CRUD translation | `lib/o2s/crud.ts` |
 | Sidebar | `lib/module-navigation.ts` |
 | Menu names | `lib/o2s/menus.ts` |
+| Sections built from the shared components | `features/app-config/designations/component/` |
 | Lookup combobox example | `features/app-config/materials/` (unit, material group) |
 | Backend slice | `../O2S-backend/O2S/Endpoints/Configuration/FactoryEndpoints.cs`, `Features/Configuration/Factory/` |
 
@@ -132,63 +138,117 @@ upload, Excel upload) are in **`references/add-ons.md`**. Write each file from i
     to `MENU_NAME_TO_O2S` in `lib/o2s/menus.ts`. Without it, non-admin users with the O2S permission
     still don't see the item.
 
-## Conventions the templates follow (keep them)
+## Rules (R1–R10) — mandatory for new and existing pages
 
-- Feature folders: `features/<module>/<kebab-thing>/`, components in `component/` (singular).
-  Import the workspace from `<file>-workspace`; don't add a `<file>.workspace.tsx` re-export.
-- Every service function takes `{ apiUrl, accessToken, organizationId?, … }`, builds the URL with
-  `new URL(path, apiUrl)`, sends `Authorization: Bearer` + `x-organization-id`, and goes through `readJsonResponse`.
-- The workspace reads `access_token` from `localStorage` on every call; a "session expired" / "unauthorized"
-  error clears the stored tokens and `router.replace("/sign-in")` (`handleAuthFailure`).
-- The workspace reloads on organization change (`SELECTED_ORGANIZATION_CHANGED_EVENT`) and passes
-  `organizationId: selectedOrganizationId || undefined` to every call.
-- One effect fetches the active page and the deleted page in parallel, keyed by `requestKey`; `loading` /
-  `error` are derived from which key last finished. Any mutation calls `triggerRefresh()`.
-- The form dialog is controlled (`values` / `onValuesChange`); the workspace owns the editor values.
-- Active list: 10 per page; deleted list: 5 per page; page-size options `[5, 10, 25, 50]`.
-- Feedback: `toast.success` / `toast.error` from `sonner`; form errors also shown inside the dialog.
-- Delete is soft first (confirm dialog → amber "recently deleted" banner with Restore / Delete permanently);
-  the deleted card offers the same two actions per row.
-- Below `lg` the tables become cards with a pager; from `lg` up they use `AppDataTable`.
-- Styling: copy the class strings from the templates verbatim — the glass cards, `rounded-xl` buttons,
-  `h-7 text-xs` filter inputs and `h-8 py-1` table cells are what make the screens look alike.
-- 2-space indent, no semicolons, as in the templates.
+Every CRUD page follows all of these. A new page is written to them from the start (the templates already
+do); an existing page is brought into line whenever it is touched — see "Existing pages" below.
 
-### Where the templates deliberately differ from Factory
+**R1 — Shared components, never hand-written equivalents.**
 
-Factory is the visual and behavioural reference, not a lint-clean one. The templates fix these; don't
-reintroduce them when copying from Factory:
-
-| Factory | Templates |
+| Part of the page | Shared component |
 |---|---|
-| `setLoading(true)` + `void loadFactories()` in an effect, dialog copies `initialValues` into a draft in an effect — both fail `react-hooks/set-state-in-effect` | derived `loading` / `error` from `requestKey`; controlled dialog |
-| stale list responses can overwrite newer ones while typing in a filter | the effect cancels the older request's result |
-| filters on `contact`, `email`, `address` that `FactoryParams` ignores | only `<Thing>Params` properties |
-| bulk upload menu that always errors under O2S | omitted (add-on C) |
-| sidebar item without `permissionMenuName` | always set |
-| unused `imageInputRef`, `uploadingTemplate`, `optionalNumber`, `activeCount`; `factory.workspace.tsx` re-export | not present |
+| Page header: eyebrow, title, description, badges, **Refresh** and **New** buttons | `ModulePageHeader` (`components/module-page-header.tsx`), which renders `AppRefreshButton` / `AppAddNewButton` |
+| Table card: header with badges, desktop table, mobile cards, skeletons, pager | `AppDataSection` (`components/app-data-section.tsx`) |
+| Filter fields + **Reset** button | `AppDataFilterForm` (`components/app-data-filter-form.tsx`), passed as `AppDataSection`'s `filters`, with `debounceMs={FILTER_DEBOUNCE_MS}` |
+| Selects, lookups | `AppSelect`, `AppCombobox` |
+
+A control the shared components lack (e.g. the bulk-actions dropdown) goes in `AppDataSection`'s
+`headerActions` or `ModulePageHeader`'s `actions`. No hand-written `<Card>` table sections, filter `<form>`s,
+Search / Reset / New / Refresh `<Button>`s or mobile pagers. Live examples: Factory and Designation sections.
+
+**R1a — Filters apply on their own; no Search button; New only in the header** (active *and* deleted sections).
+- Pass `debounceMs={FILTER_DEBOUNCE_MS}` (400 ms) and **no `onSubmit`** to `AppDataFilterForm`: a text filter
+  applies once typing pauses; a **select** or **combobox** filter applies **at once** on selection (a
+  combobox is a `kind: "custom"` field whose `onValueChange` calls `onFilterChange` directly — never debounce it).
+- The filter row has only **Reset**, placed directly after the last filter (`AppDataFilterForm` left-aligns
+  its button cell when there is no `onSubmit`; don't add `xl:col-span-*` to push it to the row's end).
+  Don't pass `onCreate` / `createLabel` to `AppDataFilterForm` — the
+  **New** button lives in `ModulePageHeader` only, so the active section takes no `onCreate` prop.
+- The workspace's `onFilterChange` sets the filters **and resets that list to page 1** in one handler.
+- Other pages that still pass `onSubmit` keep their Search button; bring them to R1a when they are touched.
+
+**R2 — No setState in effects (`react-hooks/set-state-in-effect`).** One effect loads the active and the
+deleted page in parallel, keyed by `requestKey`; `loading` / `error` are derived from which key last
+finished; a newer request cancels the older one's result. The form dialog is controlled
+(`values` / `onValuesChange`) — no draft copied from props in an effect. Same for lookup selections.
+
+**R3 — Filters only for `<Thing>Params` properties.** Read `O2S-backend/.../<Thing>.Params.cs`; a filter O2S
+doesn't bind is silently ignored. Status filter values are `"true"` / `"false"`, `""` = all.
+
+**R4 — No Excel upload / template download unless the backend has those routes** (add-on C). Under plain
+`crudRules` they always error.
+
+**R5 — Navigation is permission-aware.** The sidebar item has `permissionMenuName`; if it differs from the
+O2S `menuName`, `MENU_NAME_TO_O2S` maps it. Without both, non-admins don't see the page.
+
+**R6 — The resource has an adapter rule** (`crudRules(...)` in `lib/o2s/rules/<module>.ts`), with
+`imageFields` / lookup `fromO2s` + `toO2s` where the record has an image or lookups.
+
+**R7 — Data handling.** Ids are GUID strings (never `Number(id)`); payloads send `null`, not `undefined`, to
+clear a lookup or image; display-only objects (`unit`, `image`) are never sent back.
+
+**R8 — Page behaviour.**
+- The service: every function takes `{ apiUrl, accessToken, organizationId?, … }`, builds the URL with
+  `new URL(path, apiUrl)`, sends `Authorization: Bearer` + `x-organization-id`, goes through `readJsonResponse`.
+- Auth: `access_token` read from `localStorage` per call; "session expired" / "unauthorized" clears the stored
+  tokens and `router.replace("/sign-in")` (`handleAuthFailure`).
+- Organization: reload on `SELECTED_ORGANIZATION_CHANGED_EVENT`; pass `organizationId: selectedOrganizationId || undefined`.
+- Any mutation calls `triggerRefresh()`. Feedback through `toast.success` / `toast.error` (`sonner`); form errors also inside the dialog.
+- Delete is soft first (confirm dialog → amber "recently deleted" banner with Restore / Delete permanently);
+  the deleted section offers the same two actions per row.
+- Active list 10 per page, deleted list 5, page-size options `[5, 10, 25, 50]`.
+
+**R9 — Structure and style.** Feature folder `features/<module>/<kebab-thing>/`, components in `component/`;
+the route imports `<file>-workspace` (no `<file>.workspace.tsx` re-export). The page container around the
+header and sections (also the skeleton's and the error state's) is `space-y-4 p-2 sm:p-3 lg:p-4` — not the
+older `space-y-6 p-4 sm:p-6 lg:p-8`. Class strings inside cells, mobile
+cards, empty states, the banner and dialogs as in the templates (`h-8 py-1` cells, `text-xs` cell text,
+`rounded-xl` buttons). 2-space indent, no semicolons in new files; keep an existing file's indent.
+
+**R10 — Lint-clean.** `npm run typecheck` passes and `npx eslint` on every new or touched file reports no
+errors and no warnings — no unused variables, imports, helpers or props. An `<img>` for an O2S file URL
+carries `// eslint-disable-next-line @next/next/no-img-element` with a reason.
+
+## Existing pages
+
+When asked for *any* change to an existing CRUD page (a new field, a filter, a column, a bug fix, a restyle):
+
+1. **Do the requested change.**
+2. **Audit the page against R1–R10** — its route, feature folder, adapter rule, sidebar item and menu-name
+   entry. Run `npx eslint <feature folder>` and read the backend `<Thing>Params` / DTO.
+3. **Fix every rule the page breaks**, in the same change, using the templates as the target shape. Keep the
+   page's existing columns, fields, labels, badges, image thumbnails and extra actions — the rules change
+   *how* the page is built, not *what* it shows.
+4. **Ask before removing anything users can see.** R3 (a filter the backend ignores) and R4 (a bulk-upload
+   menu that always errors) remove visible controls: list them and get a yes before deleting them. If the
+   user says keep, leave them and note it in the summary.
+5. **Report** a short R1–R10 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
+
+Known state of the reference pages (update this list when you fix one):
+
+| Page | Open rule breaks |
+|---|---|
+| Factory (`features/app-config/factory/`) | R2 (loader effect, dialog draft effect), R3 (`contact` / `email` filters), R4 (bulk upload menu), R5 (no `permissionMenuName`), R9 (`factory.workspace.tsx` re-export), R10 (unused `imageInputRef`, `uploadingTemplate`, `downloadingTemplate`, `optionalNumber`; `<img>` warning in the dialog). R1 done. |
+| Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`) — not yet audited for the rest |
+| Other CRUD pages | not yet audited |
 
 ## Verify
 
-1. `npm run typecheck` and `npx eslint <the new and edited files>` — no errors. The one expected warning
-   per table section is `Compilation Skipped: Use of incompatible library` (TanStack Table under the React
-   Compiler); every existing section has it. Fix anything else.
-2. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
+1. R10: `npm run typecheck` and `npx eslint <the new and touched files>` — no errors and no warnings.
+2. Re-check R1–R9 against the finished files (for an existing page, this is the report in step 5 above).
+3. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
    `http://localhost:3000<route>` and walk through: list loads → filter → create → edit → delete →
    restore from the banner → delete → permanently delete from the deleted card.
    If you cannot run it, say so in your summary rather than claiming it works.
 
 ## Pitfalls
 
-- **Ids are GUID strings.** Never `Number(id)`; compare with `===` on strings. `editingId` is `string | null`.
-- **PATCH merges into the stored record**, so a field left out of the payload keeps its old value — but a
-  field sent as `undefined` is dropped by `JSON.stringify` and also keeps its old value. To clear an optional
-  field, the payload builder must send `null`, not `undefined`, when that matters (lookups, image).
-- **Excel upload / template download don't exist in O2S** — `crudRules` turns them into an error. Don't add
-  the bulk-actions dropdown unless the backend has those routes (see `references/add-ons.md`).
-- **Don't send display-only objects back.** If the record carries `unit: { id, name }` or `image: {…}`, the
-  form values hold only `unitId` / `imageId`; for a lookup, also strip the object in `toO2s` (see the
-  `material` rule in `configuration.ts`).
-- **Images:** the rule needs `fromO2s: imageFields` so the record gets an `image` object (the O2S DTO has only `imageId`).
-- **Status filter values** are the strings `"true"` / `"false"`; `""` means all (the list handler drops it).
-- **The header's "Active N" badge counts the current page only**, not the whole table (as in Factory).
+- **Why R7's `null`:** PATCH merges into the stored record, so a field left out of the payload keeps its old
+  value — and a field sent as `undefined` is dropped by `JSON.stringify`, so it keeps its old value too.
+- **Why R7's "never send display objects back":** strip `unit` / `image` in `toO2s` as the `material` rule in
+  `configuration.ts` does, or O2S receives a navigation object it can't bind.
+- **Images:** the rule needs `fromO2s: imageFields` so the record gets an `image` object (the O2S DTO has only
+  `imageId`); existing images still have no URL (see add-on B).
+- **`AppDataFilterForm` is 4 per row** (`xl:grid-cols-4`); widen a field with `className: "min-w-0 space-y-1 xl:col-span-2"`.
+- **`ModulePageHeader`'s refresh button always says "Refresh"**, including on the error state.
+- **The header's "Active N" badge counts the current page only**, not the whole table.

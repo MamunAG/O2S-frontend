@@ -377,26 +377,22 @@ export async function permanentlyDelete__Thing__({
 
 ## 3. `features/__module__/__file__/component/active-__file__-section.tsx`
 
+Built on the shared components: `AppDataSection` (card, header, desktop table, mobile cards, skeletons,
+pager) and `AppDataFilterForm` (filter fields + Reset; text filters debounced, selects / comboboxes applied
+at once — rule R1a). Don't hand-write those parts. No Search button, and no New button here: New is in the
+page header.
+
 ```tsx
 "use client"
 
 import { useMemo } from "react"
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  MoreHorizontal,
-  Plus,
-  Search,
-} from "lucide-react"
-import { type ColumnDef, getCoreRowModel, useReactTable } from "@tanstack/react-table"
+import { MoreHorizontal, Plus } from "lucide-react"
+import type { ColumnDef } from "@tanstack/react-table"
 
-import { AppDataTable } from "@/components/app-data-table"
-import { AppSelect } from "@/components/app-select"
+import { AppDataFilterForm, FILTER_DEBOUNCE_MS } from "@/components/app-data-filter-form"
+import { AppDataSection } from "@/components/app-data-section"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -404,8 +400,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
 
 import {
   EMPTY_FILTERS,
@@ -415,7 +409,6 @@ import {
 } from "../__file__.types"
 
 const ALL_STATUS_VALUE = "__all_statuses__"
-const MOBILE_SKELETONS = Array.from({ length: 5 })
 
 type Active__Thing__SectionProps = {
   data: __Thing__Record[]
@@ -427,7 +420,6 @@ type Active__Thing__SectionProps = {
   onFilterChange: (nextValues: __Thing__FilterValues) => void
   onPageChange: (nextPage: number) => void
   onLimitChange: (nextPageSize: number) => void
-  onCreate: () => void
   onEdit: (id: string) => void
   onDelete: (__thing__: __Thing__Record) => void
 }
@@ -474,6 +466,34 @@ function EmptyState({
   )
 }
 
+function RowActions({
+  __thing__,
+  onEdit,
+  onDelete,
+}: {
+  __thing__: __Thing__Record
+  onEdit: (id: string) => void
+  onDelete: (__thing__: __Thing__Record) => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="ghost" size="icon-sm" className="size-7 rounded-full">
+          <MoreHorizontal className="size-3.5" />
+          <span className="sr-only">Open actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onSelect={() => onEdit(__thing__.id)}>Edit __label__</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onSelect={() => onDelete(__thing__)}>
+          Delete __label__
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export function Active__Thing__Section({
   data,
   meta,
@@ -484,7 +504,6 @@ export function Active__Thing__Section({
   onFilterChange,
   onPageChange,
   onLimitChange,
-  onCreate,
   onEdit,
   onDelete,
 }: Active__Thing__SectionProps) {
@@ -556,260 +575,153 @@ export function Active__Thing__Section({
       header: () => <span className="pr-4">Actions</span>,
       cell: ({ row }) => (
         <div className="pr-4 text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon-sm" className="size-7 rounded-full">
-                <MoreHorizontal className="size-3.5" />
-                <span className="sr-only">Open actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onSelect={() => onEdit(row.original.id)}>Edit __label__</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => onDelete(row.original)}>
-                Delete __label__
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <RowActions __thing__={row.original} onEdit={onEdit} onDelete={onDelete} />
         </div>
       ),
     },
   ], [onDelete, onEdit])
-
-  const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
 
   const clearFilters = () => {
     onFilterChange(EMPTY_FILTERS)
     onPageChange(1)
   }
 
-  const totalPages = meta?.totalPages ?? 1
+  const emptyState = (
+    <EmptyState
+      title="No __labels__ found"
+      description="Try clearing or relaxing the current filters."
+      actionLabel="Reset"
+      onAction={clearFilters}
+    />
+  )
 
   return (
-    <Card className="overflow-hidden border-white/60 bg-white/80 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
-      <CardHeader className="border-b border-slate-200/70 py-0 dark:border-white/10">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <CardTitle className="text-base">__Labels__ table</CardTitle>
-            <CardDescription>{pageSummary}</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-              Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
-            </Badge>
-            <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-              {filterCount} active filter{filterCount === 1 ? "" : "s"}
-            </Badge>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-3 sm:p-0 sm:px-2">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            onPageChange(1)
-          }}
-          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
-        >
-          {/* FIELDS: one block per text filter */}
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="filter__Thing__Name" className="text-xs font-medium text-slate-700 dark:text-slate-300">Name</label>
-            <Input
-              id="filter__Thing__Name"
-              value={filters.name}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, name: event.target.value })}
-              placeholder="Input __label__ name"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="filter__Thing__Code" className="text-xs font-medium text-slate-700 dark:text-slate-300">Code</label>
-            <Input
-              id="filter__Thing__Code"
-              value={filters.code}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, code: event.target.value })}
-              placeholder="Input code"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="filter__Thing__Status" className="text-xs font-medium text-slate-700 dark:text-slate-300">Status</label>
-            <AppSelect
-              triggerId="filter__Thing__Status"
-              value={filters.isActive || ALL_STATUS_VALUE}
-              onValueChange={(value) => onFilterChange({ ...filters, isActive: value === ALL_STATUS_VALUE ? "" : value })}
-              placeholder="All statuses"
-              options={[
+    <AppDataSection
+      title="__Labels__ table"
+      description={pageSummary}
+      data={data}
+      columns={columns}
+      loading={loading}
+      pageSummary={pageSummary}
+      page={page}
+      totalPages={meta?.totalPages ?? 1}
+      pageSize={limit}
+      pageSizeOptions={[5, 10, 25, 50]}
+      onPageChange={onPageChange}
+      onPageSizeChange={(nextPageSize) => {
+        onLimitChange(nextPageSize)
+        onPageChange(1)
+      }}
+      getRowId={(__thing__) => __thing__.id}
+      emptyState={emptyState}
+      // FIELDS: one entry per column id
+      columnClassNames={{
+        __thing__: "h-8 py-1",
+        code: "h-8 py-1",
+        status: "h-8 py-1",
+        created: "h-8 py-1",
+        updated: "h-8 py-1",
+        actions: "h-8 py-1",
+      }}
+      headerBadges={
+        <>
+          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+            Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
+          </Badge>
+          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
+            {filterCount} active filter{filterCount === 1 ? "" : "s"}
+          </Badge>
+        </>
+      }
+      filters={
+        <AppDataFilterForm
+          // FIELDS: one entry per filter — kind "text" for strings, "select" for isActive / enums,
+          // "custom" (with a `control`) for a lookup combobox
+          fields={[
+            {
+              id: "filter__Thing__Name",
+              label: "Name",
+              kind: "text",
+              value: filters.name,
+              placeholder: "Input __label__ name",
+              onValueChange: (name) => onFilterChange({ ...filters, name }),
+            },
+            {
+              id: "filter__Thing__Code",
+              label: "Code",
+              kind: "text",
+              value: filters.code,
+              placeholder: "Input code",
+              onValueChange: (code) => onFilterChange({ ...filters, code }),
+            },
+            {
+              id: "filter__Thing__Status",
+              label: "Status",
+              kind: "select",
+              value: filters.isActive || ALL_STATUS_VALUE,
+              placeholder: "All statuses",
+              options: [
                 { value: ALL_STATUS_VALUE, label: "All statuses" },
                 { value: "true", label: "Active" },
                 { value: "false", label: "Inactive" },
-              ]}
-            />
+              ],
+              onValueChange: (value) => onFilterChange({ ...filters, isActive: value === ALL_STATUS_VALUE ? "" : value }),
+            },
+          ]}
+          debounceMs={FILTER_DEBOUNCE_MS}
+          onReset={clearFilters}
+        />
+      }
+      renderMobileItem={(__thing__) => (
+        <article className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-white/3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{__thing__.name}</p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{__thing__.code || "-"}</p>
+            </div>
+            <RowActions __thing__={__thing__} onEdit={onEdit} onDelete={onDelete} />
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-end xl:col-span-6">
-            <Button type="submit" className="w-full rounded-xl sm:w-auto">
-              <Search className="size-3.5" />
-              Search
-            </Button>
-            <Button type="button" variant="outline" className="w-full rounded-xl sm:w-auto" onClick={clearFilters}>
-              Reset
-            </Button>
-            <Button type="button" onClick={onCreate} className="w-full rounded-xl sm:w-auto">
-              <Plus className="size-3.5" />
-              New __label__
-            </Button>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge variant={getStatusTone(__thing__)} className="rounded-full px-3 py-1">{getStatusLabel(__thing__)}</Badge>
           </div>
-        </form>
-      </CardContent>
 
-      <CardContent className="border-t border-slate-200/70 p-0 dark:border-white/10">
-        <div className="lg:hidden">
-          {loading ? (
-            <div className="space-y-3 p-4">
-              {MOBILE_SKELETONS.map((_, index) => (
-                <Skeleton key={index} className="h-32 rounded-2xl" />
-              ))}
-            </div>
-          ) : data.length > 0 ? (
-            <div className="space-y-3 p-4">
-              {data.map((__thing__) => (
-                <article
-                  key={__thing__.id}
-                  className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-white/3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{__thing__.name}</p>
-                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">{__thing__.code || "-"}</p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon-sm" className="rounded-full">
-                          <MoreHorizontal className="size-3.5" />
-                          <span className="sr-only">Open actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onSelect={() => onEdit(__thing__.id)}>Edit __label__</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onSelect={() => onDelete(__thing__)}>
-                          Delete __label__
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge variant={getStatusTone(__thing__)} className="rounded-full px-3 py-1">{getStatusLabel(__thing__)}</Badge>
-                  </div>
-
-                  {/* FIELDS: a few secondary fields as "Label: value" lines */}
-                  <div className="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
-                    <p>Created: {formatDate(__thing__.created_at)}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4">
-              <EmptyState
-                title="No __labels__ found"
-                description="Try clearing or relaxing the current filters."
-                actionLabel="Reset"
-                onAction={clearFilters}
-              />
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3 border-t border-slate-200/70 px-4 py-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-slate-500 dark:text-slate-400">{pageSummary}</p>
-            <div className="flex items-center justify-between gap-2">
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(1)} disabled={loading || page <= 1}>
-                <ChevronsLeft className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={loading || page <= 1}>
-                <ChevronLeft className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={loading || page >= totalPages}>
-                <ChevronRight className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(totalPages)} disabled={loading || page >= totalPages}>
-                <ChevronsRight className="size-3.5" />
-              </Button>
-            </div>
+          {/* FIELDS: a few secondary fields as "Label: value" lines */}
+          <div className="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+            <p>Created: {formatDate(__thing__.created_at)}</p>
           </div>
-        </div>
-
-        <div className="hidden lg:block">
-          <AppDataTable
-            table={table}
-            pageSummary={pageSummary}
-            page={page}
-            totalPages={totalPages}
-            pageSize={limit}
-            isLoading={loading}
-            pageSizeOptions={[5, 10, 25, 50]}
-            // FIELDS: one entry per column id
-            columnClassNames={{
-              __thing__: "h-8 py-1",
-              code: "h-8 py-1",
-              status: "h-8 py-1",
-              created: "h-8 py-1",
-              updated: "h-8 py-1",
-              actions: "h-8 py-1",
-            }}
-            onPageChange={(nextPage) => onPageChange(nextPage)}
-            onPageSizeChange={(nextPageSize) => {
-              onLimitChange(nextPageSize)
-              onPageChange(1)
-            }}
-            emptyState={
-              <EmptyState
-                title="No __labels__ found"
-                description="Try clearing or relaxing the current filters."
-                actionLabel="Reset"
-                onAction={clearFilters}
-              />
-            }
-          />
-        </div>
-      </CardContent>
-    </Card>
+        </article>
+      )}
+    />
   )
 }
 ```
+
+`AppDataFilterForm` lays the fields out 4 per row (`xl:grid-cols-4`), with the buttons in the cell after the
+last field. To make a field wider, give it `className: "min-w-0 space-y-1 xl:col-span-2"` (as Designation does).
 
 ---
 
 ## 4. `features/__module__/__file__/component/deleted-__file__-section.tsx`
 
-Same shape as the active section, with these differences: no "New" button, no Created/Updated columns but a
-**Deleted** column (`deleted_at`), the identity avatar is a dark circle, the row actions are
-**Restore** / **Delete permanently** (`onOpenAction(row, "restore" | "permanent")`), the header badge
-shows `{meta?.total ?? data.length} deleted`, ids are prefixed `deleted…` instead of `filter…`, and the
-empty state has a trash icon and no button.
+Same shape as the active section — the filters work the same way (debounced text, immediate selects /
+comboboxes, Reset only) — with these differences: no
+Created/Updated columns but a **Deleted** column (`deleted_at`), the identity avatar is a dark circle, the
+row actions are **Restore** / **Delete permanently** (`onOpenAction(row, "restore" | "permanent")`), the
+header badge shows `{meta?.total ?? data.length} deleted`, filter ids are prefixed `deleted…`, and the empty
+state has a trash icon and no button.
 
 ```tsx
 "use client"
 
 import { useMemo } from "react"
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  MoreHorizontal,
-  Search,
-  Trash2,
-} from "lucide-react"
-import { type ColumnDef, getCoreRowModel, useReactTable } from "@tanstack/react-table"
+import { MoreHorizontal, Trash2 } from "lucide-react"
+import type { ColumnDef } from "@tanstack/react-table"
 
-import { AppDataTable } from "@/components/app-data-table"
-import { AppSelect } from "@/components/app-select"
+import { AppDataFilterForm, FILTER_DEBOUNCE_MS } from "@/components/app-data-filter-form"
+import { AppDataSection } from "@/components/app-data-section"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -817,8 +729,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
 
 import {
   EMPTY_FILTERS,
@@ -828,7 +738,6 @@ import {
 } from "../__file__.types"
 
 const ALL_STATUS_VALUE = "__all_deleted_statuses__"
-const MOBILE_SKELETONS = Array.from({ length: 5 })
 
 export type Deleted__Thing__ActionMode = "restore" | "permanent"
 
@@ -861,6 +770,32 @@ function EmptyState({ title, description }: { title: string; description: string
       <h3 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">{title}</h3>
       <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p>
     </div>
+  )
+}
+
+function RowActions({
+  __thing__,
+  onOpenAction,
+}: {
+  __thing__: __Thing__Record
+  onOpenAction: (__thing__: __Thing__Record, mode: Deleted__Thing__ActionMode) => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="ghost" size="icon-sm" className="rounded-full">
+          <MoreHorizontal className="size-3.5" />
+          <span className="sr-only">Open deleted item actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onSelect={() => onOpenAction(__thing__, "restore")}>Restore __label__</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onSelect={() => onOpenAction(__thing__, "permanent")}>
+          Delete permanently
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -922,196 +857,105 @@ export function Deleted__Thing__Section({
       header: () => <span className="pr-4">Actions</span>,
       cell: ({ row }) => (
         <div className="pr-4 text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon-sm" className="rounded-full">
-                <MoreHorizontal className="size-3.5" />
-                <span className="sr-only">Open actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onSelect={() => onOpenAction(row.original, "restore")}>Restore __label__</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => onOpenAction(row.original, "permanent")}>
-                Delete permanently
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <RowActions __thing__={row.original} onOpenAction={onOpenAction} />
         </div>
       ),
     },
   ], [onOpenAction])
-
-  const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
 
   const clearFilters = () => {
     onFilterChange(EMPTY_FILTERS)
     onPageChange(1)
   }
 
-  const totalPages = meta?.totalPages ?? 1
+  const emptyState = (
+    <EmptyState title="No deleted __labels__ found" description="Try clearing or relaxing the current filters." />
+  )
 
   return (
-    <Card className="overflow-hidden border-white/60 bg-white/80 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
-      <CardHeader className="border-b border-slate-200/70 py-0 dark:border-white/10">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <CardTitle className="text-base">Deleted __labels__</CardTitle>
-            <CardDescription>{pageSummary}</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-              {meta?.total ?? data.length} deleted
-            </Badge>
-            <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-              {filterCount} active filter{filterCount === 1 ? "" : "s"}
-            </Badge>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-3 sm:p-0 sm:px-2">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            onPageChange(1)
-          }}
-          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
-        >
-          {/* FIELDS: the same filters as the active section, ids prefixed "deleted" */}
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="deleted__Thing__Name" className="text-xs font-medium text-slate-700 dark:text-slate-300">Name</label>
-            <Input
-              id="deleted__Thing__Name"
-              value={filters.name}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, name: event.target.value })}
-              placeholder="Input __label__ name"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="deleted__Thing__Code" className="text-xs font-medium text-slate-700 dark:text-slate-300">Code</label>
-            <Input
-              id="deleted__Thing__Code"
-              value={filters.code}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, code: event.target.value })}
-              placeholder="Input code"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="deleted__Thing__Status" className="text-xs font-medium text-slate-700 dark:text-slate-300">Status</label>
-            <AppSelect
-              triggerId="deleted__Thing__Status"
-              value={filters.isActive || ALL_STATUS_VALUE}
-              onValueChange={(value) => onFilterChange({ ...filters, isActive: value === ALL_STATUS_VALUE ? "" : value })}
-              placeholder="All statuses"
-              options={[
+    <AppDataSection
+      title="Deleted __labels__"
+      description={pageSummary}
+      data={data}
+      columns={columns}
+      loading={loading}
+      pageSummary={pageSummary}
+      page={page}
+      totalPages={meta?.totalPages ?? 1}
+      pageSize={limit}
+      pageSizeOptions={[5, 10, 25, 50]}
+      onPageChange={onPageChange}
+      onPageSizeChange={(nextPageSize) => {
+        onLimitChange(nextPageSize)
+        onPageChange(1)
+      }}
+      getRowId={(__thing__) => __thing__.id}
+      emptyState={emptyState}
+      mobileSkeletonClassName="h-28 rounded-2xl"
+      headerBadges={
+        <>
+          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+            {meta?.total ?? data.length} deleted
+          </Badge>
+          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
+            {filterCount} active filter{filterCount === 1 ? "" : "s"}
+          </Badge>
+        </>
+      }
+      filters={
+        <AppDataFilterForm
+          // FIELDS: the same filters as the active section, ids prefixed "deleted"
+          fields={[
+            {
+              id: "deleted__Thing__Name",
+              label: "Name",
+              kind: "text",
+              value: filters.name,
+              placeholder: "Input __label__ name",
+              onValueChange: (name) => onFilterChange({ ...filters, name }),
+            },
+            {
+              id: "deleted__Thing__Code",
+              label: "Code",
+              kind: "text",
+              value: filters.code,
+              placeholder: "Input code",
+              onValueChange: (code) => onFilterChange({ ...filters, code }),
+            },
+            {
+              id: "deleted__Thing__Status",
+              label: "Status",
+              kind: "select",
+              value: filters.isActive || ALL_STATUS_VALUE,
+              placeholder: "All statuses",
+              options: [
                 { value: ALL_STATUS_VALUE, label: "All statuses" },
                 { value: "true", label: "Active" },
                 { value: "false", label: "Inactive" },
-              ]}
-            />
+              ],
+              onValueChange: (value) => onFilterChange({ ...filters, isActive: value === ALL_STATUS_VALUE ? "" : value }),
+            },
+          ]}
+          debounceMs={FILTER_DEBOUNCE_MS}
+          onReset={clearFilters}
+        />
+      }
+      renderMobileItem={(__thing__) => (
+        <article className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-white/3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{__thing__.name}</p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{__thing__.code || "-"}</p>
+            </div>
+            <RowActions __thing__={__thing__} onOpenAction={onOpenAction} />
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-end xl:col-span-6">
-            <Button type="submit" className="w-full rounded-xl sm:w-auto">
-              <Search className="size-3.5" />
-              Search
-            </Button>
-            <Button type="button" variant="outline" className="w-full rounded-xl sm:w-auto" onClick={clearFilters}>
-              Reset
-            </Button>
+
+          <div className="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+            <p>Deleted: {formatDate(__thing__.deleted_at)}</p>
           </div>
-        </form>
-      </CardContent>
-
-      <CardContent className="border-t border-slate-200/70 p-0 dark:border-white/10">
-        <div className="lg:hidden">
-          {loading ? (
-            <div className="space-y-3 p-4">
-              {MOBILE_SKELETONS.map((_, index) => (
-                <Skeleton key={index} className="h-28 rounded-2xl" />
-              ))}
-            </div>
-          ) : data.length > 0 ? (
-            <div className="space-y-3 p-4">
-              {data.map((__thing__) => (
-                <article
-                  key={__thing__.id}
-                  className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-white/3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{__thing__.name}</p>
-                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">{__thing__.code || "-"}</p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon-sm" className="rounded-full">
-                          <MoreHorizontal className="size-3.5" />
-                          <span className="sr-only">Open deleted item actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onSelect={() => onOpenAction(__thing__, "restore")}>Restore __label__</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onSelect={() => onOpenAction(__thing__, "permanent")}>
-                          Delete permanently
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
-                    <p>Deleted: {formatDate(__thing__.deleted_at)}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4">
-              <EmptyState title="No deleted __labels__ found" description="Try clearing or relaxing the current filters." />
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3 border-t border-slate-200/70 px-4 py-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-slate-500 dark:text-slate-400">{pageSummary}</p>
-            <div className="flex items-center justify-between gap-2">
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(1)} disabled={loading || page <= 1}>
-                <ChevronsLeft className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={loading || page <= 1}>
-                <ChevronLeft className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={loading || page >= totalPages}>
-                <ChevronRight className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(totalPages)} disabled={loading || page >= totalPages}>
-                <ChevronsRight className="size-3.5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="hidden lg:block">
-          <AppDataTable
-            table={table}
-            pageSummary={pageSummary}
-            page={page}
-            totalPages={totalPages}
-            pageSize={limit}
-            isLoading={loading}
-            pageSizeOptions={[5, 10, 25, 50]}
-            onPageChange={(nextPage) => onPageChange(nextPage)}
-            onPageSizeChange={(nextPageSize) => {
-              onLimitChange(nextPageSize)
-              onPageChange(1)
-            }}
-            emptyState={<EmptyState title="No deleted __labels__ found" description="Try clearing or relaxing the current filters." />}
-          />
-        </div>
-      </CardContent>
-    </Card>
+        </article>
+      )}
+    />
   )
 }
 ```
@@ -1293,9 +1137,10 @@ export function __Thing__FormDialog({
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Plus, RefreshCcw, Trash2, Undo2 } from "lucide-react"
+import { Loader2, Plus, Trash2, Undo2 } from "lucide-react"
 import { toast } from "sonner"
 
+import { ModulePageHeader } from "@/components/module-page-header"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1306,7 +1151,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -1465,7 +1309,7 @@ function WorkspaceSkeleton() {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <ScrollArea className="h-full">
-        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+        <div className="space-y-4 p-2 sm:p-3 lg:p-4">
           <Card className={CARD_CLASS}>
             <CardContent className="p-6 sm:p-8">
               <div className="space-y-3">
@@ -1759,53 +1603,32 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
     return <WorkspaceSkeleton />
   }
 
+  // Shared header: eyebrow, title, description, badges, and the Refresh / New buttons
+  // (AppRefreshButton / AppAddNewButton inside ModulePageHeader).
   const header = (
-    <Card className={CARD_CLASS}>
-      <CardContent className="p-4 sm:p-8 sm:py-2">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-1.5">
-            <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-              __EYEBROW__
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
-              __TITLE__
-            </h1>
-            <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Create, review, and maintain __label__ records.
-            </p>
-
-            {!error ? (
-              <div className="flex flex-wrap gap-2 pt-2">
-                <Badge variant="secondary" className="rounded-full px-3 py-1">Total {activeTotal}</Badge>
-                <Badge variant="outline" className="rounded-full px-3 py-1">Active {activeOnPage}</Badge>
-                <Badge variant="outline" className="rounded-full px-3 py-1">Deleted {deletedTotal}</Badge>
-                {recentlyDeleted ? (
-                  <Badge variant="destructive" className="rounded-full px-3 py-1">Recently deleted</Badge>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button type="button" variant="outline" onClick={triggerRefresh} className="rounded-xl">
-              <RefreshCcw className="size-3.5" />
-              {error ? "Retry" : "Refresh"}
-            </Button>
-            {!error ? (
-              <Button type="button" onClick={openCreateDialog} className="rounded-xl">
-                <Plus className="size-3.5" />
-                New __label__
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <ModulePageHeader
+      eyebrow="__EYEBROW__"
+      title="__TITLE__"
+      description="Create, review, and maintain __label__ records."
+      badges={
+        error
+          ? []
+          : [
+              { label: `Total ${activeTotal}`, variant: "secondary" },
+              { label: `Active ${activeOnPage}` },
+              { label: `Deleted ${deletedTotal}` },
+              ...(recentlyDeleted ? [{ label: "Recently deleted", variant: "destructive" as const }] : []),
+            ]
+      }
+      onRefresh={triggerRefresh}
+      onCreate={error ? undefined : openCreateDialog}
+      createLabel="New __label__"
+    />
   )
 
   if (error) {
     return (
-      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-4 p-2 sm:p-3 lg:p-4">
         {header}
         <EmptyState title="Unable to load __labels__" description={error} actionLabel="Try again" onAction={triggerRefresh} />
       </div>
@@ -1815,7 +1638,7 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <ScrollArea className="h-full">
-        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+        <div className="space-y-4 p-2 sm:p-3 lg:p-4">
           {header}
 
           {recentlyDeleted ? (
@@ -1860,10 +1683,12 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
             page={page}
             limit={limit}
             filters={activeFilters}
-            onFilterChange={setActiveFilters}
+            onFilterChange={(next) => {
+              setActiveFilters(next)
+              setPage(1)
+            }}
             onPageChange={setPage}
             onLimitChange={setLimit}
-            onCreate={openCreateDialog}
             onEdit={openEditDialog}
             onDelete={setDeleteTarget}
           />
@@ -1875,7 +1700,10 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
             page={deletedPage}
             limit={deletedLimit}
             filters={deletedFilters}
-            onFilterChange={setDeletedFilters}
+            onFilterChange={(next) => {
+              setDeletedFilters(next)
+              setDeletedPage(1)
+            }}
             onPageChange={setDeletedPage}
             onLimitChange={setDeletedLimit}
             onOpenAction={openPendingAction}
@@ -1932,10 +1760,11 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
 }
 ```
 
-> **Filters apply as you type.** The filters are part of `requestKey`, so each keystroke reloads (the
-> previous request's result is discarded) — that is how Factory behaves; the Search button only resets to
-> page 1. Keep it unless the user asks for search-on-submit (then hold a draft in the section and call
-> `onFilterChange` on submit).
+> **Filters apply on their own — there is no Search button.** `AppDataFilterForm` with
+> `debounceMs={FILTER_DEBOUNCE_MS}` (400 ms) reports a text filter once typing pauses; a select or a combobox
+> filter reports at once on selection. Each report sets the filters and resets that list to page 1, which
+> changes `requestKey` and reloads (an older request's result is discarded). The filter row has only
+> **Reset**; **New** lives in the page header only.
 >
 > **Don't bring back `setLoading(true)` / `void loadAll()` in an effect** (Factory's shape): it fails
 > `react-hooks/set-state-in-effect`. Anything new the lists depend on goes into `requestKey` and the effect's deps.

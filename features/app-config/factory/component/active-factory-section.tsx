@@ -2,34 +2,13 @@
 
 import { useMemo } from "react"
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Download,
-  MoreHorizontal,
-  Plus,
-  Search,
-  Upload,
-} from "lucide-react"
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
+import { Download, MoreHorizontal, Plus, Upload } from "lucide-react"
+import type { ColumnDef } from "@tanstack/react-table"
 
-import { AppDataTable } from "@/components/app-data-table"
-import { AppSelect } from "@/components/app-select"
+import { AppDataFilterForm, FILTER_DEBOUNCE_MS } from "@/components/app-data-filter-form"
+import { AppDataSection } from "@/components/app-data-section"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,12 +16,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
 
 import type { FactoryFilterValues, FactoryRecord, PaginationMeta } from "../factory.types"
 
 const ALL_STATUS_VALUE = "__all_statuses__"
+
+const EMPTY_FILTERS: FactoryFilterValues = {
+  name: "",
+  displayName: "",
+  code: "",
+  contact: "",
+  email: "",
+  address: "",
+  isActive: "",
+}
 
 type FactoryTableSectionProps = {
   data: FactoryRecord[]
@@ -54,7 +41,6 @@ type FactoryTableSectionProps = {
   onFilterChange: (nextValues: FactoryFilterValues) => void
   onPageChange: (nextPage: number | ((current: number) => number)) => void
   onLimitChange: (nextPageSize: number) => void
-  onCreate: () => void
   onEdit: (factoryId: string) => void
   onDelete: (factory: FactoryRecord) => void
   onDownloadTemplate?: () => void
@@ -90,6 +76,51 @@ function getFactoryImageUrl(factory: FactoryRecord) {
   )
 }
 
+function FactoryAvatar({ factory, className, textClassName }: { factory: FactoryRecord; className: string; textClassName: string }) {
+  const imageUrl = getFactoryImageUrl(factory)
+
+  return (
+    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/3 ${className}`}>
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- O2S file URLs are not configured for next/image
+        <img src={imageUrl} alt={factory.name || "Factory image"} className="h-full w-full object-cover" />
+      ) : (
+        <span className={`font-semibold text-slate-700 dark:text-slate-200 ${textClassName}`}>
+          {(factory.name?.trim() || "?").charAt(0).toUpperCase()}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function RowActions({
+  factory,
+  onEdit,
+  onDelete,
+}: {
+  factory: FactoryRecord
+  onEdit: (factoryId: string) => void
+  onDelete: (factory: FactoryRecord) => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="ghost" size="icon-sm" className="size-7 rounded-full">
+          <MoreHorizontal className="size-3.5" />
+          <span className="sr-only">Open actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onSelect={() => onEdit(factory.id)}>Edit factory</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onSelect={() => onDelete(factory)}>
+          Delete factory
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function EmptyState({
   title,
   description,
@@ -115,8 +146,6 @@ function EmptyState({
   )
 }
 
-const MOBILE_SKELETONS = Array.from({ length: 5 })
-
 export function ActiveFactorySection({
   data,
   meta,
@@ -127,7 +156,6 @@ export function ActiveFactorySection({
   onFilterChange,
   onPageChange,
   onLimitChange,
-  onCreate,
   onEdit,
   onDelete,
   onDownloadTemplate,
@@ -136,22 +164,8 @@ export function ActiveFactorySection({
   uploadingTemplate = false,
 }: FactoryTableSectionProps) {
   const filterCount = useMemo(
-    () =>
-      [
-        filters.name,
-        filters.displayName,
-        filters.code,
-        filters.contact,
-        filters.email,
-        filters.address,
-        filters.isActive,
-      ].filter((value) => value.trim()).length,
+    () => Object.values(filters).filter((value) => value.trim()).length,
     [filters],
-  )
-
-  const activeCount = useMemo(
-    () => data.filter((factory) => !factory.deleted_at && factory.isActive !== false).length,
-    [data],
   )
 
   const pageSummary = useMemo(() => {
@@ -165,34 +179,17 @@ export function ActiveFactorySection({
     {
       id: "factory",
       header: "Factory",
-      cell: ({ row }) => {
-        const factory = row.original
-        const imageUrl = getFactoryImageUrl(factory)
-
-        return (
-          <div className="pl-4">
-            <div className="flex items-center gap-2">
-              <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/[0.03]">
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt={factory.name || "Factory image"}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
-                    {(factory.name?.trim() || "?").charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-slate-950 dark:text-slate-50">{factory.name}</p>
-                <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{factory.displayName}</p>
-              </div>
+      cell: ({ row }) => (
+        <div className="pl-4">
+          <div className="flex items-center gap-2">
+            <FactoryAvatar factory={row.original} className="size-7" textClassName="text-[11px]" />
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-slate-950 dark:text-slate-50">{row.original.name}</p>
+              <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{row.original.displayName}</p>
             </div>
           </div>
-        )
-      },
+        </div>
+      ),
     },
     {
       id: "code",
@@ -217,336 +214,188 @@ export function ActiveFactorySection({
     {
       id: "created",
       header: "Created",
-      cell: ({ row }) => (
-        <div className="space-y-1">
-          <p className="text-xs text-slate-700 dark:text-slate-200">{formatDate(row.original.created_at)}</p>
-        </div>
-      ),
+      cell: ({ row }) => <p className="text-xs text-slate-700 dark:text-slate-200">{formatDate(row.original.created_at)}</p>,
     },
     {
       id: "updated",
       header: "Updated",
-      cell: ({ row }) => {
-        const factory = row.original
-        const hasUpdateMetadata = Boolean(factory.updated_by_id || factory.updated_by_user)
-
-        return (
-          <div className="space-y-1">
-            {hasUpdateMetadata ? (
-              <p className="text-xs text-slate-700 dark:text-slate-200">{formatDate(factory.updated_at)}</p>
-            ) : (
-              <p className="text-xs text-slate-500 dark:text-slate-400">Not edited yet</p>
-            )}
-          </div>
-        )
-      },
+      cell: ({ row }) =>
+        row.original.updated_by_id || row.original.updated_by_user ? (
+          <p className="text-xs text-slate-700 dark:text-slate-200">{formatDate(row.original.updated_at)}</p>
+        ) : (
+          <p className="text-xs text-slate-500 dark:text-slate-400">Not edited yet</p>
+        ),
     },
     {
       id: "actions",
       header: () => <span className="pr-4">Actions</span>,
       cell: ({ row }) => (
         <div className="pr-4 text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon-sm" className="size-7 rounded-full">
-                <MoreHorizontal className="size-3.5" />
-                <span className="sr-only">Open actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onSelect={() => onEdit(row.original.id)}>Edit factory</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => onDelete(row.original)}>
-                Delete factory
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <RowActions factory={row.original} onEdit={onEdit} onDelete={onDelete} />
         </div>
       ),
     },
   ], [onDelete, onEdit])
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  })
-
   const clearFilters = () => {
-    onFilterChange({
-      name: "",
-      displayName: "",
-      code: "",
-      contact: "",
-      email: "",
-      address: "",
-      isActive: "",
-    })
+    onFilterChange(EMPTY_FILTERS)
     onPageChange(1)
   }
 
-  return (
-    <Card className="overflow-hidden border-white/60 bg-white/80 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
-      <CardHeader className="border-b border-slate-200/70 py-0 dark:border-white/10">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <CardTitle className="text-base">Factories table</CardTitle>
-            <CardDescription>{pageSummary}</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-              Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
-            </Badge>
-            <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-              {filterCount} active filter{filterCount === 1 ? "" : "s"}
-            </Badge>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" className="rounded-full">
-                  <MoreHorizontal className="size-2.5" />
-                  {/* Bulk actions */}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onSelect={onDownloadTemplate} disabled={downloadingTemplate}>
-                  <Download className="mr-2 size-3.5" />
-                  {downloadingTemplate ? "Downloading template..." : "Download template"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onUploadTemplate} disabled={uploadingTemplate}>
-                  <Upload className="mr-2 size-3.5" />
-                  {uploadingTemplate ? "Uploading factories..." : "Upload factories"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </CardHeader>
+  const emptyState = (
+    <EmptyState
+      title="No factories found"
+      description="Try clearing or relaxing the current filters."
+      actionLabel="Reset"
+      onAction={clearFilters}
+    />
+  )
 
-      <CardContent className="p-3 sm:p-0 sm:px-2">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            onPageChange(1)
-          }}
-          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
-        >
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="filterFactoryName" className="text-xs font-medium text-slate-700 dark:text-slate-300">Factory name</label>
-            <Input
-              id="filterFactoryName"
-              value={filters.name}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, name: event.target.value })}
-              placeholder="Input factory name"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="filterFactoryDisplayName" className="text-xs font-medium text-slate-700 dark:text-slate-300">Display name</label>
-            <Input
-              id="filterFactoryDisplayName"
-              value={filters.displayName}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, displayName: event.target.value })}
-              placeholder="Input display name"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="filterFactoryCode" className="text-xs font-medium text-slate-700 dark:text-slate-300">Code</label>
-            <Input
-              id="filterFactoryCode"
-              value={filters.code}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, code: event.target.value })}
-              placeholder="Input code"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="filterFactoryContact" className="text-xs font-medium text-slate-700 dark:text-slate-300">Contact</label>
-            <Input
-              id="filterFactoryContact"
-              value={filters.contact}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, contact: event.target.value })}
-              placeholder="Input contact"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="filterFactoryEmail" className="text-xs font-medium text-slate-700 dark:text-slate-300">Email</label>
-            <Input
-              id="filterFactoryEmail"
-              value={filters.email}
-              className="h-7 rounded-md px-2 text-xs"
-              onChange={(event) => onFilterChange({ ...filters, email: event.target.value })}
-              placeholder="Input email"
-            />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <label htmlFor="filterFactoryStatus" className="text-xs font-medium text-slate-700 dark:text-slate-300">Status</label>
-            <AppSelect
-              triggerId="filterFactoryStatus"
-              value={filters.isActive || ALL_STATUS_VALUE}
-              onValueChange={(value) => onFilterChange({ ...filters, isActive: value === ALL_STATUS_VALUE ? "" : value })}
-              placeholder="All statuses"
-              options={[
+  return (
+    <AppDataSection
+      title="Factories table"
+      description={pageSummary}
+      data={data}
+      columns={columns}
+      loading={loading}
+      pageSummary={pageSummary}
+      page={page}
+      totalPages={meta?.totalPages ?? 1}
+      pageSize={limit}
+      pageSizeOptions={[5, 10, 25, 50]}
+      onPageChange={(nextPage) => onPageChange(nextPage)}
+      onPageSizeChange={(nextPageSize) => {
+        onLimitChange(nextPageSize)
+        onPageChange(1)
+      }}
+      getRowId={(factory) => factory.id}
+      emptyState={emptyState}
+      columnClassNames={{
+        factory: "h-8 py-1",
+        code: "h-8 py-1",
+        contact: "h-8 py-1",
+        email: "h-8 py-1",
+        status: "h-8 py-1",
+        created: "h-8 py-1",
+        updated: "h-8 py-1",
+        actions: "h-8 py-1",
+      }}
+      headerBadges={
+        <>
+          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+            Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
+          </Badge>
+          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
+            {filterCount} active filter{filterCount === 1 ? "" : "s"}
+          </Badge>
+        </>
+      }
+      headerActions={
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" className="rounded-full">
+              <MoreHorizontal className="size-2.5" />
+              <span className="sr-only">Bulk actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onSelect={onDownloadTemplate} disabled={downloadingTemplate}>
+              <Download className="mr-2 size-3.5" />
+              {downloadingTemplate ? "Downloading template..." : "Download template"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onUploadTemplate} disabled={uploadingTemplate}>
+              <Upload className="mr-2 size-3.5" />
+              {uploadingTemplate ? "Uploading factories..." : "Upload factories"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      }
+      filters={
+        <AppDataFilterForm
+          fields={[
+            {
+              id: "filterFactoryName",
+              label: "Factory name",
+              kind: "text",
+              value: filters.name,
+              placeholder: "Input factory name",
+              onValueChange: (name) => onFilterChange({ ...filters, name }),
+            },
+            {
+              id: "filterFactoryDisplayName",
+              label: "Display name",
+              kind: "text",
+              value: filters.displayName,
+              placeholder: "Input display name",
+              onValueChange: (displayName) => onFilterChange({ ...filters, displayName }),
+            },
+            {
+              id: "filterFactoryCode",
+              label: "Code",
+              kind: "text",
+              value: filters.code,
+              placeholder: "Input code",
+              onValueChange: (code) => onFilterChange({ ...filters, code }),
+            },
+            {
+              id: "filterFactoryContact",
+              label: "Contact",
+              kind: "text",
+              value: filters.contact,
+              placeholder: "Input contact",
+              onValueChange: (contact) => onFilterChange({ ...filters, contact }),
+            },
+            {
+              id: "filterFactoryEmail",
+              label: "Email",
+              kind: "text",
+              value: filters.email,
+              placeholder: "Input email",
+              onValueChange: (email) => onFilterChange({ ...filters, email }),
+            },
+            {
+              id: "filterFactoryStatus",
+              label: "Status",
+              kind: "select",
+              value: filters.isActive || ALL_STATUS_VALUE,
+              placeholder: "All statuses",
+              options: [
                 { value: ALL_STATUS_VALUE, label: "All statuses" },
                 { value: "true", label: "Active" },
                 { value: "false", label: "Inactive" },
-              ]}
-            />
+              ],
+              onValueChange: (value) => onFilterChange({ ...filters, isActive: value === ALL_STATUS_VALUE ? "" : value }),
+            },
+          ]}
+          debounceMs={FILTER_DEBOUNCE_MS}
+          onReset={clearFilters}
+        />
+      }
+      renderMobileItem={(factory) => (
+        <article className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-white/3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <FactoryAvatar factory={factory} className="size-10" textClassName="text-sm" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{factory.name}</p>
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">{factory.displayName}</p>
+              </div>
+            </div>
+            <RowActions factory={factory} onEdit={onEdit} onDelete={onDelete} />
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-end xl:col-span-6">
-            <Button type="submit" className="w-full rounded-xl sm:w-auto">
-              <Search className="size-3.5" />
-              Search
-            </Button>
-            <Button type="button" variant="outline" className="w-full rounded-xl sm:w-auto" onClick={clearFilters}>
-              Reset
-            </Button>
-            <Button type="button" onClick={onCreate} className="w-full rounded-xl sm:w-auto">
-              <Plus className="size-3.5" />
-              New factory
-            </Button>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge variant={getStatusTone(factory)} className="rounded-full px-3 py-1">{getStatusLabel(factory)}</Badge>
+            <Badge variant="outline" className="rounded-full px-3 py-1">{factory.code || "No code"}</Badge>
           </div>
-        </form>
-      </CardContent>
 
-      <CardContent className="border-t border-slate-200/70 p-0 dark:border-white/10">
-        <div className="lg:hidden">
-          {loading ? (
-            <div className="space-y-3 p-4">
-              {MOBILE_SKELETONS.map((_, index) => (
-                <Skeleton key={index} className="h-32 rounded-2xl" />
-              ))}
-            </div>
-          ) : data.length > 0 ? (
-            <div className="space-y-3 p-4">
-              {data.map((factory) => {
-                const imageUrl = getFactoryImageUrl(factory)
-
-                return (
-                  <article
-                    key={factory.id}
-                    className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/[0.03]">
-                            {imageUrl ? (
-                              <img
-                                src={imageUrl}
-                                alt={factory.name || "Factory image"}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                                {(factory.name?.trim() || "?").charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-50">{factory.name}</p>
-                          <p className="truncate text-xs text-slate-500 dark:text-slate-400">{factory.displayName}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon-sm" className="rounded-full">
-                          <MoreHorizontal className="size-3.5" />
-                          <span className="sr-only">Open actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onSelect={() => onEdit(factory.id)}>Edit factory</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onSelect={() => onDelete(factory)}>
-                          Delete factory
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Badge variant={getStatusTone(factory)} className="rounded-full px-3 py-1">{getStatusLabel(factory)}</Badge>
-                      <Badge variant="outline" className="rounded-full px-3 py-1">{factory.code || "No code"}</Badge>
-                    </div>
-
-                    <div className="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
-                      <p>Contact: {factory.contact || "-"}</p>
-                      <p>Email: {factory.email || "-"}</p>
-                      <p>Created: {formatDate(factory.created_at)}</p>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="p-4">
-              <EmptyState
-                title="No factories found"
-                description="Try clearing or relaxing the current filters."
-                actionLabel="Reset"
-                onAction={clearFilters}
-              />
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3 border-t border-slate-200/70 px-4 py-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-slate-500 dark:text-slate-400">{pageSummary}</p>
-            <div className="flex items-center justify-between gap-2">
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(1)} disabled={loading || page <= 1}>
-                <ChevronsLeft className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={loading || page <= 1}>
-                <ChevronLeft className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(Math.min(meta?.totalPages ?? 1, page + 1))} disabled={loading || page >= (meta?.totalPages ?? 1)}>
-                <ChevronRight className="size-3.5" />
-              </Button>
-              <Button type="button" variant="outline" size="icon-sm" className="rounded-xl" onClick={() => onPageChange(meta?.totalPages ?? 1)} disabled={loading || page >= (meta?.totalPages ?? 1)}>
-                <ChevronsRight className="size-3.5" />
-              </Button>
-            </div>
+          <div className="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+            <p>Contact: {factory.contact || "-"}</p>
+            <p>Email: {factory.email || "-"}</p>
+            <p>Created: {formatDate(factory.created_at)}</p>
           </div>
-        </div>
-
-        <div className="hidden lg:block">
-          <AppDataTable
-            table={table}
-            pageSummary={pageSummary}
-            page={page}
-            totalPages={meta?.totalPages ?? 1}
-            pageSize={limit}
-            isLoading={loading}
-            pageSizeOptions={[5, 10, 25, 50]}
-            columnClassNames={{
-              factory: "h-8 py-1",
-              code: "h-8 py-1",
-              contact: "h-8 py-1",
-              email: "h-8 py-1",
-              status: "h-8 py-1",
-              created: "h-8 py-1",
-              updated: "h-8 py-1",
-              actions: "h-8 py-1",
-            }}
-            onPageChange={(nextPage) => onPageChange(nextPage)}
-            onPageSizeChange={(nextPageSize) => {
-              onLimitChange(nextPageSize)
-              onPageChange(1)
-            }}
-            emptyState={
-              <EmptyState
-                title="No factories found"
-                description="Try clearing or relaxing the current filters."
-                actionLabel="Reset"
-                onAction={clearFilters}
-              />
-            }
-          />
-        </div>
-      </CardContent>
-    </Card>
+        </article>
+      )}
+    />
   )
 }
