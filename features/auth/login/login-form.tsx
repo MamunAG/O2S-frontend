@@ -191,7 +191,7 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
         </Button>
 
         <p className="mt-3 text-center text-sm text-slate-600 dark:text-slate-300">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             href="/register"
             className="font-medium text-slate-900 underline underline-offset-4 transition hover:text-primary dark:text-slate-100"
