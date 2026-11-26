@@ -312,6 +312,16 @@ export function OrganizationEntryDialog({
             <DialogFooter>
               {showLogoutAction ? (
                 <>
+                  {/* Logout sits in the left corner; Request access and Save stay on the right. */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleLogout}
+                    className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 sm:mr-auto dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10 dark:hover:text-red-200"
+                  >
+                    <LogOut className="size-3.5" />
+                    Logout
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -319,15 +329,6 @@ export function OrganizationEntryDialog({
                     className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
                   >
                     <Link href="/organization-access-request">Request access</Link>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleLogout}
-                    className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10 dark:hover:text-red-200"
-                  >
-                    <LogOut className="size-3.5" />
-                    Logout
                   </Button>
                 </>
               ) : (
