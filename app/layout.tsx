@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Geist_Mono, Figtree } from "next/font/google"
 
 import "./globals.css"
@@ -12,6 +13,16 @@ const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
 })
+
+export const metadata: Metadata = {
+  title: {
+    default: "O2S · Order To Ship",
+    template: "%s · O2S",
+  },
+  description:
+    "Garment manufacturing from costing and buyer orders to factory production and shipment.",
+  applicationName: "O2S",
+}
 
 export default function RootLayout({
   children,

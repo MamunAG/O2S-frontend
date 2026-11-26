@@ -52,14 +52,14 @@ export async function EntryTopNav({ current }: EntryTopNavProps) {
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex size-8 items-center justify-center rounded-lg bg-slate-900 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">
-              CX
+              O2S
             </div>
             <div className="hidden leading-tight sm:block">
               <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
-                Code Crafter X
+                O2S
               </p>
               <p className="text-xs text-slate-600 dark:text-slate-300">
-                Workspace
+                Order To Ship
               </p>
             </div>
           </Link>

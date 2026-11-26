@@ -4,7 +4,9 @@ export function LoginHero() {
   return (
     <section className="flex flex-col justify-center gap-3 lg:gap-6">
       <div className="inline-flex w-fit items-center rounded-full border border-slate-200/70 bg-white/70 px-4 py-1 text-xs font-medium tracking-wide text-slate-600 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-        Code Crafter X
+        <span className="font-semibold text-slate-900 dark:text-white">O2S</span>
+        <span className="mx-2 text-slate-300 dark:text-slate-600">·</span>
+        Order To Ship
       </div>
       <div className="space-y-2 lg:space-y-4">
         <h1 className="max-w-xl text-2xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
