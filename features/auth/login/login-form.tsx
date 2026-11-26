@@ -13,6 +13,7 @@ import {
   serializeAuthUserAvatarCookie,
   serializeAuthUserLabelCookie,
 } from "@/lib/auth-session"
+import { requestConfirmEmailCode } from "../confirm-email/confirm-email.service"
 import { loginUser } from "./login.service"
 import type { LoggedInUser } from "./login.types"
 
@@ -28,6 +29,25 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null)
+  // the login was refused for an unconfirmed email: offer a fresh code instead of the raw error
+  const [unconfirmed, setUnconfirmed] = useState(false)
+  const [resending, setResending] = useState(false)
+  const identifier = email.trim()
+  const isEmailAddress = identifier.includes("@")
+  const confirmUrl = (step?: "code") =>
+    `/confirm-email?email=${encodeURIComponent(isEmailAddress ? identifier : "")}${step ? "&from=login&step=code" : ""}`
+
+  async function resendAndConfirm() {
+    setResending(true)
+    setError("")
+    try {
+      await requestConfirmEmailCode({ apiUrl, email: identifier })
+      router.push(confirmUrl("code"))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to send a new code right now.")
+      setResending(false)
+    }
+  }
 
   // O2S answers "Confirm your email address first (...)"; code-crafter said "verify your email"
   function isEmailVerificationRequired(message: string) {
@@ -40,6 +60,7 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
     setLoading(true)
     setError("")
     setMessage("")
+    setUnconfirmed(false)
     let shouldRedirect = false
 
     try {
@@ -90,8 +111,7 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
       const errorMessage = error instanceof Error ? error.message : fallback
 
       if (isEmailVerificationRequired(errorMessage)) {
-        router.push(`/confirm-email?email=${encodeURIComponent(email.trim())}`)
-        shouldRedirect = true
+        setUnconfirmed(true)
         return
       }
 
@@ -179,6 +199,33 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
             Register here
           </Link>
         </p>
+
+        {unconfirmed ? (
+          <div className="mt-4 space-y-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+            <p>
+              <span className="font-medium">Your email address is not confirmed yet.</span>{" "}
+              {isEmailAddress
+                ? `We can send a new code to ${identifier}; enter it on the next page, then sign in.`
+                : "Confirm it with the code we email you, then sign in."}
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              {isEmailAddress ? (
+                <>
+                  <Button type="button" className="h-9 rounded-lg text-sm" disabled={resending} onClick={() => void resendAndConfirm()}>
+                    {resending ? "Sending code..." : "Resend code"}
+                  </Button>
+                  <Link href={confirmUrl("code")} className="text-xs font-medium underline underline-offset-4">
+                    I already have a code
+                  </Link>
+                </>
+              ) : (
+                <Button type="button" className="h-9 rounded-lg text-sm" onClick={() => router.push(confirmUrl())}>
+                  Confirm my email
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         {error ? (
           <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">

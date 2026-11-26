@@ -17,7 +17,8 @@ export default async function Page({ searchParams }: PageProps) {
   const initialEmail = getSearchParamValue(resolvedSearchParams?.email)
   const source = getSearchParamValue(resolvedSearchParams?.from)
   const step = getSearchParamValue(resolvedSearchParams?.step)
-  const initialStep = source === "register" && step === "code" ? "verify" : undefined
+  // straight to the code step after a code was sent: from register, or from the login page's Resend code
+  const initialStep = (source === "register" || source === "login") && step === "code" ? "verify" : undefined
 
   return <ConfirmEmailPage initialEmail={initialEmail} initialStep={initialStep} />
 }
