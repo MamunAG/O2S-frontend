@@ -29,9 +29,10 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
   const [error, setError] = useState("")
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null)
 
+  // O2S answers "Confirm your email address first (...)"; code-crafter said "verify your email"
   function isEmailVerificationRequired(message: string) {
     const normalized = message.toLowerCase()
-    return normalized.includes("verify your email")
+    return normalized.includes("verify your email") || normalized.includes("confirm your email")
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -197,7 +198,7 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
         ) : null}
 
         <p className="mt-6 text-xs leading-5 text-slate-500 dark:text-slate-400">
-          The backend requires a verified, active account before login succeeds.
+          New account? Confirm your email with the code we sent before you sign in.
         </p>
       </form>
     </section>
