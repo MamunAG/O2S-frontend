@@ -22,8 +22,8 @@ import type {
 export type ApiContext = { apiUrl: string; organizationId: string }
 
 type Envelope<T> = { success?: boolean; message?: string | string[]; data?: T }
-type Query = Record<string, string | number | boolean | null | undefined>
-type Page<T> = { items: T[]; meta: PageMeta & { hasNextPage?: boolean } }
+export type Query = Record<string, string | number | boolean | null | undefined>
+export type Page<T> = { items: T[]; meta: PageMeta & { hasNextPage?: boolean } }
 
 const ID_KEY = /^(id|.*Id)$/
 
@@ -63,7 +63,7 @@ function messageOf(payload: Envelope<unknown> | null, fallback: string) {
   return typeof message === "string" && message.trim() && message !== "OK" ? message : fallback
 }
 
-async function request<T>(
+export async function request<T>(
   ctx: ApiContext,
   path: string,
   options: { method?: string; body?: unknown; query?: Query; fallback?: string } = {},
@@ -166,9 +166,9 @@ export async function searchFabricCosts(ctx: ApiContext, searchText: string, pag
 
 // ---------- lookups ----------
 
-type Loaded = { items: Option[]; hasNextPage: boolean }
+export type Loaded = { items: Option[]; hasNextPage: boolean }
 
-async function selectOptions(
+export async function selectOptions(
   ctx: ApiContext,
   path: string,
   label: (row: Record<string, unknown>) => string,
@@ -181,7 +181,7 @@ async function selectOptions(
   }
 }
 
-type LoadParams = { query: string; page: number; limit: number }
+export type LoadParams = { query: string; page: number; limit: number }
 
 export const loadBuyerOptions = (ctx: ApiContext, p: LoadParams) =>
   selectOptions(ctx, `${MERCH}/buyer`, (r) => String(r.displayName ?? ""), {

@@ -44,7 +44,7 @@ type Load = (params: AppComboboxLoadParams) => Promise<{ items: AppComboboxOptio
 
 const scopeOptions = (scopes: CostScope[]) => scopes.map((s) => ({ value: String(s.id), label: s.name }))
 
-function ScopePicker({
+export function ScopePicker({
   value,
   label,
   options,
@@ -72,7 +72,7 @@ function ScopePicker({
   )
 }
 
-function Table({ minWidth, head, children }: { minWidth: string; head: React.ReactNode; children: React.ReactNode }) {
+export function Table({ minWidth, head, children }: { minWidth: string; head: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="w-full max-w-full min-w-0 overflow-x-auto rounded-md border border-slate-200/70 dark:border-white/10">
       <table className={cn("w-full border-collapse text-xs", minWidth)}>
@@ -85,7 +85,7 @@ function Table({ minWidth, head, children }: { minWidth: string; head: React.Rea
   )
 }
 
-function EmptyRow({ span, text }: { span: number; text: string }) {
+export function EmptyRow({ span, text }: { span: number; text: string }) {
   return (
     <tr>
       <td colSpan={span} className="p-4 text-center text-slate-500">{text}</td>
@@ -93,7 +93,7 @@ function EmptyRow({ span, text }: { span: number; text: string }) {
   )
 }
 
-function RemoveButton({ onClick, label }: { onClick: () => void; label: string }) {
+export function RemoveButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
     <Button type="button" variant="ghost" size="icon-sm" aria-label={label} onClick={onClick}>
       <Trash2 className="size-3.5 text-red-600" />
@@ -196,7 +196,7 @@ export function OtherCostSection({
   )
 }
 
-function ColorPicker({
+export function ColorPicker({
   selected,
   options,
   readOnly,

@@ -29,6 +29,7 @@ export const MENU_NAME_TO_O2S: Record<string, string> = {
   "TNA Task Setup": "TNA Task",
   "GMT Costing": "Gmt Costing",
   Booking: "Create Fabric Booking",
+  "GMT Budget": "Create Budget",
   "Budget Approval": "Create Budget",
   "HR Audit Log": "Audit Log",
   "Merchandising Audit Log": "Audit Log",
