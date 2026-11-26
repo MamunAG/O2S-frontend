@@ -10,8 +10,10 @@ npm ci
 NEXT_PUBLIC_API_URL=http://localhost:5299 npm run dev   # a local O2S backend
 ```
 
-`NEXT_PUBLIC_API_URL` (in `.env`) is the O2S API: `http://o2s.runasp.net` in production. A site served over HTTPS
-can only call an HTTPS API, so turn on SSL for the backend's domain before hosting this app on HTTPS.
+`NEXT_PUBLIC_API_URL` (in `.env`, or the Vercel project's environment variables, which win) is the O2S API:
+`http://o2s.runasp.net` in production. A page served over HTTPS (Vercel) may not call an HTTP API, so there
+`lib/o2s` sends the requests to this site's own `/o2s-api/...`, which `next.config.mjs` rewrites to the API from
+the server. Once the API answers on `https://`, set `NEXT_PUBLIC_API_URL` to that and the browser calls it directly.
 
 ## How the O2S bridge works (`lib/o2s`)
 
