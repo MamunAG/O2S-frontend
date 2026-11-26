@@ -474,9 +474,9 @@ export const MODULE_NAVIGATION: ModuleNavigationItem[] = [
                 permissionMenuName: "Booking",
               },
               {
-                label: "Budget Approval",
-                href: "/merchandising/production/costing-budget/budget-approval",
-                permissionMenuName: "Budget Approval",
+                label: "GMT Budget",
+                href: "/merchandising/production/costing-budget/gmt-budget",
+                permissionMenuName: "GMT Budget",
               },
             ],
           },
