@@ -10,8 +10,12 @@ const firebaseConfig = {
   messagingSenderId: params.get("messagingSenderId"),
   appId: params.get("appId"),
 }
+// optional ones, when the page passed them
+for (const key of ["storageBucket", "measurementId"]) {
+  if (params.get(key)) firebaseConfig[key] = params.get(key)
+}
 
-if (Object.values(firebaseConfig).every(Boolean)) {
+if (["apiKey", "authDomain", "projectId", "messagingSenderId", "appId"].every((key) => Boolean(firebaseConfig[key]))) {
   firebase.initializeApp(firebaseConfig)
   const messaging = firebase.messaging()
 
