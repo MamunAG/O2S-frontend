@@ -1,10 +1,12 @@
 // A code-crafter CRUD resource (`/api/v1/<resource>`) on an O2S slice (`/api/v1/{companyId}<o2sPath>`):
-//   GET    /<resource>                -> GET /paginated-list   (deletedOnly=true -> an empty page: O2S deletes for good)
+//   GET    /<resource>                -> GET /paginated-list   (deletedOnly=true -> the soft-deleted rows)
 //   GET    /<resource>/{id}           -> GET /{id}
 //   POST   /<resource>                -> POST /
 //   PATCH  /<resource>/{id}           -> GET /{id}, merge, PUT /{id}   (O2S replaces the whole record)
-//   DELETE /<resource>/{id}[/permanent] -> DELETE /{id}
-//   POST   /<resource>/{id}/restore, /<resource>/upload, GET /template/upload -> a clear "not in O2S" error
+//   DELETE /<resource>/{id}           -> DELETE /{id}              (O2S marks the row deleted)
+//   DELETE /<resource>/{id}/permanent -> DELETE /{id}/permanent    (a deleted row gone for good)
+//   POST   /<resource>/{id}/restore   -> POST /{id}/restore
+//   POST   /<resource>/upload, GET /template/upload -> a clear "not in O2S" error
 // Every record gets code-crafter's audit names (created_at, created_by_user, organizationId, ...).
 
 import { companyPath, isRecord, mapItems, O2sError, singularNavs, type O2sContext, type O2sRule } from "./adapter"
@@ -20,7 +22,7 @@ export type CrudOptions = {
   queryNames?: Record<string, string>
   /** Extra rules for this resource, tried before the CRUD ones. */
   extra?: O2sRule[]
-  /** A screen calls the restore / Excel upload routes: say so plainly. */
+  /** The record's name in messages ("This buyer"). */
   label?: string
 }
 
@@ -35,27 +37,16 @@ export function withAuditNames(r: Rec): Rec {
     updated_by_user: r.updatedBy ? { id: r.updatedBy, name: r.updatedByName ?? r.updatedBy } : null,
     created_at: r.createdDate ?? r.created_at ?? null,
     updated_at: r.updatedDate ?? r.updated_at ?? null,
-    deleted_at: null,
+    deleted_at: r.deletedDate ?? null,
+    deleted_by_id: r.deletedBy ?? null,
+    deleted_by_user: r.deletedBy ? { id: r.deletedBy, name: r.deletedByName ?? r.deletedBy } : null,
   }
 }
-
-const EMPTY_PAGE = (q: URLSearchParams) => ({
-  items: [],
-  meta: {
-    total: 0,
-    page: Number(q.get("page") ?? 1) || 1,
-    limit: Number(q.get("limit") ?? 10) || 10,
-    totalPages: 0,
-    hasNextPage: false,
-    hasPreviousPage: false,
-  },
-})
 
 export function crudRules(resource: string, o2sPath: string, options: CrudOptions = {}): O2sRule[] {
   const esc = resource.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")
   const base = new RegExp(`^/api/v1/${esc}$`)
   const one = new RegExp(`^/api/v1/${esc}/([^/]+)$`)
-  const label = options.label ?? "This record"
   const from = (data: unknown, ctx: O2sContext) =>
     mapItems(data, (r) => {
       const record = singularNavs(withAuditNames(r)) as Rec
@@ -73,10 +64,17 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
       },
     },
     {
+      methods: ["POST"],
       match: new RegExp(`^/api/v1/${esc}/([^/]+)/restore$`),
-      handle: async () => {
-        throw new O2sError(`${label} cannot be restored: O2S deletes records permanently.`, 400)
-      },
+      to: (m, ctx) => companyPath(ctx, `${o2sPath}/${m[1]}/restore`),
+      method: "POST",
+      response: () => ({ restored: true }),
+    },
+    {
+      methods: ["DELETE"],
+      match: new RegExp(`^/api/v1/${esc}/([^/]+)/permanent$`),
+      to: (m, ctx) => companyPath(ctx, `${o2sPath}/${m[1]}/permanent`),
+      response: () => ({ deleted: true }),
     },
     { methods: ["GET"], match: base, handle: crudListHandler(o2sPath, options) },
     {
@@ -105,7 +103,7 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
     },
     {
       methods: ["DELETE"],
-      match: new RegExp(`^/api/v1/${esc}/([^/]+)(?:/permanent)?$`),
+      match: one,
       to: (m, ctx) => companyPath(ctx, `${o2sPath}/${m[1]}`),
       response: () => ({ deleted: true }),
     },
@@ -115,8 +113,8 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
 /** GET /<resource>: the O2S paginated list with the screen's filters, as `{ items, meta }`. */
 export function crudListHandler(o2sPath: string, options: CrudOptions = {}): NonNullable<O2sRule["handle"]> {
   return async (_m, ctx) => {
-    if (ctx.query.get("deletedOnly") === "true") return { data: EMPTY_PAGE(ctx.query) }
     const q = new URLSearchParams()
+    if (ctx.query.get("deletedOnly") === "true") q.set("deletedOnly", "true")
     ctx.query.forEach((value, key) => {
       if (key === "deletedOnly" || key === "organizationId" || value === "" || value === "all") return
       if (key === "page") q.set("pageNumber", value)
