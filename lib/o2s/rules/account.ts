@@ -249,8 +249,9 @@ export const accountRules: O2sRule[] = [
   {
     methods: ["POST"],
     match: /^\/api\/v1\/organization$/,
-    // A first company can be created before any is selected.
-    to: (_m, ctx) => `/api/v1/${encodeURIComponent(ctx.companyId || "0")}/configuration/company`,
+    // Any logged-in user creates an organization and becomes its admin (no organization needs to be
+    // selected, and no menu permission is needed).
+    to: () => "/api/v1/account/companies",
     request: (body) => toO2sCompany(body as Rec),
     response: (data) => toOrganization(data as Rec),
   },

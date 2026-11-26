@@ -144,7 +144,8 @@ export function OrganizationEntryDialog({
             payload: values,
         })
 
-      if (isEditMode && organization!.isDefault !== values.isDefault) {
+      // A new organization is the creator's (they become its admin); "default" applies to it too.
+      if (isEditMode ? organization!.isDefault !== values.isDefault : values.isDefault) {
         if (!userId) {
           toast.error("Please sign in again to update the default organization.")
           return
@@ -156,7 +157,7 @@ export function OrganizationEntryDialog({
           apiUrl,
           accessToken: authenticatedAccessToken,
           userId: authenticatedUserId,
-          organizationId: organization!.id,
+          organizationId: isEditMode ? organization!.id : savedOrganization.id,
           isDefault: values.isDefault,
         })
         savedOrganization = {
