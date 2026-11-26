@@ -240,10 +240,10 @@ export function ForgotPasswordForm({ apiUrl }: ForgotPasswordFormProps) {
                   type="text"
                   name="code"
                   inputMode="numeric"
-                  maxLength={4}
+                  maxLength={6}
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
-                  placeholder="1234"
+                  placeholder="123456"
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-white/20 dark:focus:ring-white/10"
                   required
                 />

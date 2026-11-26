@@ -9,7 +9,7 @@ export function ForgotPasswordHero({ apiUrl }: { apiUrl: string }) {
           Reset your password with a clean, guided flow.
         </h1>
         <p className="max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
-          We will send a 4-digit verification code to your email or recovery
+          We will send a 6-digit verification code to your email or recovery
           email, then let you set a new password once the code is confirmed.
           The recovery flow uses the O2S auth API at{" "}
           <span className="font-mono text-sm text-slate-900 dark:text-slate-100">
@@ -25,7 +25,7 @@ export function ForgotPasswordHero({ apiUrl }: { apiUrl: string }) {
         </div>
         <div className="rounded-2xl border border-white/60 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
           <div className="font-medium text-slate-900 dark:text-slate-100">Step 2</div>
-          <div className="font-mono text-xs">4-digit code</div>
+          <div className="font-mono text-xs">6-digit code</div>
         </div>
         <div className="rounded-2xl border border-white/60 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
           <div className="font-medium text-slate-900 dark:text-slate-100">Step 3</div>

@@ -11,7 +11,7 @@ export function ConfirmEmailHero() {
           Confirm your email and unlock sign in.
         </h1>
         <p className="max-w-xl text-base leading-7 text-slate-300">
-          We send a 4-digit code to your email address. Use it here to verify
+          We send a 6-digit code to your email address. Use it here to verify
           the account, request a fresh code if needed, and continue to the app.
         </p>
       </div>

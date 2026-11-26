@@ -435,13 +435,13 @@ export function SecuritySettings({ apiUrl }: SecuritySettingsProps) {
                       id="reset-code"
                       name="reset-code"
                       inputMode="numeric"
-                      maxLength={4}
+                      maxLength={6}
                       value={code}
                       onChange={(event) => {
                         setCode(event.target.value)
                         setCodeVerified(false)
                       }}
-                      placeholder="1234"
+                      placeholder="123456"
                       required
                     />
                   </div>
@@ -449,7 +449,7 @@ export function SecuritySettings({ apiUrl }: SecuritySettingsProps) {
                     type="button"
                     variant="outline"
                     onClick={handleVerifyCode}
-                    disabled={verifyingCode || code.trim().length !== 4 || !resetEmail.trim()}
+                    disabled={verifyingCode || code.trim().length !== 6 || !resetEmail.trim()}
                     className="rounded-md"
                   >
                     {verifyingCode ? "Checking..." : "Verify"}
