@@ -29,6 +29,31 @@ export function clearStoredAuthSession() {
   window.localStorage.removeItem("access_token")
   window.localStorage.removeItem("refresh_token")
   window.localStorage.removeItem("auth_user")
+  window.localStorage.removeItem(MUST_CHANGE_PASSWORD_KEY)
+}
+
+/**
+ * Set after a login with a one-time password (User Setup): the user must choose a new password on
+ * /set-password before anything else; the backend refuses every other route meanwhile (403 mustChangePassword).
+ */
+export const MUST_CHANGE_PASSWORD_KEY = "must_change_password"
+export const SET_PASSWORD_PATH = "/set-password"
+
+export function markPasswordChangeRequired(required: boolean) {
+  try {
+    if (required) window.localStorage.setItem(MUST_CHANGE_PASSWORD_KEY, "1")
+    else window.localStorage.removeItem(MUST_CHANGE_PASSWORD_KEY)
+  } catch {
+    // storage blocked: the backend's 403 sends the user to /set-password anyway
+  }
+}
+
+export function isPasswordChangeRequired() {
+  try {
+    return typeof window !== "undefined" && window.localStorage.getItem(MUST_CHANGE_PASSWORD_KEY) === "1"
+  } catch {
+    return false
+  }
 }
 
 export function getAuthUserLabel(user: AuthUser | null | undefined, fallback = "User") {
@@ -127,7 +152,7 @@ export function clearAuthUserAvatarCookie() {
 export const RETURN_PATH_KEY = "o2s_return_path"
 
 /** Pages that are never a place to come back to. */
-export const AUTH_PAGES = ["/sign-in", "/login", "/register", "/forgot-password", "/confirm-email"]
+export const AUTH_PAGES = ["/sign-in", "/login", "/register", "/forgot-password", "/confirm-email", "/set-password"]
 
 /** Remembers the current page, to open it again after the next sign-in. */
 export function rememberReturnPath() {

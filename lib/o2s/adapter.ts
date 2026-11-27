@@ -14,7 +14,7 @@
 //     is refused again) the session is over: endSession() clears it and goes to /sign-in.
 // A path with no rule is sent unchanged (its envelope is still translated).
 
-import { endSession } from "@/lib/auth-session"
+import { endSession, markPasswordChangeRequired, SET_PASSWORD_PATH } from "@/lib/auth-session"
 import { currentPageMenuName, readSelectedFactoryId } from "@/lib/factory-selection"
 import { readSelectedOrganizationId } from "@/lib/organization-selection"
 
@@ -310,6 +310,14 @@ async function sendToO2s(original: FetchFn, path: string, init: RequestInit, all
     // No answer at all (offline, DNS, or IIS's own error page without CORS headers): fetch throws a TypeError.
     if (error instanceof TypeError) throw new O2sError(OFFLINE_MESSAGE, 503)
     throw error
+  }
+  if (response.status === 403 && headers.has("Authorization")) {
+    // Logged in with a one-time password: every route but change-password says so until a new one is set.
+    const body = (await response.clone().json().catch(() => null)) as { Data?: { mustChangePassword?: boolean } } | null
+    if (body?.Data?.mustChangePassword) {
+      markPasswordChangeRequired(true)
+      if (window.location.pathname !== SET_PASSWORD_PATH) window.location.assign(SET_PASSWORD_PATH)
+    }
   }
   if (response.status === 401 && headers.has("Authorization")) {
     if (allowRefresh && (await refreshAccessToken(original))) return sendToO2s(original, path, init, false)

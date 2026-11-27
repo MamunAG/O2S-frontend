@@ -2,7 +2,7 @@
 // (memberships, menu permissions, organization menus, access requests) plus the audit log.
 
 import { companyPath, isRecord, O2sError, type O2sContext, type O2sRule } from "../adapter"
-import { crudRules, pageOf, withAuditNames } from "../crud"
+import { crudListHandler, crudRules, pageOf, withAuditNames } from "../crud"
 import { fromO2sModuleName } from "../menus"
 
 type Rec = Record<string, unknown>
@@ -332,6 +332,15 @@ export const configurationRules: O2sRule[] = [
       }
     },
   },
+
+  // --- User Setup: logins of the selected organization made with a one-time password ---
+  { methods: ["GET"], match: /^\/api\/v1\/user-setup$/, handle: crudListHandler("/configuration/user-setup") },
+  {
+    methods: ["GET", "PUT"],
+    match: /^\/api\/v1\/user-setup\/([^/]+)(\/one-time-password|\/status)?$/,
+    to: (m, ctx) => companyPath(ctx, `/configuration/user-setup/${m[1]}${m[2] ?? ""}`),
+  },
+  { methods: ["POST"], match: /^\/api\/v1\/user-setup$/, to: (_m, ctx) => companyPath(ctx, "/configuration/user-setup") },
 
   // --- the factories a user may work with (IAM "User Factory Permission"; O2S is strict: none = no factory) ---
   {
