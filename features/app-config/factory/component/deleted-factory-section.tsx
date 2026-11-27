@@ -184,6 +184,8 @@ export function DeletedFactorySection({
   return (
     <AppDataSection
       title="Deleted factories"
+      collapsible
+      defaultCollapsed
       data={data}
       columns={columns}
       loading={loading}

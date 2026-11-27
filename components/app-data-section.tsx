@@ -1,6 +1,7 @@
 "use client"
 
-import { type ReactNode } from "react"
+import { type ReactNode, useState } from "react"
+import { ChevronDown } from "lucide-react"
 import {
   type ColumnDef,
   getCoreRowModel,
@@ -48,6 +49,10 @@ export type AppDataSectionProps<TData> = {
   nonResizableColumnIds?: string[]
   minColumnWidth?: number
   maxColumnWidth?: number
+  /** Clicking the header (or the chevron on its right) shows / hides the filters and the table. */
+  collapsible?: boolean
+  /** With `collapsible`: start collapsed. */
+  defaultCollapsed?: boolean
 }
 
 export function AppDataSection<TData>({
@@ -81,7 +86,13 @@ export function AppDataSection<TData>({
   nonResizableColumnIds,
   minColumnWidth,
   maxColumnWidth,
+  collapsible = false,
+  defaultCollapsed = false,
 }: AppDataSectionProps<TData>) {
+  const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed)
+  const expanded = !collapsible || !collapsed
+  const toggle = () => setCollapsed((value) => !value)
+
   // TanStack Table intentionally returns non-memoizable functions; the table stays local to this render boundary.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -92,7 +103,10 @@ export function AppDataSection<TData>({
 
   return (
     <Card className="gap-0 overflow-hidden border-white/60 bg-white/80 py-0 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
-      <CardHeader className="border-b border-slate-200/70 px-3 py-2 sm:px-4 dark:border-white/10 [.border-b]:pb-2">
+      <CardHeader
+        className={`px-3 py-2 sm:px-4 ${expanded ? "border-b border-slate-200/70 dark:border-white/10 [.border-b]:pb-2" : ""} ${collapsible ? "cursor-pointer select-none" : ""}`}
+        onClick={collapsible ? toggle : undefined}
+      >
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <CardTitle className="text-sm font-semibold">{title}</CardTitle>
@@ -100,15 +114,38 @@ export function AppDataSection<TData>({
               <CardDescription className="truncate">{description}</CardDescription>
             ) : null}
           </div>
-          {headerBadges || headerActions ? (
+          {headerBadges || headerActions || collapsible ? (
             <div className="flex flex-wrap items-center gap-2">
               {headerBadges}
-              {headerActions}
+              {headerActions ? (
+                // An action button in the header must not also toggle the section.
+                <div className="contents" onClick={(event) => event.stopPropagation()}>
+                  {headerActions}
+                </div>
+              ) : null}
+              {collapsible ? (
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-label={expanded ? "Collapse section" : "Expand section"}
+                  className="inline-flex size-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    toggle()
+                  }}
+                >
+                  <ChevronDown
+                    className={`size-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+                  />
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>
       </CardHeader>
 
+      {expanded ? (
+      <>
       {filters ? (
         <CardContent className="px-3 py-2 sm:px-4">{filters}</CardContent>
       ) : null}
@@ -187,6 +224,8 @@ export function AppDataSection<TData>({
           />
         </div>
       </CardContent>
+      </>
+      ) : null}
     </Card>
   )
 }

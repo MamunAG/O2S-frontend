@@ -18,7 +18,7 @@ description: >
 
 A new page is **1 route file + 6 feature files**, and **2–3 edits** to shared files.
 
-**One set of rules, every page, every time.** All of "Rules (R1–R13)" below apply to every page, new or existing,
+**One set of rules, every page, every time.** All of "Rules (R1–R14)" below apply to every page, new or existing,
 whenever the user asks to create **or** modify it — there are no separate rules for new pages and existing ones,
 no rule that only some pages follow, and no "later". Whatever the request (a new page, a field, a column, a
 bug fix, a restyle), the page comes out of it meeting all of them (see "Applying the rules").
@@ -139,7 +139,7 @@ upload, Excel upload) are in **`references/add-ons.md`**. Write each file from i
     to `MENU_NAME_TO_O2S` in `lib/o2s/menus.ts`. Without it, non-admin users with the O2S permission
     still don't see the item.
 
-## Rules (R1–R13) — one set for every page
+## Rules (R1–R14) — one set for every page
 
 Every CRUD page follows all of these, new or existing, on every request to create or modify it. The templates
 already meet them; a page built another way is brought to them in the same change — see "Applying the rules".
@@ -263,7 +263,7 @@ The same steps for every request, whether it creates a page or modifies one (a n
 a bug fix, a restyle):
 
 1. **Do the requested change** (a new page: the Steps above, from the templates).
-2. **Audit the whole page against R1–R13**, not only the lines the request touched — its route, feature
+2. **Audit the whole page against R1–R14**, not only the lines the request touched — its route, feature
    folder, adapter rule, sidebar item and menu-name entry. Run `npx eslint <feature folder>` and read the
    backend `<Thing>Params` / DTO.
 3. **Fix every rule the page breaks**, in the same change, using the templates as the target shape. Keep the
@@ -272,13 +272,13 @@ a bug fix, a restyle):
 4. **Ask before removing anything users can see.** R3 (a filter the backend ignores) and R4 (a bulk-upload
    menu that always errors) remove visible controls: list them and get a yes before deleting them. If the
    user says keep, leave them and note it in the summary.
-5. **Report** a short R1–R13 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
+5. **Report** a short R1–R14 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
 
 Known state of the reference pages (update this list when you fix one):
 
 | Page | Open rule breaks |
 |---|---|
-| Factory (`features/app-config/factory/`) | None. Brought to R1–R13 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`). |
+| Factory (`features/app-config/factory/`) | None. Brought to R1–R14 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`). |
 | Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections) — not yet audited for the rest |
 | Exchange Rates (`features/app-config/exchange-rates/`) | R13: the table's `description` repeats `pageSummary` (keep only its "1 row currency × rate = the column currency" note). Otherwise a matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
 | Other CRUD pages | not yet audited |
@@ -286,7 +286,7 @@ Known state of the reference pages (update this list when you fix one):
 ## Verify
 
 1. R10: `npm run typecheck` and `npx eslint <the new and touched files>` — no errors and no warnings.
-2. Re-check R1–R13 against the finished files: this is the report in step 5 of "Applying the rules".
+2. Re-check R1–R14 against the finished files: this is the report in step 5 of "Applying the rules".
 3. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
    `http://localhost:3000<route>` and walk through: list loads → filter → create → edit → delete →
    restore from the banner → delete → permanently delete from the deleted card.
