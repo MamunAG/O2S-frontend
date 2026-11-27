@@ -121,6 +121,8 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
   const [deleteWorking, setDeleteWorking] = useState(false)
   const [rerunOpen, setRerunOpen] = useState(false)
   const [rerunWorking, setRerunWorking] = useState(false)
+  // Why the last rerun could not fetch the rates (nothing was cleared then); shown in the dialog.
+  const [rerunError, setRerunError] = useState("")
 
   const organizationId = selectedOrganizationId || undefined
 
@@ -281,6 +283,7 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
     if (!token) return
 
     setRerunWorking(true)
+    setRerunError("")
     try {
       const result = await rerunExchangeRates({ apiUrl, accessToken: token, organizationId })
       const codes = result.rates.map((rate) => rate.currencyCode).join(", ")
@@ -291,8 +294,12 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
       setRerunOpen(false)
       triggerRefresh()
     } catch (caught) {
-      const message = errorMessage(caught, "Unable to fetch the latest exchange rates right now.")
-      if (!handleAuthFailure(message)) toast.error(message)
+      // The server fetches before it clears: a failure here means the saved rates are untouched.
+      const message = errorMessage(caught, "The exchange rates could not be fetched, so nothing was cleared.")
+      if (!handleAuthFailure(message)) {
+        setRerunError(message)
+        toast.error(message)
+      }
     } finally {
       setRerunWorking(false)
     }
@@ -307,7 +314,16 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
   }
 
   const rerunButton = (
-    <Button type="button" variant="outline" className="rounded-xl" onClick={() => setRerunOpen(true)} disabled={rerunWorking}>
+    <Button
+      type="button"
+      variant="outline"
+      className="rounded-xl"
+      onClick={() => {
+        setRerunError("")
+        setRerunOpen(true)
+      }}
+      disabled={rerunWorking}
+    >
       {rerunWorking ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCw className="size-3.5" />}
       Rerun latest
     </Button>
@@ -414,10 +430,15 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Rerun the latest exchange rates?</AlertDialogTitle>
             <AlertDialogDescription>
-              Today&apos;s rates (Dhaka date) are cleared, manual edits included, and the provider&apos;s latest rates are fetched and
-              saved. If the provider cannot be reached, nothing is cleared.
+              The provider&apos;s latest rates are fetched first. Only when they arrive are today&apos;s rates (Dhaka date) cleared,
+              manual edits included, and replaced with them. If they cannot be fetched, nothing is cleared and you are told why.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {rerunError ? (
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+              {rerunError}
+            </div>
+          ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={rerunWorking}>Cancel</AlertDialogCancel>
             <AlertDialogAction
@@ -428,7 +449,7 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
               disabled={rerunWorking}
             >
               {rerunWorking ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCw className="size-3.5" />}
-              Rerun latest
+              {rerunError ? "Try again" : "Rerun latest"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
