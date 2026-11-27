@@ -58,7 +58,7 @@ function WorkspaceSkeleton() {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <ScrollArea className="h-full">
-        <div className="space-y-4 p-2 sm:p-3 lg:p-4">
+        <div className="min-w-0 space-y-4 p-2 [contain:inline-size] sm:p-3 lg:p-4">
           <Card className={CARD_CLASS}>
             <CardContent className="px-3 py-2 sm:px-4">
               <div className="space-y-2">
@@ -301,7 +301,7 @@ export function UserSetupWorkspace({ apiUrl }: { apiUrl: string }) {
 
   if (error) {
     return (
-      <div className="space-y-4 p-2 sm:p-3 lg:p-4">
+      <div className="min-w-0 space-y-4 p-2 [contain:inline-size] sm:p-3 lg:p-4">
         {header}
         <div className="flex min-h-80 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white/75 px-6 py-12 text-center dark:border-white/10 dark:bg-slate-950/60">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900">
@@ -320,7 +320,7 @@ export function UserSetupWorkspace({ apiUrl }: { apiUrl: string }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <ScrollArea className="h-full">
-        <div className="space-y-4 p-2 sm:p-3 lg:p-4">
+        <div className="min-w-0 space-y-4 p-2 [contain:inline-size] sm:p-3 lg:p-4">
           {header}
           <UserSetupSection
             data={users}
