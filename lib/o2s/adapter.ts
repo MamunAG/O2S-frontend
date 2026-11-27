@@ -181,6 +181,33 @@ export function singularNavs(value: unknown): unknown {
   return out
 }
 
+export const UPDATING_MESSAGE = "O2S is being updated. Please try again in a minute."
+export const UNAVAILABLE_MESSAGE = "The server is not available right now. Please try again in a few minutes."
+export const OFFLINE_MESSAGE = "Cannot reach the server. Check your internet connection and try again."
+
+/**
+ * A user-facing message for an answer that is not JSON. While the API deploys, IIS answers every request
+ * with app_offline.htm (503); when the app cannot start it sends its own HTML error page (500.30, 502.5, ...).
+ * Neither is shown as is: HTML never reaches a toast.
+ */
+export function messageForNonJson(status: number, text: string): string {
+  const isHtml = /<\s*(!doctype|html|head|body|h1|p|div)\b/i.test(text)
+  if (/being updated|app_offline|is updating/i.test(text) || (status === 503 && isHtml)) return UPDATING_MESSAGE
+  if (status === 502 || status === 503 || status === 504 || /HTTP Error 50\d|failed to start/i.test(text)) {
+    return UNAVAILABLE_MESSAGE
+  }
+  if (isHtml) {
+    return status >= 500
+      ? "The server had a problem. Please try again in a few minutes."
+      : `The server sent an unexpected answer (${status}). Please try again.`
+  }
+  // plain text: keep a short one, it is usually the reason
+  const plain = text.replace(/\s+/g, " ").trim()
+  if (plain && plain.length <= 300) return plain
+  if (status === 404) return "Not found. It may have been deleted, or the server is being updated."
+  return status >= 500 ? "The server had a problem. Please try again in a few minutes." : "The request failed. Please try again."
+}
+
 /** Reads an O2S answer: the envelope, a bare (201) object, nothing (204) or ProblemDetails. */
 async function readO2s(response: Response): Promise<{ ok: boolean; message: string; data: unknown }> {
   if (response.status === 204) return { ok: response.ok, message: "OK", data: null }
@@ -189,7 +216,8 @@ async function readO2s(response: Response): Promise<{ ok: boolean; message: stri
   try {
     payload = text ? JSON.parse(text) : null
   } catch {
-    return { ok: response.ok, message: response.ok ? "OK" : text || response.statusText, data: null }
+    if (response.ok) return { ok: true, message: "OK", data: null }
+    return { ok: false, message: messageForNonJson(response.status, text), data: null }
   }
   if (isRecord(payload) && "IsError" in payload) {
     return {
@@ -263,7 +291,14 @@ async function sendToO2s(original: FetchFn, path: string, init: RequestInit, all
   headers.delete("x-organization-id")
   const token = window.localStorage.getItem("access_token")
   if (headers.has("Authorization") && token) headers.set("Authorization", `Bearer ${token}`)
-  const response = await original(`${sendBase()}${path}`, { ...init, headers })
+  let response: Response
+  try {
+    response = await original(`${sendBase()}${path}`, { ...init, headers })
+  } catch (error) {
+    // No answer at all (offline, DNS, or IIS's own error page without CORS headers): fetch throws a TypeError.
+    if (error instanceof TypeError) throw new O2sError(OFFLINE_MESSAGE, 503)
+    throw error
+  }
   if (response.status === 401 && allowRefresh && headers.has("Authorization") && (await refreshAccessToken(original))) {
     return sendToO2s(original, path, init, false)
   }
