@@ -265,13 +265,13 @@ export function FactoryFormDialog({
                                     type="button"
                                     variant="outline"
                                     onClick={() => onOpenChange(false)}
-                                    className="rounded-xl"
+                                    className="h-9 min-w-24 rounded-xl px-4 text-sm"
                                 >
                                     {cancelLabel ?? "Cancel"}
                                 </Button>
                             ) : null}
-                            <Button type="submit" disabled={loading || submitting} className="rounded-xl">
-                                {submitting ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                            <Button type="submit" disabled={loading || submitting} className="h-9 min-w-28 rounded-xl px-4 text-sm">
+                                {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
                                 {mode === "create" ? "Save factory" : "Save changes"}
                             </Button>
                         </DialogFooter>
