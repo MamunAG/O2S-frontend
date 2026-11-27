@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 import type { EmployeeFormValues } from "../employee.types"
 import { EmployeeExtendedProfileSections } from "./employee-extended-profile-sections"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 type FactoryOption = AppComboboxOption
 type DesignationOption = AppComboboxOption
@@ -399,10 +400,9 @@ export function EmployeeFormDialog({
 
                 <div className="space-y-2">
                   <FieldLabel>Joining date</FieldLabel>
-                  <Input
+                  <AppDatePicker
                     value={draft.joiningDate}
-                    onChange={(event) => update("joiningDate", event.target.value)}
-                    type="date"
+                    onValueChange={(value) => update("joiningDate", value)}
                     disabled={loading || submitting}
                   />
                 </div>

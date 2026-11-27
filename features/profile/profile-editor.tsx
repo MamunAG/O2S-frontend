@@ -31,6 +31,7 @@ import type {
   ProfileUpdatePayload,
 } from "./profile.types"
 import type { LoggedInUser } from "@/features/auth/login/login.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 type ProfileEditorProps = {
   apiUrl: string
@@ -811,11 +812,10 @@ export function ProfileEditor({ apiUrl }: ProfileEditorProps) {
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                       Date of birth
                     </span>
-                    <Input
-                      type="date"
+                    <AppDatePicker
                       value={draft.date_of_birth ?? ""}
-                      onChange={(event) =>
-                        setDraftField("date_of_birth", event.target.value)
+                      onValueChange={(value) =>
+                        setDraftField("date_of_birth", value)
                       }
                     />
                   </label>

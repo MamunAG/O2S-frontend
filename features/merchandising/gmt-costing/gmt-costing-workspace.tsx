@@ -33,6 +33,7 @@ import { GmtCostingFormDialog, type GmtCostingDialogMode } from "./component/gmt
 import { GmtCostingSheetDialog } from "./component/gmt-costing-sheet-dialog"
 import { deleteGmtCosting, fetchGmtCostings, loadBuyerOptions, loadStyleOptions, type ApiContext } from "./gmt-costing.api"
 import type { AccessRules, GmtCostingFilters, GmtCostingListItem, PageMeta } from "./gmt-costing.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 /** The API's menu name (GmtCostingEndpoints.menuName). */
 export const GMT_COSTING_MENU_NAME = "Gmt Costing"
@@ -419,21 +420,19 @@ export function GmtCostingWorkspace({ apiUrl }: { apiUrl: string }) {
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="gmtFilterFrom">Cost Date From</FieldLabel>
-                    <Input
+                    <AppDatePicker
                       id="gmtFilterFrom"
-                      type="date"
                       value={draft.fromCostDate}
-                      onChange={(event) => setDraft({ ...draft, fromCostDate: event.target.value })}
+                      onValueChange={(value) => setDraft({ ...draft, fromCostDate: value })}
                       className={INPUT_CLASS}
                     />
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="gmtFilterTo">Cost Date To</FieldLabel>
-                    <Input
+                    <AppDatePicker
                       id="gmtFilterTo"
-                      type="date"
                       value={draft.toCostDate}
-                      onChange={(event) => setDraft({ ...draft, toCostDate: event.target.value })}
+                      onValueChange={(value) => setDraft({ ...draft, toCostDate: value })}
                       className={INPUT_CLASS}
                     />
                   </div>

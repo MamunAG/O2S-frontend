@@ -4,13 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table"
-import { Controller, useFieldArray, useForm, useFormState, useWatch } from "react-hook-form"
+import { Controller, useController, useFieldArray, useForm, useFormState, useWatch } from "react-hook-form"
 import { ArrowDownNarrowWide, CalendarClock, CalendarIcon, Download, GripVertical, Loader2, Plus, Trash2, X } from "lucide-react"
 import type { DragEvent } from "react"
 import { z } from "zod"
 
 import { AppCombobox, type AppComboboxLoadParams, type AppComboboxLoadResult, type AppComboboxOption } from "@/components/app-combobox"
 import { Button } from "@/components/ui/button"
+import { AppDatePicker } from "@/components/app-date-picker"
 import { Calendar } from "@/components/ui/calendar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -169,10 +170,13 @@ function DaysInputCell({ ariaInvalid = false, className, control, disabled = fal
   )
 }
 
-function ExecutionDateInputCell({ ariaInvalid = false, className, control, disabled = false, index, register, onValueChange }: ExecutionDateInputCellProps) {
+function ExecutionDateInputCell({ ariaInvalid = false, className, control, disabled = false, index, onValueChange }: ExecutionDateInputCellProps) {
   const formula = useWatch({ control, name: `tnaDetails.${index}.relationFormula` }) ?? ""
   const hasFormula = Boolean(formula.trim())
-  const executionDateField = register(`tnaDetails.${index}.executionDate`)
+  // Controlled (the shared date picker has no native input to register): same field, same blur behaviour.
+  const {
+    field: { ref: executionDateRef, name: executionDateName, value: executionDate, onChange: setExecutionDate, onBlur: touchExecutionDate },
+  } = useController({ control, name: `tnaDetails.${index}.executionDate` })
   const disabledTitle = hasFormula
     ? "This row is controlled by a formula."
     : disabled
@@ -180,19 +184,17 @@ function ExecutionDateInputCell({ ariaInvalid = false, className, control, disab
       : undefined
 
   return (
-    <Input
-      type="date"
+    <AppDatePicker
+      ref={executionDateRef}
+      name={executionDateName}
       className={className}
       disabled={hasFormula || disabled}
       title={disabledTitle}
       aria-invalid={ariaInvalid}
-      {...executionDateField}
-      onChange={(event) => {
-        executionDateField.onChange(event)
-      }}
-      onBlur={(event) => {
-        executionDateField.onBlur(event)
-        const nextValue = event.target.value
+      value={executionDate ?? ""}
+      onValueChange={(nextValue) => {
+        setExecutionDate(nextValue)
+        touchExecutionDate()
         if (parseDateOnly(nextValue)) onValueChange?.(nextValue)
       }}
     />

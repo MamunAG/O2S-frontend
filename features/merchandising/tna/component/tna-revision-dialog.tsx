@@ -6,10 +6,10 @@ import { CalendarClock, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 import type { TnaDetailRevisionFormValues, TnaDetailRevisionRecord } from "../tna.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 export type TnaRevisionDraft = {
   newExecutionDate: string
@@ -162,9 +162,8 @@ export function TnaRevisionDialog({
               <label htmlFor="tna-revision-previous-date" className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Previous execution date
               </label>
-              <Input
+              <AppDatePicker onValueChange={() => undefined}
                 id="tna-revision-previous-date"
-                type="date"
                 value={previousExecutionDate}
                 readOnly
                 className="bg-slate-50 text-slate-600 dark:bg-white/[0.04] dark:text-slate-300"
@@ -175,11 +174,10 @@ export function TnaRevisionDialog({
               <label htmlFor="tna-revision-new-date" className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 New execution date <span className="text-destructive">*</span>
               </label>
-              <Input
+              <AppDatePicker
                 id="tna-revision-new-date"
-                type="date"
                 value={draft.newExecutionDate}
-                onChange={(event) => onDraftChange({ ...draft, newExecutionDate: event.target.value })}
+                onValueChange={(value) => onDraftChange({ ...draft, newExecutionDate: value })}
               />
               {revisionUnchanged ? (
                 <p className="text-[11px] leading-4 text-amber-700 dark:text-amber-200">

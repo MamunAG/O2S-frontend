@@ -12,13 +12,14 @@ import { cn } from "@/lib/utils"
 
 import type { JobAiAssistRow } from "../job.types"
 import { getAiAssistRowKey, type AiAssistFocusColumn, useJobAiAssistStore } from "./job-ai-assist.store"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 type JobAiAssistDialogProps = {
   tableInputClassName: string
   onFileChange: (file: File | null) => void
   onAnalyze: () => void
   onAddRow: (row: JobAiAssistRow, index: number) => void
-  onFieldKeyDown: (event: KeyboardEvent<HTMLInputElement>, rowIndex: number, column: AiAssistFocusColumn) => void
+  onFieldKeyDown: (event: KeyboardEvent<HTMLElement>, rowIndex: number, column: AiAssistFocusColumn) => void
   onFillDown: () => void
   onFormatDateForInput: (value: string | null | undefined) => string
 }
@@ -172,7 +173,7 @@ export function JobAiAssistDialog({
                               <Input value={row.fob == null ? "" : String(row.fob)} onChange={(event) => updateRow(index, { fob: event.target.value })} onFocus={() => setFocusedCell({ rowIndex: index, column: "fob" })} onKeyDown={(event) => onFieldKeyDown(event, index, "fob")} inputMode="decimal" className={cn(tableInputClassName, "text-right")} data-ai-assist-fob={index} />
                             </td>
                             <td className="px-2 py-2 align-top">
-                              <Input type="date" value={onFormatDateForInput(row.deliveryDate)} onChange={(event) => updateRow(index, { deliveryDate: event.target.value || null })} onFocus={() => setFocusedCell({ rowIndex: index, column: "deliveryDate" })} onKeyDown={(event) => onFieldKeyDown(event, index, "deliveryDate")} className={tableInputClassName} data-ai-assist-delivery-date={index} />
+                              <AppDatePicker value={onFormatDateForInput(row.deliveryDate)} onValueChange={(value) => updateRow(index, { deliveryDate: value || null })} onFocus={() => setFocusedCell({ rowIndex: index, column: "deliveryDate" })} onKeyDown={(event) => onFieldKeyDown(event, index, "deliveryDate")} className={tableInputClassName} data-ai-assist-delivery-date={index} />
                             </td>
                             <td className="sticky right-0 bg-white px-2 py-2 text-right align-top shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.35)] dark:bg-[#17131d]">
                               <Button type="button" size="sm" variant={rowAdded ? "secondary" : "outline"} className="h-6 rounded-md px-3 text-xs" disabled={rowAdding || addingRowIndex !== null} onClick={() => onAddRow(row, index)}>

@@ -90,6 +90,7 @@ import {
   WastageSection,
 } from "./gmt-costing-sections"
 import { FIELD_CLASS, FieldLabel, INPUT_CLASS, LookupCombobox, NumInput, SECTION_CARD_CLASS, formatNumber } from "./gmt-ui"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 export type GmtCostingDialogMode = "create" | "edit" | "view" | "copy"
 
@@ -765,7 +766,7 @@ function DateField({
   return (
     <div className={FIELD_CLASS}>
       <FieldLabel required={required}>{label}</FieldLabel>
-      <Input type="date" value={value} readOnly={readOnly} onChange={(e) => onChange(e.target.value)} className={INPUT_CLASS} />
+      <AppDatePicker value={value} readOnly={readOnly} onValueChange={(value) => onChange(value)} className={INPUT_CLASS} />
     </div>
   )
 }

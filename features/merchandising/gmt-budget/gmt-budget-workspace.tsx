@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { fetchCurrentMenuPermission } from "@/features/iam/menu-permissions/menu-permission.service"
 import { parseStoredAuthUser } from "@/lib/auth-session"
@@ -29,6 +28,7 @@ import type { AccessRules, Option, PageMeta } from "../gmt-costing/gmt-costing.t
 import { deleteGmtBudget, fetchPoStyleList, loadPoOptions, type PoStyleFilters } from "./gmt-budget.api"
 import type { PoStyleRow } from "./gmt-budget.types"
 import { GmtBudgetFormDialog, type BudgetSeed, type GmtBudgetDialogMode } from "./component/gmt-budget-form-dialog"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 /** The API's menu name (GmtBudgetEndpoints.menuName). */
 export const GMT_BUDGET_MENU_NAME = "Create Budget"
@@ -299,7 +299,7 @@ export function GmtBudgetWorkspace({ apiUrl }: { apiUrl: string }) {
   const dateField = (id: string, label: string, key: keyof Filters, disabled: boolean) => (
     <div className={FIELD_CLASS}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <Input id={id} type="date" disabled={disabled} value={draft[key] as string} onChange={(e) => setDraft({ ...draft, [key]: e.target.value })} className={INPUT_CLASS} />
+      <AppDatePicker id={id} disabled={disabled} value={draft[key] as string} onValueChange={(value) => setDraft({ ...draft, [key]: value })} className={INPUT_CLASS} />
     </div>
   )
 

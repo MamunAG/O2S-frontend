@@ -18,7 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -35,6 +34,7 @@ import {
 import type { AuditEvent, AuditFeed, AuditFilters } from "./audit-log.types"
 import type { AuditLogModuleConfig } from "./audit-log.config"
 import { useAuditLogWorkspace } from "./use-audit-log-workspace"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 const DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
@@ -452,13 +452,12 @@ function AuditFilters({
       </Select>
       <label className="flex w-full items-center gap-2 sm:w-auto">
         <span className="shrink-0 text-xs text-muted-foreground">From</span>
-        <Input
-          type="date"
+        <AppDatePicker
           aria-label="Audit log from date"
           value={filters.fromDate ?? ""}
           max={filters.toDate}
-          onChange={(event) =>
-            update({ fromDate: event.target.value || undefined })
+          onValueChange={(value) =>
+            update({ fromDate: value || undefined })
           }
           disabled={disabled}
           className="w-full sm:w-36"
@@ -466,13 +465,12 @@ function AuditFilters({
       </label>
       <label className="flex w-full items-center gap-2 sm:w-auto">
         <span className="shrink-0 text-xs text-muted-foreground">To</span>
-        <Input
-          type="date"
+        <AppDatePicker
           aria-label="Audit log to date"
           value={filters.toDate ?? ""}
           min={filters.fromDate}
-          onChange={(event) =>
-            update({ toDate: event.target.value || undefined })
+          onValueChange={(value) =>
+            update({ toDate: value || undefined })
           }
           disabled={disabled}
           className="w-full sm:w-36"

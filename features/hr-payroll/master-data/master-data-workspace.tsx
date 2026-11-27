@@ -74,6 +74,7 @@ import type {
   MasterDataRecord,
   PaginationMeta,
 } from "./master-data.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 const WEEKDAYS = [
   "Sunday",
@@ -208,11 +209,10 @@ function SettingsField({
               key={index}
               className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[150px_1fr_1fr_auto]"
             >
-              <Input
-                type="date"
+              <AppDatePicker
                 value={holiday.date}
                 disabled={disabled}
-                onChange={(event) => update(index, "date", event.target.value)}
+                onValueChange={(value) => update(index, "date", value)}
               />
               <Input
                 placeholder="Holiday name"

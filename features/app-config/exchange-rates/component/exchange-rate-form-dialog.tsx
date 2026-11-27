@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 import type { ExchangeRateFormValues } from "../exchange-rate.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 type ExchangeRateFormDialogProps = {
   open: boolean
@@ -106,11 +107,10 @@ export function ExchangeRateFormDialog({
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <FieldLabel htmlFor="exchangeRateDate" required>Date</FieldLabel>
-                <Input
+                <AppDatePicker
                   id="exchangeRateDate"
-                  type="date"
                   value={draft.currencyDate}
-                  onChange={(event) => update("currencyDate", event.target.value)}
+                  onValueChange={(value) => update("currencyDate", value)}
                   disabled={submitting}
                 />
               </div>

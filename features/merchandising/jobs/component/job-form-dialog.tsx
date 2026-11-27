@@ -66,6 +66,7 @@ import {
   useJobAiAssistStore,
 } from "./job-ai-assist.store"
 import { JobPoSummaryDialog } from "./job-po-summary-dialog"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 type SelectOption = AppComboboxOption
 type MissingPoDetailsSetupItem = {
@@ -1047,17 +1048,18 @@ export function JobFormDialog({
     window.requestAnimationFrame(() => {
       const attribute = getDetailFocusAttribute(column)
       const nextInput = Array.from(
-        document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        document.querySelectorAll<HTMLElement>(
           `[${attribute}="${nextDetail.id}"]`
         )
       ).find((input) => input.offsetParent !== null)
       nextInput?.focus()
-      nextInput?.select()
+      // the delivery date cell is the shared date picker's button, which has nothing to select
+      if (nextInput instanceof HTMLInputElement || nextInput instanceof HTMLTextAreaElement) nextInput.select()
     })
   }
 
   function handleDetailFieldKeyDown(
-    event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    event: React.KeyboardEvent<HTMLElement>,
     currentIndex: number,
     column: DetailFocusColumn
   ) {
@@ -1079,17 +1081,17 @@ export function JobFormDialog({
     window.requestAnimationFrame(() => {
       const attribute = getAiAssistFocusAttribute(column)
       const input = Array.from(
-        document.querySelectorAll<HTMLInputElement>(
+        document.querySelectorAll<HTMLElement>(
           `[${attribute}="${rowIndex}"]`
         )
       ).find((field) => field.offsetParent !== null)
       input?.focus()
-      input?.select()
+      if (input instanceof HTMLInputElement) input.select()
     })
   }
 
   function handleAiAssistFieldKeyDown(
-    event: React.KeyboardEvent<HTMLInputElement>,
+    event: React.KeyboardEvent<HTMLElement>,
     currentIndex: number,
     column: AiAssistFocusColumn
   ) {
@@ -1331,12 +1333,11 @@ export function JobFormDialog({
                           </div>
                           <div className={JOB_DIALOG_FIELD_CLASS}>
                             <FieldLabel>PO Receive Date</FieldLabel>
-                            <Input
+                            <AppDatePicker
                               className={JOB_DIALOG_INPUT_CLASS}
-                              type="date"
                               value={values.poReceiveDate}
-                              onChange={(event) =>
-                                update("poReceiveDate", event.target.value)
+                              onValueChange={(value) =>
+                                update("poReceiveDate", value)
                               }
                             />
                           </div>
@@ -1706,13 +1707,12 @@ export function JobFormDialog({
                                         placeholder="CM/Dzn"
                                         data-job-detail-cm={detail.id}
                                       />
-                                      <Input
+                                      <AppDatePicker
                                         className={JOB_DIALOG_INPUT_CLASS}
-                                        type="date"
                                         value={detail.deliveryDate}
-                                        onChange={(event) =>
+                                        onValueChange={(value) =>
                                           updateDetailFromRow(index, {
-                                            deliveryDate: event.target.value,
+                                            deliveryDate: value,
                                           })
                                         }
                                         onKeyDown={(event) =>
@@ -2064,13 +2064,12 @@ export function JobFormDialog({
                                           />
                                         </td>
                                         <td className="px-1.5 py-2 align-top">
-                                          <Input
-                                            type="date"
+                                          <AppDatePicker
                                             value={detail.deliveryDate}
-                                            onChange={(event) =>
+                                            onValueChange={(value) =>
                                               updateDetailFromRow(index, {
                                                 deliveryDate:
-                                                  event.target.value,
+                                                  value,
                                               })
                                             }
                                             onKeyDown={(event) =>

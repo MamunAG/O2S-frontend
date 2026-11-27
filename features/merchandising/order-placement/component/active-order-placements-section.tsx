@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 
 import type { OrderPlacementFilterValues, OrderPlacementRecord, PaginationMeta } from "../order-placement.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 type ActiveOrderPlacementsSectionProps = {
   records: OrderPlacementRecord[]
@@ -250,7 +251,7 @@ export function ActiveOrderPlacementsSection({
           </div>
           <div className="min-w-0 space-y-1">
             <label htmlFor="filterPlacementDate" className="text-xs font-medium text-slate-700 dark:text-slate-300">Placement Date</label>
-            <Input id="filterPlacementDate" type="date" value={draftFilters.placementDate} className="h-7 rounded-md px-2 text-xs" onChange={(event) => onDraftFiltersChange({ ...draftFilters, placementDate: event.target.value })} />
+            <AppDatePicker id="filterPlacementDate" value={draftFilters.placementDate} className="h-7 rounded-md px-2 text-xs" onValueChange={(value) => onDraftFiltersChange({ ...draftFilters, placementDate: value })} />
           </div>
           <div className="min-w-0 space-y-1">
             <label htmlFor="filterPlacementStatus" className="text-xs font-medium text-slate-700 dark:text-slate-300">Status</label>
