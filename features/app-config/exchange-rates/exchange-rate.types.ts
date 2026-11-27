@@ -26,13 +26,14 @@ export type UserSummary = {
   display_name?: string | null
 }
 
-/** One currency's rate in BDT (O2S CurrencyExchangeRateDto). Shared by every company. */
+/** A currency pair's rate (O2S CurrencyExchangeRateDto): amount in fromCurrencyCode x rate = amount in toCurrencyCode. */
 export type ExchangeRateRecord = {
   id: string
-  currencyCode: string
+  fromCurrencyCode: string
+  toCurrencyCode: string
   /** The provider's update time (UTC, sent without an offset); a manual rate's date at midnight. */
   currencyDate: string
-  rateInBdt: number
+  rate: number
   /** Added or edited on this screen; the daily job leaves it alone, "Rerun latest" replaces it. */
   isManual: boolean
 
@@ -45,19 +46,41 @@ export type ExchangeRateRecord = {
   updated_at?: string | null
 }
 
-/** Only properties of the backend's CurrencyExchangeRateParams. isManual is "" (all) | "true" | "false". */
+/** One cell of the matrix: the rate from the row's currency to this column's. */
+export type ExchangeRateCell = {
+  id: string
+  toCurrencyCode: string
+  rate: number
+  isManual: boolean
+  updatedByName?: string | null
+  updatedDate?: string | null
+}
+
+/** One matrix row: a date and a from currency, with a cell per to currency. */
+export type ExchangeRateMatrixRow = {
+  currencyDate: string
+  fromCurrencyCode: string
+  cells: ExchangeRateCell[]
+}
+
+export type ExchangeRateMatrixPage = PaginatedResponse<ExchangeRateMatrixRow> & {
+  /** The column order: the configured currencies, BDT, then any other code on the page. */
+  currencies: string[]
+}
+
+/** Only properties of the backend's CurrencyExchangeRateParams the matrix uses. */
 export type ExchangeRateFilterValues = {
-  currencyCode: string
-  isManual: string
+  fromCurrencyCode: string
   fromCurrencyDate: string
   toCurrencyDate: string
 }
 
 export type ExchangeRateFormValues = {
-  currencyCode: string
+  fromCurrencyCode: string
+  toCurrencyCode: string
   /** yyyy-MM-dd */
   currencyDate: string
-  rateInBdt: string
+  rate: string
 }
 
 /** POST /exchange-rate/rerun */
@@ -68,14 +91,18 @@ export type ExchangeRateRerunResult = {
 }
 
 export const EMPTY_FILTERS: ExchangeRateFilterValues = {
-  currencyCode: "",
-  isManual: "",
+  fromCurrencyCode: "",
   fromCurrencyDate: "",
   toCurrencyDate: "",
+}
+
+/** The key of a matrix row (its date + from currency), for selection. */
+export function matrixRowKey(row: ExchangeRateMatrixRow) {
+  return `${row.currencyDate}|${row.fromCurrencyCode}`
 }
 
 export function emptyFormValues(): ExchangeRateFormValues {
   const today = new Date()
   const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
-  return { currencyCode: "", currencyDate: date, rateInBdt: "" }
+  return { fromCurrencyCode: "", toCurrencyCode: "BDT", currencyDate: date, rate: "" }
 }

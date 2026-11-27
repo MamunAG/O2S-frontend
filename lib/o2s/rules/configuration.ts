@@ -125,8 +125,15 @@ export const configurationRules: O2sRule[] = [
             : `/configuration/currency/exchange-rates/${m[1]}/${m[2]}`),
         response: (data) => {
           const d = data as Rec
-          return { id: d.id, currency_date: d.currencyDate, currency_code: d.currencyCode, rate_in_bdt: d.rateInBdt }
+          // O2S stores pairs; these routes read the code -> BDT one.
+          return { id: d.id, currency_date: d.currencyDate, currency_code: d.fromCurrencyCode, rate_in_bdt: d.rate }
         },
+      },
+      {
+        // The rate to convert `from` into `to` (amount x rate): ?from=USD&to=BDT[&date=yyyy-MM-dd].
+        methods: ["GET"],
+        match: /^\/api\/v1\/currency\/exchange-rates\/rate$/,
+        to: (_m, ctx) => companyPath(ctx, `/configuration/currency/exchange-rates/rate?${ctx.query}`),
       },
       {
         methods: ["POST"],
@@ -140,6 +147,38 @@ export const configurationRules: O2sRule[] = [
   ...crudRules("exchange-rate", "/configuration/exchange-rate", {
     label: "This exchange rate",
     extra: [
+      {
+        // The grid: paged by date, a row per date + from currency, a cell per to currency.
+        methods: ["GET"],
+        match: /^\/api\/v1\/exchange-rate\/matrix$/,
+        handle: async (_m, ctx) => {
+          const q = new URLSearchParams()
+          ctx.query.forEach((value, key) => {
+            if (!value || key === "organizationId") return
+            if (key === "page") q.set("pageNumber", value)
+            else if (key === "limit") q.set("pageSize", value)
+            else q.set(key, value)
+          })
+          const d = (await ctx.call(companyPath(ctx, `/configuration/exchange-rate/matrix?${q}`))) as Rec
+          const page = (d.pageNumber as number) || 1
+          const limit = (d.pageSize as number) || 10
+          const totalPages = (d.totalPages as number) || 0
+          return {
+            data: {
+              items: d.data ?? [],
+              currencies: d.currencies ?? [],
+              meta: {
+                total: d.totalItems ?? 0,
+                page,
+                limit,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPreviousPage: page > 1,
+              },
+            },
+          }
+        },
+      },
       {
         methods: ["DELETE"],
         match: /^\/api\/v1\/exchange-rate\/selected$/,

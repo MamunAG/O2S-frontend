@@ -63,7 +63,7 @@ export function ExchangeRateFormDialog({
             <DialogHeader>
               <DialogTitle>Add exchange rate</DialogTitle>
               <DialogDescription>
-                A rate added here is marked Manual: the daily job leaves it as it is, and Rerun latest replaces it only on today&apos;s date.
+                A rate added here counts as edited by hand: the daily job leaves it as it is, and Rerun latest replaces it only on today&apos;s date.
               </DialogDescription>
             </DialogHeader>
 
@@ -77,17 +77,32 @@ export function ExchangeRateFormDialog({
           <div className="space-y-4 px-6 py-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <FieldLabel htmlFor="exchangeRateCode" required>Currency code</FieldLabel>
+                <FieldLabel htmlFor="exchangeRateFrom" required>From currency</FieldLabel>
                 <Input
-                  id="exchangeRateCode"
-                  value={draft.currencyCode}
-                  onChange={(event) => update("currencyCode", event.target.value.toUpperCase())}
+                  id="exchangeRateFrom"
+                  value={draft.fromCurrencyCode}
+                  onChange={(event) => update("fromCurrencyCode", event.target.value.toUpperCase())}
                   placeholder="e.g. USD"
                   maxLength={10}
                   autoComplete="off"
                   disabled={submitting}
                 />
               </div>
+              <div className="space-y-2">
+                <FieldLabel htmlFor="exchangeRateTo" required>To currency</FieldLabel>
+                <Input
+                  id="exchangeRateTo"
+                  value={draft.toCurrencyCode}
+                  onChange={(event) => update("toCurrencyCode", event.target.value.toUpperCase())}
+                  placeholder="e.g. BDT"
+                  maxLength={10}
+                  autoComplete="off"
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <FieldLabel htmlFor="exchangeRateDate" required>Date</FieldLabel>
                 <Input
@@ -98,22 +113,26 @@ export function ExchangeRateFormDialog({
                   disabled={submitting}
                 />
               </div>
+              <div className="space-y-2">
+                <FieldLabel htmlFor="exchangeRateValue" required>Rate</FieldLabel>
+                <Input
+                  id="exchangeRateValue"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="any"
+                  value={draft.rate}
+                  onChange={(event) => update("rate", event.target.value)}
+                  placeholder="e.g. 122.5"
+                  disabled={submitting}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <FieldLabel htmlFor="exchangeRateValue" required>Rate in BDT</FieldLabel>
-              <Input
-                id="exchangeRateValue"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.0001"
-                value={draft.rateInBdt}
-                onChange={(event) => update("rateInBdt", event.target.value)}
-                placeholder="BDT for 1 unit of the currency, e.g. 122.5"
-                disabled={submitting}
-              />
-            </div>
+            <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
+              1 {draft.fromCurrencyCode || "FROM"} × rate = {draft.toCurrencyCode || "TO"}. The reverse rate ({draft.toCurrencyCode || "TO"} →{" "}
+              {draft.fromCurrencyCode || "FROM"} = 1 / rate) is saved with it.
+            </p>
           </div>
 
           <div className="border-t border-slate-200/70 px-6 py-4 dark:border-white/10">

@@ -23,13 +23,14 @@ import { readSelectedOrganizationId, SELECTED_ORGANIZATION_CHANGED_EVENT } from 
 
 import { ActiveExchangeRateSection } from "./component/active-exchange-rate-section"
 import { ExchangeRateFormDialog } from "./component/exchange-rate-form-dialog"
-import { createExchangeRate, deleteExchangeRates, fetchExchangeRates, rerunExchangeRates, updateExchangeRateValue } from "./exchange-rate.service"
+import { createExchangeRate, deleteExchangeRates, fetchExchangeRateMatrix, rerunExchangeRates, updateExchangeRateValue } from "./exchange-rate.service"
 import {
   EMPTY_FILTERS,
   emptyFormValues,
+  type ExchangeRateCell,
   type ExchangeRateFilterValues,
   type ExchangeRateFormValues,
-  type ExchangeRateRecord,
+  type ExchangeRateMatrixRow,
   type PaginationMeta,
 } from "./exchange-rate.types"
 
@@ -45,8 +46,11 @@ function errorMessage(caught: unknown, fallback: string) {
   return caught instanceof Error ? caught.message : fallback
 }
 
-function describeRows(rows: ExchangeRateRecord[]) {
-  return rows.length === 1 ? `the ${rows[0].currencyCode} rate` : `${rows.length} exchange rates`
+function describeRows(rows: ExchangeRateMatrixRow[]) {
+  const rates = rows.reduce((total, row) => total + row.cells.length, 0)
+  return rows.length === 1
+    ? `the ${rates} ${rows[0].fromCurrencyCode} rate${rates === 1 ? "" : "s"} of that day`
+    : `${rates} rates in ${rows.length} rows`
 }
 
 function EmptyState({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel: string; onAction: () => void }) {
@@ -106,10 +110,12 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
     typeof window === "undefined" ? "" : readSelectedOrganizationId(),
   )
 
-  const [rates, setRates] = useState<ExchangeRateRecord[]>([])
+  const [rows, setRows] = useState<ExchangeRateMatrixRow[]>([])
+  const [currencies, setCurrencies] = useState<string[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
+  // Days per page (each day has a row per currency).
+  const [limit, setLimit] = useState(5)
   const [filters, setFilters] = useState<ExchangeRateFilterValues>(EMPTY_FILTERS)
 
   const [editorOpen, setEditorOpen] = useState(false)
@@ -117,7 +123,7 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
   const [editorError, setEditorError] = useState("")
   const [editorValues, setEditorValues] = useState<ExchangeRateFormValues>(emptyFormValues)
 
-  const [deleteTargets, setDeleteTargets] = useState<ExchangeRateRecord[]>([])
+  const [deleteTargets, setDeleteTargets] = useState<ExchangeRateMatrixRow[]>([])
   const [deleteWorking, setDeleteWorking] = useState(false)
   const [rerunOpen, setRerunOpen] = useState(false)
   const [rerunWorking, setRerunWorking] = useState(false)
@@ -134,8 +140,8 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
   const error = !loading && loaded ? loaded.error : ""
 
   // The ticked rows belong to the list they were ticked on: a new page, filter or reload clears them.
-  const [selection, setSelection] = useState<{ key: string; ids: string[] }>({ key: "", ids: [] })
-  const selectedIds = selection.key === requestKey ? selection.ids : []
+  const [selection, setSelection] = useState<{ key: string; keys: string[] }>({ key: "", keys: [] })
+  const selectedKeys = selection.key === requestKey ? selection.keys : []
 
   const handleAuthFailure = useCallback(
     (message: string) => {
@@ -176,10 +182,11 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
 
     let cancelled = false
 
-    fetchExchangeRates({ apiUrl, accessToken: token, page, limit, filters, organizationId })
+    fetchExchangeRateMatrix({ apiUrl, accessToken: token, page, limit, filters, organizationId })
       .then((result) => {
         if (cancelled) return
-        setRates(result.items)
+        setRows(result.items)
+        setCurrencies(result.currencies)
         setMeta(result.meta)
         setLoaded({ key: requestKey, error: "" })
       })
@@ -204,8 +211,14 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
 
   const submitEditor = useCallback(
     async (values: ExchangeRateFormValues) => {
-      if (!/^[A-Za-z]{3,10}$/.test(values.currencyCode.trim())) {
-        setEditorError("Currency code is 3 to 10 letters, e.g. USD.")
+      const from = values.fromCurrencyCode.trim().toUpperCase()
+      const to = values.toCurrencyCode.trim().toUpperCase()
+      if (!/^[A-Z]{3,10}$/.test(from) || !/^[A-Z]{3,10}$/.test(to)) {
+        setEditorError("Currency codes are 3 to 10 letters, e.g. USD and BDT.")
+        return
+      }
+      if (from === to) {
+        setEditorError("From and to currency must differ (a currency to itself is always 1).")
         return
       }
       if (!values.currencyDate) {
@@ -220,7 +233,7 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
       setEditorError("")
       try {
         const saved = await createExchangeRate({ apiUrl, accessToken: token, values, organizationId })
-        toast.success(`${saved.currencyCode} rate added.`)
+        toast.success(`${saved.fromCurrencyCode} → ${saved.toCurrencyCode} rate added, with its reverse.`)
         setEditorOpen(false)
         triggerRefresh()
       } catch (caught) {
@@ -236,26 +249,27 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
     [apiUrl, handleAuthFailure, organizationId, readToken, triggerRefresh],
   )
 
-  // The inline edit. Resolves true when saved, so the row leaves edit mode.
+  // A cell edit: saved at once; the server sets the reverse pair (to -> from = 1 / rate) too, so the page reloads.
+  // Resolves true when saved, so the cell leaves edit mode.
   const saveRate = useCallback(
-    async (row: ExchangeRateRecord, rateInBdt: string) => {
-      if (Number(rateInBdt) === row.rateInBdt) return true
+    async (row: ExchangeRateMatrixRow, cell: ExchangeRateCell, rate: string) => {
+      if (Number(rate.replace(/,/g, "")) === cell.rate) return true
 
       const token = readToken()
       if (!token) return false
 
       try {
-        const saved = await updateExchangeRateValue({ apiUrl, accessToken: token, id: row.id, rateInBdt, organizationId })
-        setRates((current) => current.map((r) => (r.id === saved.id ? saved : r)))
-        toast.success(`${saved.currencyCode} rate updated. It is now marked Manual.`)
+        const saved = await updateExchangeRateValue({ apiUrl, accessToken: token, id: cell.id, rate, organizationId })
+        toast.success(`1 ${saved.fromCurrencyCode} = ${saved.rate} ${saved.toCurrencyCode} saved. The reverse rate was updated too.`)
+        triggerRefresh()
         return true
       } catch (caught) {
-        const message = errorMessage(caught, "Unable to update the exchange rate right now.")
+        const message = errorMessage(caught, `Unable to update the ${row.fromCurrencyCode} → ${cell.toCurrencyCode} rate right now.`)
         if (!handleAuthFailure(message)) toast.error(message)
         return false
       }
     },
-    [apiUrl, handleAuthFailure, organizationId, readToken],
+    [apiUrl, handleAuthFailure, organizationId, readToken, triggerRefresh],
   )
 
   const confirmDelete = useCallback(async () => {
@@ -265,7 +279,8 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
 
     setDeleteWorking(true)
     try {
-      const deleted = await deleteExchangeRates({ apiUrl, accessToken: token, ids: deleteTargets.map((row) => row.id), organizationId })
+      const ids = deleteTargets.flatMap((row) => row.cells.map((cell) => cell.id))
+      const deleted = await deleteExchangeRates({ apiUrl, accessToken: token, ids, organizationId })
       toast.success(deleted === 1 ? "Exchange rate deleted." : `${deleted} exchange rates deleted.`)
       setDeleteTargets([])
       triggerRefresh()
@@ -286,9 +301,9 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
     setRerunError("")
     try {
       const result = await rerunExchangeRates({ apiUrl, accessToken: token, organizationId })
-      const codes = result.rates.map((rate) => rate.currencyCode).join(", ")
+      const codes = [...new Set(result.rates.map((rate) => rate.fromCurrencyCode))].join(", ")
       toast.success(
-        `Fetched the latest rates (${codes || "none"}).` +
+        `Fetched the latest rates: ${result.rates.length} pairs of ${codes || "none"}.` +
           (result.cleared ? ` ${result.cleared} of today's rate${result.cleared === 1 ? " was" : "s were"} replaced.` : ""),
       )
       setRerunOpen(false)
@@ -305,8 +320,8 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
     }
   }, [apiUrl, handleAuthFailure, organizationId, readToken, rerunWorking, triggerRefresh])
 
-  const total = meta?.total ?? rates.length
-  const manualOnPage = rates.filter((row) => row.isManual).length
+  const totalDays = meta?.total ?? 0
+  const manualOnPage = rows.reduce((total, row) => total + row.cells.filter((cell) => cell.isManual).length, 0)
 
   // Nothing has finished loading yet (also while redirecting to sign-in).
   if (!loaded) {
@@ -333,13 +348,14 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
     <ModulePageHeader
       eyebrow="App configuration · Data"
       title="Exchange Rates"
-      description="Daily currency rates in BDT, shared by every company. Click a rate to edit it; Rerun latest fetches today's rates again."
+      description="Daily rates between every two currencies, shared by every company: 1 row currency × rate = the column currency. Click a rate to edit it; Rerun latest fetches today's rates again."
       badges={
         error
           ? []
           : [
-              { label: `Total ${total}`, variant: "secondary" },
-              { label: `Manual on page ${manualOnPage}` },
+              { label: `Days ${totalDays}`, variant: "secondary" },
+              { label: `Currencies ${currencies.length}` },
+              { label: `Edited by hand on page ${manualOnPage}` },
             ]
       }
       onRefresh={triggerRefresh}
@@ -365,14 +381,15 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
           {header}
 
           <ActiveExchangeRateSection
-            data={rates}
+            data={rows}
+            currencies={currencies}
             meta={meta}
             loading={loading}
             page={page}
             limit={limit}
             filters={filters}
-            selectedIds={selectedIds}
-            onSelectedIdsChange={(ids) => setSelection({ key: requestKey, ids })}
+            selectedKeys={selectedKeys}
+            onSelectedKeysChange={(keys) => setSelection({ key: requestKey, keys })}
             onFilterChange={(next) => {
               setFilters(next)
               setPage(1)
@@ -411,8 +428,8 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deleteTargets.length === 1 ? "exchange rate" : "exchange rates"}</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes {describeRows(deleteTargets)}. A provider rate can be fetched again with Rerun latest; a manual
-              rate has to be added again.
+              This permanently deletes {describeRows(deleteTargets)}. Provider rates can be fetched again with Rerun latest; a rate
+              added by hand has to be added again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

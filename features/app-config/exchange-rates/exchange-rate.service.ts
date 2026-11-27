@@ -2,9 +2,9 @@ import type {
   ApiResponse,
   ExchangeRateFilterValues,
   ExchangeRateFormValues,
+  ExchangeRateMatrixPage,
   ExchangeRateRecord,
   ExchangeRateRerunResult,
-  PaginatedResponse,
 } from "./exchange-rate.types"
 
 const RESOURCE = "/api/v1/exchange-rate"
@@ -66,19 +66,21 @@ function appendFilterParams(url: URL, filters: Partial<ExchangeRateFilterValues>
 
 function parseRate(value: string) {
   const rate = Number(value.trim().replace(/,/g, ""))
-  if (!value.trim() || !Number.isFinite(rate) || rate <= 0) throw new Error("Enter a rate in BDT greater than 0.")
+  if (!value.trim() || !Number.isFinite(rate) || rate <= 0) throw new Error("Enter a rate greater than 0.")
   return rate
 }
 
 function buildExchangeRatePayload(values: ExchangeRateFormValues) {
   return {
-    currencyCode: values.currencyCode.trim().toUpperCase(),
+    fromCurrencyCode: values.fromCurrencyCode.trim().toUpperCase(),
+    toCurrencyCode: values.toCurrencyCode.trim().toUpperCase(),
     currencyDate: values.currencyDate,
-    rateInBdt: parseRate(values.rateInBdt),
+    rate: parseRate(values.rate),
   }
 }
 
-export async function fetchExchangeRates({
+/** The matrix: paged by date, a row per date + from currency, a cell per to currency. */
+export async function fetchExchangeRateMatrix({
   apiUrl,
   accessToken,
   page,
@@ -92,8 +94,8 @@ export async function fetchExchangeRates({
   limit: number
   filters: Partial<ExchangeRateFilterValues>
   organizationId?: string
-}): Promise<PaginatedResponse<ExchangeRateRecord>> {
-  const url = buildApiUrl(apiUrl, RESOURCE)
+}): Promise<ExchangeRateMatrixPage> {
+  const url = buildApiUrl(apiUrl, `${RESOURCE}/matrix`)
   url.searchParams.set("page", String(page))
   url.searchParams.set("limit", String(limit))
   appendFilterParams(url, filters)
@@ -104,10 +106,10 @@ export async function fetchExchangeRates({
     cache: "no-store",
   })
 
-  const payload = await readJsonResponse<PaginatedResponse<ExchangeRateRecord>>(response)
+  const payload = await readJsonResponse<ExchangeRateMatrixPage>(response)
 
-  if (!payload.data?.items || !payload.data?.meta) {
-    throw new Error("The exchange rate list was returned without pagination data.")
+  if (!payload.data?.items || !payload.data?.meta || !payload.data?.currencies) {
+    throw new Error("The exchange rate matrix was returned without pagination data.")
   }
 
   return payload.data
@@ -139,24 +141,24 @@ export async function createExchangeRate({
   return payload.data
 }
 
-/** The inline edit: only the rate changes (the adapter merges it into the stored record). */
+/** The cell edit: only the rate changes (the adapter merges it into the stored record); the server sets the reverse pair. */
 export async function updateExchangeRateValue({
   apiUrl,
   accessToken,
   id,
-  rateInBdt,
+  rate,
   organizationId,
 }: {
   apiUrl: string
   accessToken: string
   id: string
-  rateInBdt: string
+  rate: string
   organizationId?: string
 }) {
   const response = await fetch(buildApiUrl(apiUrl, `${RESOURCE}/${id}`), {
     method: "PATCH",
     headers: buildRequestHeaders({ accessToken, organizationId, contentType: "application/json" }),
-    body: JSON.stringify({ rateInBdt: parseRate(rateInBdt) }),
+    body: JSON.stringify({ rate: parseRate(rate) }),
   })
 
   const payload = await readJsonResponse<ExchangeRateRecord>(response)
