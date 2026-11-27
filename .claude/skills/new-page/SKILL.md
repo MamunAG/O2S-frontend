@@ -279,3 +279,8 @@ Known state of the reference pages (update this list when you fix one):
 - **`AppDataFilterForm` is 4 per row** (`xl:grid-cols-4`); widen a field with `className: "min-w-0 space-y-1 xl:col-span-2"`.
 - **`ModulePageHeader`'s refresh button always says "Refresh"**, including on the error state.
 - **The header's "Active N" badge counts the current page only**, not the whole table.
+- **A table wider than the card** (many columns, e.g. the Exchange Rates currency grid): give the columns fixed
+  widths in `columnClassNames` (the table is `table-fixed`, so it grows to their sum and scrolls inside its card), pin
+  the identity columns with `sticky left-… z-10 bg-white dark:bg-slate-950`, and wrap the section in
+  `<div className="min-w-0 [contain:inline-size]">` — otherwise the page's `ScrollArea` content grows to the table and
+  the header buttons fall off the right edge.

@@ -380,25 +380,29 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
         <div className="space-y-4 p-2 sm:p-3 lg:p-4">
           {header}
 
-          <ActiveExchangeRateSection
-            data={rows}
-            currencies={currencies}
-            meta={meta}
-            loading={loading}
-            page={page}
-            limit={limit}
-            filters={filters}
-            selectedKeys={selectedKeys}
-            onSelectedKeysChange={(keys) => setSelection({ key: requestKey, keys })}
-            onFilterChange={(next) => {
-              setFilters(next)
-              setPage(1)
-            }}
-            onPageChange={setPage}
-            onLimitChange={setLimit}
-            onSaveRate={saveRate}
-            onDelete={setDeleteTargets}
-          />
+          {/* Inline-size containment: the wide currency grid scrolls inside its card instead of widening the page
+              (the ScrollArea content grows to its widest child). */}
+          <div className="min-w-0 [contain:inline-size]">
+            <ActiveExchangeRateSection
+              data={rows}
+              currencies={currencies}
+              meta={meta}
+              loading={loading}
+              page={page}
+              limit={limit}
+              filters={filters}
+              selectedKeys={selectedKeys}
+              onSelectedKeysChange={(keys) => setSelection({ key: requestKey, keys })}
+              onFilterChange={(next) => {
+                setFilters(next)
+                setPage(1)
+              }}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+              onSaveRate={saveRate}
+              onDelete={setDeleteTargets}
+            />
+          </div>
         </div>
       </ScrollArea>
 
