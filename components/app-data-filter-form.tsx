@@ -1,7 +1,14 @@
 "use client"
 
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react"
-import { Plus, Search } from "lucide-react"
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react"
+import { ChevronDown, Plus, Search } from "lucide-react"
 
 import { AppSelect } from "@/components/app-select"
 import { Button } from "@/components/ui/button"
@@ -94,7 +101,10 @@ function DebouncedTextInput({
 
   useEffect(() => {
     if (draft === value) return
-    const timer = window.setTimeout(() => onValueChangeRef.current(draft), delayMs)
+    const timer = window.setTimeout(
+      () => onValueChangeRef.current(draft),
+      delayMs
+    )
     return () => window.clearTimeout(timer)
   }, [delayMs, draft, value])
 
@@ -120,84 +130,106 @@ export function AppDataFilterForm({
   resetLabel = "Reset",
   actions,
 }: AppDataFilterFormProps) {
+  // Below `sm` the filters start collapsed behind a "Filters" bar with a chevron; from `sm` up they always show.
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const formId = useId()
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     onSubmit?.()
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
-    >
-      {fields.map((field) => (
-        <div key={field.id} className={field.className ?? "min-w-0 space-y-1"}>
-          <label
-            htmlFor={field.id}
-            className="block text-xs font-medium text-slate-700 dark:text-slate-300"
-          >
-            {field.label}
-          </label>
-          {field.kind === "text" && debounceMs ? (
-            <DebouncedTextInput
-              id={field.id}
-              value={field.value}
-              placeholder={field.placeholder}
-              delayMs={debounceMs}
-              onValueChange={field.onValueChange}
-            />
-          ) : field.kind === "text" ? (
-            <Input
-              id={field.id}
-              value={field.value}
-              className={FILTER_INPUT_CLASS}
-              placeholder={field.placeholder}
-              onChange={(event) => field.onValueChange(event.target.value)}
-            />
-          ) : field.kind === "select" ? (
-            <AppSelect
-              triggerId={field.id}
-              value={field.value}
-              onValueChange={field.onValueChange}
-              placeholder={field.placeholder}
-              options={field.options}
-            />
-          ) : (
-            field.control
-          )}
-        </div>
-      ))}
-
-      {/* Auto-applying filters (no Search): Reset sits right after the last filter. */}
-      <div
-        className={`flex flex-col gap-2 sm:flex-row sm:items-end ${onSubmit ? "sm:justify-end" : "sm:justify-start"}`}
+    <>
+      <button
+        type="button"
+        className="flex h-7 w-full items-center justify-between rounded-md text-xs font-medium text-slate-700 sm:hidden dark:text-slate-300"
+        aria-expanded={mobileOpen}
+        aria-controls={formId}
+        onClick={() => setMobileOpen((open) => !open)}
       >
-        {onSubmit ? (
-          <Button type="submit" className="w-full rounded-xl sm:w-auto">
-            <Search className="size-3.5" />
-            {submitLabel}
-          </Button>
-        ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full rounded-xl sm:w-auto"
-          onClick={onReset}
+        Filters
+        <ChevronDown
+          className={`size-4 text-slate-500 transition-transform duration-200 ${mobileOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+      <form
+        id={formId}
+        onSubmit={handleSubmit}
+        className={`${mobileOpen ? "mt-2 grid" : "hidden"} gap-3 sm:mt-0 sm:grid sm:grid-cols-2 xl:grid-cols-4`}
+      >
+        {fields.map((field) => (
+          <div
+            key={field.id}
+            className={field.className ?? "min-w-0 space-y-1"}
+          >
+            <label
+              htmlFor={field.id}
+              className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+            >
+              {field.label}
+            </label>
+            {field.kind === "text" && debounceMs ? (
+              <DebouncedTextInput
+                id={field.id}
+                value={field.value}
+                placeholder={field.placeholder}
+                delayMs={debounceMs}
+                onValueChange={field.onValueChange}
+              />
+            ) : field.kind === "text" ? (
+              <Input
+                id={field.id}
+                value={field.value}
+                className={FILTER_INPUT_CLASS}
+                placeholder={field.placeholder}
+                onChange={(event) => field.onValueChange(event.target.value)}
+              />
+            ) : field.kind === "select" ? (
+              <AppSelect
+                triggerId={field.id}
+                value={field.value}
+                onValueChange={field.onValueChange}
+                placeholder={field.placeholder}
+                options={field.options}
+              />
+            ) : (
+              field.control
+            )}
+          </div>
+        ))}
+
+        {/* Auto-applying filters (no Search): Reset sits right after the last filter. */}
+        <div
+          className={`flex flex-col gap-2 sm:flex-row sm:items-end ${onSubmit ? "sm:justify-end" : "sm:justify-start"}`}
         >
-          {resetLabel}
-        </Button>
-        {onCreate ? (
+          {onSubmit ? (
+            <Button type="submit" className="w-full rounded-xl sm:w-auto">
+              <Search className="size-3.5" />
+              {submitLabel}
+            </Button>
+          ) : null}
           <Button
             type="button"
+            variant="outline"
             className="w-full rounded-xl sm:w-auto"
-            onClick={onCreate}
+            onClick={onReset}
           >
-            <Plus className="size-3.5" />
-            {createLabel}
+            {resetLabel}
           </Button>
-        ) : null}
-        {actions}
-      </div>
-    </form>
+          {onCreate ? (
+            <Button
+              type="button"
+              className="w-full rounded-xl sm:w-auto"
+              onClick={onCreate}
+            >
+              <Plus className="size-3.5" />
+              {createLabel}
+            </Button>
+          ) : null}
+          {actions}
+        </div>
+      </form>
+    </>
   )
 }
