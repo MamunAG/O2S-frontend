@@ -11,15 +11,17 @@ description: >
   the sidebar". Also use for ANY change to an existing CRUD page in O2S-frontend (Factory,
   Designation, Materials, Units, Buyers, HR masters, …) — adding filters, columns, form
   fields, a lookup combobox or an image upload, restyling, fixing a bug, or refactoring —
-  because the same rules apply to existing pages and must be brought in when a page is touched.
+  because one set of rules applies to every page, new or existing, on every request to create or modify it.
 ---
 
 # CRUD pages in O2S-frontend (new and existing)
 
 A new page is **1 route file + 6 feature files**, and **2–3 edits** to shared files.
 
-**The rules in "Rules (R1–R10)" below are mandatory for every page — new pages are written to them, and an
-existing page is brought into line with them whenever it is touched** (see "Existing pages").
+**One set of rules, every page, every time.** All of "Rules (R1–R12)" below apply to every page, new or existing,
+whenever the user asks to create **or** modify it — there are no separate rules for new pages and existing ones,
+no rule that only some pages follow, and no "later". Whatever the request (a new page, a field, a column, a
+bug fix, a restyle), the page comes out of it meeting all of them (see "Applying the rules").
 
 The live reference is the Factory Setup page — when this document and that code disagree, read both and ask:
 
@@ -138,10 +140,10 @@ upload, Excel upload) are in **`references/add-ons.md`**. Write each file from i
     to `MENU_NAME_TO_O2S` in `lib/o2s/menus.ts`. Without it, non-admin users with the O2S permission
     still don't see the item.
 
-## Rules (R1–R10) — mandatory for new and existing pages
+## Rules (R1–R12) — one set for every page
 
-Every CRUD page follows all of these. A new page is written to them from the start (the templates already
-do); an existing page is brought into line whenever it is touched — see "Existing pages" below.
+Every CRUD page follows all of these, new or existing, on every request to create or modify it. The templates
+already meet them; a page built another way is brought to them in the same change — see "Applying the rules".
 
 **R1 — Shared components, never hand-written equivalents.**
 
@@ -165,7 +167,7 @@ Search / Reset / New / Refresh `<Button>`s or mobile pagers. Live examples: Fact
   Don't pass `onCreate` / `createLabel` to `AppDataFilterForm` — the
   **New** button lives in `ModulePageHeader` only, so the active section takes no `onCreate` prop.
 - The workspace's `onFilterChange` sets the filters **and resets that list to page 1** in one handler.
-- Other pages that still pass `onSubmit` keep their Search button; bring them to R1a when they are touched.
+- A page that still passes `onSubmit` (a Search button) breaks R1a: it is fixed in the change that modifies it.
 
 **R2 — No setState in effects (`react-hooks/set-state-in-effect`).** One effect loads the active and the
 deleted page in parallel, keyed by `requestKey`; `loading` / `error` are derived from which key last
@@ -209,20 +211,44 @@ cards, empty states, the banner and dialogs as in the templates (`h-8 py-1` cell
 errors and no warnings — no unused variables, imports, helpers or props. An `<img>` for an O2S file URL
 carries `// eslint-disable-next-line @next/next/no-img-element` with a reason.
 
-## Existing pages
+**R11 — Every outbound call goes through the service and the O2S adapter** (the frontend side of the
+backend's rule that every outbound HTTP call is a Refit client).
+- Components, dialogs and the workspace never call `fetch` (nor axios or another HTTP client): they call the
+  feature's `<file>.service.ts` (or a shared `*-api.ts` helper), which calls `${apiUrl}/api/v1/...` as in R8 and
+  so passes through `lib/o2s/adapter.ts` and its rule (R6).
+- The browser calls only the O2S API. A third-party service (exchange rates, AI, a vendor, maps, …) is called by
+  the backend through its own Refit client (`O2S-backend` CLAUDE.md, "Every outbound HTTP call goes through
+  Refit"), behind an O2S endpoint the page calls; never from the page, and never with a key in `NEXT_PUBLIC_*`.
+  No such endpoint yet → add it to the backend first (its `production-feature` skill), then the adapter rule.
+- What the user sees of a failure is the adapter's `message` (`toast.error(...)`, the dialog's error): never the
+  raw response text. The adapter already turns an HTML answer (the deploy's `app_offline.htm`, IIS error pages)
+  or no answer at all into a plain sentence; don't read `response.text()` into a toast to get around it.
 
-When asked for *any* change to an existing CRUD page (a new field, a filter, a column, a bug fix, a restyle):
+**R12 — Toast placement: errors and warnings at the top middle, everything else at the bottom right.**
+- A failure the user must notice is `toast.error(...)`; a caution is `toast.warning(...)`. Both show at the **top
+  middle**. A success, an info note, a loading toast or a plain `toast(...)` shows at the **bottom right**.
+- This is set once in `components/ui/sonner.tsx` (the `Toaster` defaults to bottom right; `toast.error` /
+  `toast.warning` default to top center) for every `import { toast } from "sonner"`, so a page passes **no
+  `position`**. Never report an error with `toast.success` / `toast.info` / `toast(...)` to change where it shows,
+  and never pass `position` to move a toast against this rule.
+- Don't add a second `<Toaster>`; the one in `app/layout.tsx` takes no `position` prop.
 
-1. **Do the requested change.**
-2. **Audit the page against R1–R10** — its route, feature folder, adapter rule, sidebar item and menu-name
-   entry. Run `npx eslint <feature folder>` and read the backend `<Thing>Params` / DTO.
+## Applying the rules
+
+The same steps for every request, whether it creates a page or modifies one (a new field, a filter, a column,
+a bug fix, a restyle):
+
+1. **Do the requested change** (a new page: the Steps above, from the templates).
+2. **Audit the whole page against R1–R12**, not only the lines the request touched — its route, feature
+   folder, adapter rule, sidebar item and menu-name entry. Run `npx eslint <feature folder>` and read the
+   backend `<Thing>Params` / DTO.
 3. **Fix every rule the page breaks**, in the same change, using the templates as the target shape. Keep the
    page's existing columns, fields, labels, badges, image thumbnails and extra actions — the rules change
    *how* the page is built, not *what* it shows.
 4. **Ask before removing anything users can see.** R3 (a filter the backend ignores) and R4 (a bulk-upload
    menu that always errors) remove visible controls: list them and get a yes before deleting them. If the
    user says keep, leave them and note it in the summary.
-5. **Report** a short R1–R10 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
+5. **Report** a short R1–R12 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
 
 Known state of the reference pages (update this list when you fix one):
 
@@ -230,12 +256,13 @@ Known state of the reference pages (update this list when you fix one):
 |---|---|
 | Factory (`features/app-config/factory/`) | R2 (loader effect, dialog draft effect), R3 (`contact` / `email` filters), R4 (bulk upload menu), R5 (no `permissionMenuName`), R9 (`factory.workspace.tsx` re-export), R10 (unused `imageInputRef`, `uploadingTemplate`, `downloadingTemplate`, `optionalNumber`; `<img>` warning in the dialog). R1 done. |
 | Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`) — not yet audited for the rest |
+| Exchange Rates (`features/app-config/exchange-rates/`) | None. A matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
 | Other CRUD pages | not yet audited |
 
 ## Verify
 
 1. R10: `npm run typecheck` and `npx eslint <the new and touched files>` — no errors and no warnings.
-2. Re-check R1–R9 against the finished files (for an existing page, this is the report in step 5 above).
+2. Re-check R1–R12 against the finished files: this is the report in step 5 of "Applying the rules".
 3. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
    `http://localhost:3000<route>` and walk through: list loads → filter → create → edit → delete →
    restore from the banner → delete → permanently delete from the deleted card.

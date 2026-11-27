@@ -96,6 +96,11 @@ export const MODULE_NAVIGATION: ModuleNavigationItem[] = [
             permissionMenuName: "Currency Setup",
           },
           {
+            label: "Exchange Rates",
+            href: "/app-config/data/exchange-rates",
+            permissionMenuName: "Exchange Rates",
+          },
+          {
             label: "Unit Setup",
             href: "/app-config/data/units",
             permissionMenuName: "Unit Setup",

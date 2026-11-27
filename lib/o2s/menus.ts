@@ -6,6 +6,7 @@
 export const MENU_NAME_TO_O2S: Record<string, string> = {
   "Country Setup": "Country",
   "Currency Setup": "Currency",
+  "Exchange Rates": "Exchange Rate",
   "Unit Setup": "Unit",
   "Supplier Entry": "Supplier",
   "Material Group Entry": "Material Group",
