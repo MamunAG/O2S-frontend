@@ -163,7 +163,7 @@ export function FabricProcessFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 sm:max-w-xl">
         <form
-          className="flex max-h-[90dvh] sm:max-h-[calc(100vh-2rem)] flex-col"
+          className="flex max-h-[95dvh] sm:max-h-[calc(100vh-2rem)] flex-col"
           onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)}
         >
           <div className="border-b border-slate-200/70 px-6 pb-4 pt-6 dark:border-white/10">

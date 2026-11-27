@@ -313,7 +313,7 @@ export function OrderPlacementFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="left-0 top-0 h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[100vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-slate-200/70 bg-slate-50 p-0 shadow-2xl sm:left-1/2 sm:top-1/2 sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg 2xl:w-[min(1400px,calc(100vw-4rem))] 2xl:max-w-[min(1400px,calc(100vw-4rem))] dark:border-white/10 dark:bg-[#080a14]">
+      <DialogContent className="h-[95dvh] max-h-[95dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] gap-0 overflow-hidden rounded-xl border-slate-200/70 bg-slate-50 p-0 shadow-2xl sm:left-1/2 sm:top-1/2 sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg 2xl:w-[min(1400px,calc(100vw-4rem))] 2xl:max-w-[min(1400px,calc(100vw-4rem))] dark:border-white/10 dark:bg-[#080a14]">
         <form
           className="grid h-full min-h-0 w-full max-w-full min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-h-[calc(100vh-2rem)]"
           onSubmit={(event) => {

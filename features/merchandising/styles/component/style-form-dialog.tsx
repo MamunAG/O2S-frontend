@@ -442,7 +442,7 @@ export function StyleFormDialog({
         onOpenChange(nextOpen)
       }}
     >
-      <DialogContent className="left-0 top-0 h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[100vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-slate-200/70 bg-slate-50 p-0 shadow-2xl dark:border-white/10 dark:bg-[#080a14] sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:max-w-7xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
+      <DialogContent className="h-[95dvh] max-h-[95dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] gap-0 overflow-hidden rounded-xl border-slate-200/70 bg-slate-50 p-0 shadow-2xl dark:border-white/10 dark:bg-[#080a14] sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:max-w-7xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
         <form
           className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] sm:max-h-[calc(100vh-2rem)] sm:min-h-[78vh]"
           onSubmit={(event) => {
@@ -493,7 +493,7 @@ export function StyleFormDialog({
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="sticky top-0 z-20 -mx-2 -mt-2 w-screen max-w-none overflow-hidden rounded-none border-b border-slate-200/70 bg-white/95 p-3 shadow-[0_14px_30px_rgba(15,23,42,0.12)] backdrop-blur dark:border-white/10 dark:bg-[#17131d]/95 dark:shadow-[0_14px_30px_rgba(0,0,0,0.35)] sm:mx-0 sm:mt-0 sm:w-full sm:max-w-full sm:rounded-lg sm:border lg:hidden">
+                <div className="sticky top-0 z-20 -mx-2 -mt-2 w-[calc(100%+1rem)] max-w-none overflow-hidden rounded-none border-b border-slate-200/70 bg-white/95 p-3 shadow-[0_14px_30px_rgba(15,23,42,0.12)] backdrop-blur dark:border-white/10 dark:bg-[#17131d]/95 dark:shadow-[0_14px_30px_rgba(0,0,0,0.35)] sm:mx-0 sm:mt-0 sm:w-full sm:max-w-full sm:rounded-lg sm:border lg:hidden">
                   <DialogHeader className="min-w-0">
                     <DialogTitle className="text-base">{mode === "create" ? "Create style" : "Edit style"}</DialogTitle>
                   </DialogHeader>
