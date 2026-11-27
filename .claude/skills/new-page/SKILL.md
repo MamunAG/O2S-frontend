@@ -11,15 +11,17 @@ description: >
   the sidebar". Also use for ANY change to an existing CRUD page in O2S-frontend (Factory,
   Designation, Materials, Units, Buyers, HR masters, …) — adding filters, columns, form
   fields, a lookup combobox or an image upload, restyling, fixing a bug, or refactoring —
-  because the same rules apply to existing pages and must be brought in when a page is touched.
+  because one set of rules applies to every page, new or existing, on every request to create or modify it.
 ---
 
 # CRUD pages in O2S-frontend (new and existing)
 
 A new page is **1 route file + 6 feature files**, and **2–3 edits** to shared files.
 
-**The rules in "Rules (R1–R11)" below are mandatory for every page — new pages are written to them, and an
-existing page is brought into line with them whenever it is touched** (see "Existing pages").
+**One set of rules, every page, every time.** All of "Rules (R1–R11)" below apply to every page, new or existing,
+whenever the user asks to create **or** modify it — there are no separate rules for new pages and existing ones,
+no rule that only some pages follow, and no "later". Whatever the request (a new page, a field, a column, a
+bug fix, a restyle), the page comes out of it meeting all of them (see "Applying the rules").
 
 The live reference is the Factory Setup page — when this document and that code disagree, read both and ask:
 
@@ -138,10 +140,10 @@ upload, Excel upload) are in **`references/add-ons.md`**. Write each file from i
     to `MENU_NAME_TO_O2S` in `lib/o2s/menus.ts`. Without it, non-admin users with the O2S permission
     still don't see the item.
 
-## Rules (R1–R11) — mandatory for new and existing pages
+## Rules (R1–R11) — one set for every page
 
-Every CRUD page follows all of these. A new page is written to them from the start (the templates already
-do); an existing page is brought into line whenever it is touched — see "Existing pages" below.
+Every CRUD page follows all of these, new or existing, on every request to create or modify it. The templates
+already meet them; a page built another way is brought to them in the same change — see "Applying the rules".
 
 **R1 — Shared components, never hand-written equivalents.**
 
@@ -165,7 +167,7 @@ Search / Reset / New / Refresh `<Button>`s or mobile pagers. Live examples: Fact
   Don't pass `onCreate` / `createLabel` to `AppDataFilterForm` — the
   **New** button lives in `ModulePageHeader` only, so the active section takes no `onCreate` prop.
 - The workspace's `onFilterChange` sets the filters **and resets that list to page 1** in one handler.
-- Other pages that still pass `onSubmit` keep their Search button; bring them to R1a when they are touched.
+- A page that still passes `onSubmit` (a Search button) breaks R1a: it is fixed in the change that modifies it.
 
 **R2 — No setState in effects (`react-hooks/set-state-in-effect`).** One effect loads the active and the
 deleted page in parallel, keyed by `requestKey`; `loading` / `error` are derived from which key last
@@ -222,13 +224,15 @@ backend's rule that every outbound HTTP call is a Refit client).
   raw response text. The adapter already turns an HTML answer (the deploy's `app_offline.htm`, IIS error pages)
   or no answer at all into a plain sentence; don't read `response.text()` into a toast to get around it.
 
-## Existing pages
+## Applying the rules
 
-When asked for *any* change to an existing CRUD page (a new field, a filter, a column, a bug fix, a restyle):
+The same steps for every request, whether it creates a page or modifies one (a new field, a filter, a column,
+a bug fix, a restyle):
 
-1. **Do the requested change.**
-2. **Audit the page against R1–R11** — its route, feature folder, adapter rule, sidebar item and menu-name
-   entry. Run `npx eslint <feature folder>` and read the backend `<Thing>Params` / DTO.
+1. **Do the requested change** (a new page: the Steps above, from the templates).
+2. **Audit the whole page against R1–R11**, not only the lines the request touched — its route, feature
+   folder, adapter rule, sidebar item and menu-name entry. Run `npx eslint <feature folder>` and read the
+   backend `<Thing>Params` / DTO.
 3. **Fix every rule the page breaks**, in the same change, using the templates as the target shape. Keep the
    page's existing columns, fields, labels, badges, image thumbnails and extra actions — the rules change
    *how* the page is built, not *what* it shows.
@@ -248,7 +252,7 @@ Known state of the reference pages (update this list when you fix one):
 ## Verify
 
 1. R10: `npm run typecheck` and `npx eslint <the new and touched files>` — no errors and no warnings.
-2. Re-check R1–R9 against the finished files (for an existing page, this is the report in step 5 above).
+2. Re-check R1–R11 against the finished files: this is the report in step 5 of "Applying the rules".
 3. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
    `http://localhost:3000<route>` and walk through: list loads → filter → create → edit → delete →
    restore from the banner → delete → permanently delete from the deleted card.
