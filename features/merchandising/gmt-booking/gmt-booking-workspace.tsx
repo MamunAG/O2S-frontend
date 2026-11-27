@@ -30,6 +30,7 @@ import { loadPoOptions } from "../gmt-budget/gmt-budget.api"
 import { deleteBooking, fetchBookings } from "./gmt-booking.api"
 import type { BookingListItem } from "./gmt-booking.types"
 import { GmtBookingFormDialog, type GmtBookingDialogMode } from "./component/gmt-booking-form-dialog"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 /** The API's menu name (GmtBookingEndpoints.menuName). */
 export const GMT_BOOKING_MENU_NAME = "Create Fabric Booking"
@@ -365,11 +366,11 @@ export function GmtBookingWorkspace({ apiUrl }: { apiUrl: string }) {
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="bookingFilterFrom">Release Date From</FieldLabel>
-                    <Input id="bookingFilterFrom" type="date" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} className={INPUT_CLASS} />
+                    <AppDatePicker id="bookingFilterFrom" value={draft.from} onValueChange={(value) => setDraft({ ...draft, from: value })} className={INPUT_CLASS} />
                   </div>
                   <div className={FIELD_CLASS}>
                     <FieldLabel htmlFor="bookingFilterTo">Release Date To</FieldLabel>
-                    <Input id="bookingFilterTo" type="date" value={draft.to} onChange={(e) => setDraft({ ...draft, to: e.target.value })} className={INPUT_CLASS} />
+                    <AppDatePicker id="bookingFilterTo" value={draft.to} onValueChange={(value) => setDraft({ ...draft, to: value })} className={INPUT_CLASS} />
                   </div>
                   <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row sm:justify-end xl:col-span-6">
                     <Button type="submit" className="w-full rounded-xl sm:w-auto">

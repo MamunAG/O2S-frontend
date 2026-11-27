@@ -20,6 +20,7 @@ import {
   type ExchangeRateMatrixRow,
   type PaginationMeta,
 } from "../exchange-rate.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 type ActiveExchangeRateSectionProps = {
   data: ExchangeRateMatrixRow[]
@@ -363,12 +364,11 @@ export function ActiveExchangeRateSection({
               label: "From date",
               kind: "custom",
               control: (
-                <Input
+                <AppDatePicker
                   id="filterExchangeRateFromDate"
-                  type="date"
                   value={filters.fromCurrencyDate}
                   max={filters.toCurrencyDate || undefined}
-                  onChange={(event) => onFilterChange({ ...filters, fromCurrencyDate: event.target.value })}
+                  onValueChange={(value) => onFilterChange({ ...filters, fromCurrencyDate: value })}
                   className="h-9 rounded-xl"
                 />
               ),
@@ -378,12 +378,11 @@ export function ActiveExchangeRateSection({
               label: "To date",
               kind: "custom",
               control: (
-                <Input
+                <AppDatePicker
                   id="filterExchangeRateToDate"
-                  type="date"
                   value={filters.toCurrencyDate}
                   min={filters.fromCurrencyDate || undefined}
-                  onChange={(event) => onFilterChange({ ...filters, toCurrencyDate: event.target.value })}
+                  onValueChange={(value) => onFilterChange({ ...filters, toCurrencyDate: value })}
                   className="h-9 rounded-xl"
                 />
               ),

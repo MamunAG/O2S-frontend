@@ -105,7 +105,7 @@ Every field appears in up to 6 places. Use the row for its kind:
 | Optional text | `x?: string \| null` | `string` / `""` | `rec.x ?? ""` | `optionalString(values.x)` | `Input` (`type="email"` for email) | `x \|\| "-"` |
 | Long text | `x?: string \| null` | `string` / `""` | `rec.x ?? ""` | `optionalString(values.x)` | `Textarea rows={4}` | usually not shown |
 | Number | `x?: number \| null` | `string` / `""` | `rec.x != null ? String(rec.x) : ""` | `optionalNumber(values.x)` | `Input type="number" inputMode="decimal"` | number, right-aligned |
-| Date | `x?: string \| null` | `string` / `""` (`yyyy-MM-dd`) | `rec.x?.slice(0, 10) ?? ""` | `optionalString(values.x)` | `Input type="date"` | `formatDate(x)` |
+| Date | `x?: string \| null` | `string` / `""` (`yyyy-MM-dd`) | `rec.x?.slice(0, 10) ?? ""` | `optionalString(values.x)` | `AppDatePicker` | `formatDate(x)` |
 | Active flag | `isActive?: boolean` | `boolean` / `true` | `rec.isActive !== false` | `values.isActive` | `Switch` in a bordered row | Status badge |
 | Lookup | `xId?: string \| null` + `x?: { id, name } \| null` | `xId: string` / `""` | `rec.xId ?? ""` | `values.xId \|\| null` | `AppCombobox` — see `references/add-ons.md` | `row.original.x?.name ?? "-"` |
 | Image | `imageId?: string \| null` + `image?: FileSummary \| null` | `imageId: string` / `""` | `rec.imageId ?? ""` | `values.imageId \|\| null` | upload box — see `references/add-ons.md` | thumbnail in the identity column |
@@ -153,6 +153,13 @@ already meet them; a page built another way is brought to them in the same chang
 | Table card: header with badges, desktop table, mobile cards, skeletons, pager | `AppDataSection` (`components/app-data-section.tsx`) |
 | Filter fields + **Reset** button | `AppDataFilterForm` (`components/app-data-filter-form.tsx`), passed as `AppDataSection`'s `filters`, with `debounceMs={FILTER_DEBOUNCE_MS}` |
 | Selects, lookups | `AppSelect`, `AppCombobox` |
+| Dates (form fields, filters, grid cells) | `AppDatePicker` (`components/app-date-picker.tsx`) — never `<Input type="date">` |
+
+`AppDatePicker` is shadcn's Date Picker (outline Button + Popover + Calendar, `captionLayout="dropdown"`): `value` /
+`onValueChange` are `yyyy-MM-dd` strings (`""` = none), with `min` / `max`, `required` (no clearing), `readOnly`,
+`disabled`, `placeholder`, and the classes the Input had. An optional date clears by clicking the selected day again or
+with Backspace / Delete. Ref, `onKeyDown`, `onFocus` and `data-*` go to its Button, so in a keyboard grid widen the
+handler types to `HTMLElement` and call `select()` only on real inputs.
 
 A control the shared components lack (e.g. the bulk-actions dropdown) goes in `AppDataSection`'s
 `headerActions` or `ModulePageHeader`'s `actions`. No hand-written `<Card>` table sections, filter `<form>`s,

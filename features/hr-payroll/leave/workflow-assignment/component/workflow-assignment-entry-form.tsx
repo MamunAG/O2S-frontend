@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 
 import type { MasterDataFormValues } from "../../../master-data/master-data.types"
 import type { HrOption } from "../../../shared/hr.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 const priorities: Record<string, number> = {
   COMPANY: 6,
@@ -125,19 +126,17 @@ export function WorkflowAssignmentEntryForm({
           </div>
           <div>
             <Label>Effective from</Label>
-            <Input
-              type="date"
+            <AppDatePicker
               value={String(values.settings.effectiveFrom ?? "")}
-              onChange={(event) => updateSetting("effectiveFrom", event.target.value)}
+              onValueChange={(value) => updateSetting("effectiveFrom", value)}
             />
           </div>
           <div>
             <Label>Effective to</Label>
-            <Input
-              type="date"
+            <AppDatePicker
               min={String(values.settings.effectiveFrom ?? "")}
               value={String(values.settings.effectiveTo ?? "")}
-              onChange={(event) => updateSetting("effectiveTo", event.target.value)}
+              onValueChange={(value) => updateSetting("effectiveTo", value)}
             />
           </div>
           <div>

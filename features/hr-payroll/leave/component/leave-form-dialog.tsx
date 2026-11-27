@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { LeavePreview } from "../../operations/operations.types"
 import type { HrOption } from "../../shared/hr.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 export type LeaveFormValues = { employeeId: string; leaveTypeId: string; startDate: string; endDate: string; durationType: string; reason: string; contactDuringLeave: string; attachmentUrl: string }
 const inputClass = "h-9 rounded-lg"
@@ -24,8 +25,8 @@ export function LeaveFormDialog({ open, values, employees, leaveTypes, durationO
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Employee" required><AppSelect value={values.employeeId} onValueChange={(value) => onChange("employeeId", value)} options={employees} placeholder="Select employee" triggerClassName={inputClass} /></Field>
       <Field label="Leave type" required><AppSelect value={values.leaveTypeId} onValueChange={(value) => onChange("leaveTypeId", value)} options={leaveTypes} placeholder="Select leave type" triggerClassName={inputClass} /></Field>
-      <Field label="From date" required><Input type="date" className={inputClass} value={values.startDate} onChange={(event) => onChange("startDate", event.target.value)} /></Field>
-      <Field label="To date" required><Input type="date" min={values.startDate} className={inputClass} value={values.endDate} onChange={(event) => onChange("endDate", event.target.value)} /></Field>
+      <Field label="From date" required><AppDatePicker className={inputClass} value={values.startDate} onValueChange={(value) => onChange("startDate", value)} /></Field>
+      <Field label="To date" required><AppDatePicker min={values.startDate} className={inputClass} value={values.endDate} onValueChange={(value) => onChange("endDate", value)} /></Field>
       <Field label="Duration" required><AppSelect value={values.durationType} onValueChange={(value) => onChange("durationType", value)} options={durationOptions} triggerClassName={inputClass} /></Field>
       <Field label="Contact during leave"><Input className={inputClass} value={values.contactDuringLeave} maxLength={255} onChange={(event) => onChange("contactDuringLeave", event.target.value)} placeholder="Phone or email (optional)" /></Field>
       <div className="sm:col-span-2"><Field label="Reason"><Textarea value={values.reason} maxLength={2000} onChange={(event) => onChange("reason", event.target.value)} placeholder="Explain the leave request" /></Field></div>

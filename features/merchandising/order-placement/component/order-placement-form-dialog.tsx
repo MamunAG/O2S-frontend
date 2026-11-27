@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 
 import type { OrderPlacementDetailFormValues, OrderPlacementDialogSectionId, OrderPlacementFormError, OrderPlacementFormValues } from "../order-placement.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 type SelectOption = AppComboboxOption
 type FactoryEditableField = "factoryCmPerDzn" | "factoryFob" | "factoryShipmentDate"
@@ -151,7 +152,7 @@ function sumProfitValue(details: OrderPlacementDetailFormValues[]) {
   }, 0)
 }
 
-function isFillDownShortcut(event: KeyboardEvent<HTMLInputElement>) {
+function isFillDownShortcut(event: KeyboardEvent<HTMLElement>) {
   return (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d"
 }
 
@@ -190,7 +191,8 @@ export function OrderPlacementFormDialog({
   const [activeFillDownField, setActiveFillDownField] = useState<FactoryEditableField | null>(null)
   const [jobDetailsError, setJobDetailsError] = useState("")
   const sectionRefs = useRef<Record<OrderPlacementDialogSectionId, HTMLDivElement | null>>({ "basic-info": null, details: null, status: null })
-  const factoryInputRefs = useRef<Record<FactoryEditableField, Array<HTMLInputElement | null>>>({
+  // A cell is an input, or the shared date picker's button (factoryShipmentDate).
+  const factoryInputRefs = useRef<Record<FactoryEditableField, Array<HTMLInputElement | HTMLButtonElement | null>>>({
     factoryCmPerDzn: [],
     factoryFob: [],
     factoryShipmentDate: [],
@@ -253,14 +255,16 @@ export function OrderPlacementFormDialog({
     if (!nextInput) return
 
     nextInput.focus()
-    try {
-      nextInput.select()
-    } catch {
-      // Date inputs may not support selection in every browser.
+    if (nextInput instanceof HTMLInputElement) {
+      try {
+        nextInput.select()
+      } catch {
+        // Some inputs may not support selection in every browser.
+      }
     }
   }
 
-  function handleEditableKeyDown(event: KeyboardEvent<HTMLInputElement>, rowIndex: number, field: FactoryEditableField) {
+  function handleEditableKeyDown(event: KeyboardEvent<HTMLElement>, rowIndex: number, field: FactoryEditableField) {
     if (isFillDownShortcut(event)) {
       event.preventDefault()
       fillDownFromRow(rowIndex, field)
@@ -379,7 +383,7 @@ export function OrderPlacementFormDialog({
                           </div>
                           <div className={FIELD_CLASS}>
                             <FieldLabel required>Placement Date</FieldLabel>
-                            <Input type="date" value={values.placementDate} onChange={(event) => handlePlacementDateChange(event.target.value)} />
+                            <AppDatePicker value={values.placementDate} onValueChange={(value) => handlePlacementDateChange(value)} />
                           </div>
                           <div className={FIELD_CLASS}>
                             <FieldLabel>Exchange Rate BDT</FieldLabel>
@@ -460,7 +464,7 @@ export function OrderPlacementFormDialog({
                                         <td className={TABLE_CELL_CLASS}><span className="block min-w-0 truncate">{detail.deliveryDate}</span></td>
                                         <td className="px-1.5 py-2 align-top"><Input ref={(element) => { factoryInputRefs.current.factoryCmPerDzn[index] = element }} value={hideZeroValue(detail.factoryCmPerDzn)} onFocus={() => handleFactoryInputFocus(index, "factoryCmPerDzn")} onKeyDown={(event) => handleEditableKeyDown(event, index, "factoryCmPerDzn")} onChange={(event) => updateDetail(detail.id, { factoryCmPerDzn: event.target.value })} inputMode="decimal" className={INPUT_CLASS} /></td>
                                         <td className="px-1.5 py-2 align-top"><Input ref={(element) => { factoryInputRefs.current.factoryFob[index] = element }} value={hideZeroValue(detail.factoryFob)} onFocus={() => handleFactoryInputFocus(index, "factoryFob")} onKeyDown={(event) => handleEditableKeyDown(event, index, "factoryFob")} onChange={(event) => updateDetail(detail.id, { factoryFob: event.target.value })} inputMode="decimal" className={INPUT_CLASS} /></td>
-                                        <td className="px-1.5 py-2 align-top"><Input ref={(element) => { factoryInputRefs.current.factoryShipmentDate[index] = element }} type="date" value={detail.factoryShipmentDate} onFocus={() => handleFactoryInputFocus(index, "factoryShipmentDate")} onKeyDown={(event) => handleEditableKeyDown(event, index, "factoryShipmentDate")} onChange={(event) => updateDetail(detail.id, { factoryShipmentDate: event.target.value })} className={INPUT_CLASS} /></td>
+                                        <td className="px-1.5 py-2 align-top"><AppDatePicker ref={(element) => { factoryInputRefs.current.factoryShipmentDate[index] = element }} value={detail.factoryShipmentDate} onFocus={() => handleFactoryInputFocus(index, "factoryShipmentDate")} onKeyDown={(event) => handleEditableKeyDown(event, index, "factoryShipmentDate")} onValueChange={(value) => updateDetail(detail.id, { factoryShipmentDate: value })} className={INPUT_CLASS} /></td>
                                         <td className={TABLE_CELL_CLASS}><span className="block min-w-0 truncate">{hideZeroValue(detail.totalFactoryCm)}</span></td>
                                         <td className={TABLE_CELL_CLASS}><span className="block min-w-0 truncate">{hideZeroValue(detail.totalFactoryFob)}</span></td>
                                       </tr>

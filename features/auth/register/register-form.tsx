@@ -9,6 +9,7 @@ import { DEFAULT_GENDER_OPTIONS } from "./register.constants"
 import { GenderCombobox } from "./gender-combobox"
 import { fetchGenderOptions, registerUser } from "./register.service"
 import type { GenderOption, RegisterFormValues } from "./register.types"
+import { AppDatePicker } from "@/components/app-date-picker"
 
 type RegisterFormProps = {
   apiUrl: string
@@ -212,11 +213,10 @@ export function RegisterForm({ apiUrl }: RegisterFormProps) {
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Date of birth
               </span>
-              <input
-                type="date"
+              <AppDatePicker
                 name="date_of_birth"
                 value={values.date_of_birth}
-                onChange={(event) => updateField("date_of_birth", event.target.value)}
+                onValueChange={(value) => updateField("date_of_birth", value)}
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:focus:border-white/20 dark:focus:ring-white/10"
               />
             </label>
