@@ -32,6 +32,10 @@ type FactoryFormDialogProps = {
     onOpenChange: (open: boolean) => void
     onImageUpload: (file: File | null | undefined) => void
     onSubmit: (values: FactoryFormValues) => void
+    /** Overrides the header (the first factory after creating an organization). */
+    title?: string
+    description?: string
+    cancelLabel?: string
 }
 
 function FieldLabel({
@@ -62,13 +66,17 @@ export function FactoryFormDialog({
     onOpenChange,
     onImageUpload,
     onSubmit,
+    title: titleOverride,
+    description: descriptionOverride,
+    cancelLabel,
 }: FactoryFormDialogProps) {
     const imageInputRef = useRef<HTMLInputElement | null>(null)
-    const title = mode === "create" ? "Create factory" : "Edit factory"
+    const title = titleOverride ?? (mode === "create" ? "Create factory" : "Edit factory")
     const description =
-        mode === "create"
+        descriptionOverride ??
+        (mode === "create"
             ? "Add a factory master record."
-            : "Update the selected factory master record."
+            : "Update the selected factory master record.")
 
     function update<K extends keyof FactoryFormValues>(key: K, value: FactoryFormValues[K]) {
         onValuesChange({ ...draft, [key]: value })
@@ -255,7 +263,7 @@ export function FactoryFormDialog({
                                 onClick={() => onOpenChange(false)}
                                 className="rounded-xl"
                             >
-                                Cancel
+                                {cancelLabel ?? "Cancel"}
                             </Button>
                             <Button type="submit" disabled={loading || submitting} className="rounded-xl">
                                 {submitting ? <Loader2 className="size-3.5 animate-spin" /> : null}

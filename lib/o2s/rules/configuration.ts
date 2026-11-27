@@ -349,6 +349,12 @@ export const configurationRules: O2sRule[] = [
       return { data: pageOf(data, ctx.query) }
     },
   },
+  // "Request factory permission" (the factory menu): the organization's admins are notified and emailed
+  {
+    methods: ["POST"],
+    match: /^\/api\/v1\/user-factory-permission\/request$/,
+    to: (_m, ctx) => companyPath(ctx, "/configuration/user-factory-permission/request"),
+  },
   // the caller's own factories (the top bar's factory switcher); before the /{userId} rule below
   {
     methods: ["GET"],

@@ -19,6 +19,7 @@ import { fetchMenuPermissions } from "@/features/iam/menu-permissions/menu-permi
 import { isGlobalAdmin, parseStoredAuthUser } from "@/lib/auth-session"
 import { MENU_SEARCH_OPEN_EVENT } from "@/lib/app-hotkeys"
 import { canOpenIam, withIamAccess } from "@/lib/iam-access"
+import { hasAnyFactory } from "@/lib/my-factories"
 import {
   readSelectedOrganizationId,
   SELECTED_ORGANIZATION_CHANGED_EVENT,
@@ -116,6 +117,15 @@ export function MenuSearchDialog() {
       const isAdmin = isGlobalAdmin(storedUser)
 
       if (!apiUrl || !accessToken || !storedUser?.id) {
+        if (active) {
+          setVisibleModules([])
+          setIsLoadingVisibleModules(false)
+        }
+        return
+      }
+
+      // No factory in the selected organization: no module at all (an admin adds one, anyone else asks for one).
+      if (!(await hasAnyFactory(selectedOrganizationId))) {
         if (active) {
           setVisibleModules([])
           setIsLoadingVisibleModules(false)

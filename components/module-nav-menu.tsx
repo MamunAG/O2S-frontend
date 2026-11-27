@@ -7,7 +7,6 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { FactorySwitcher } from "@/components/factory-switcher"
-import { OrganizationComboBox } from "@/components/organization-combobox"
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -27,6 +26,7 @@ import {
 import { fetchMenuPermissions } from "@/features/iam/menu-permissions/menu-permission.service"
 import { isGlobalAdmin, parseStoredAuthUser } from "@/lib/auth-session"
 import { canOpenIam, withIamAccess } from "@/lib/iam-access"
+import { hasAnyFactory } from "@/lib/my-factories"
 import { readSelectedOrganizationId, SELECTED_ORGANIZATION_CHANGED_EVENT } from "@/lib/organization-selection"
 import { cn } from "@/lib/utils"
 import {
@@ -77,6 +77,15 @@ export function ModuleNavMenu({ current, variant = "header" }: ModuleNavMenuProp
       const isAdmin = isGlobalAdmin(storedUser)
 
       if (!apiUrl || !accessToken || !storedUser?.id) {
+        if (active) {
+          setVisibleModules([])
+          setIsLoadingVisibleModules(false)
+        }
+        return
+      }
+
+      // No factory in the selected organization: no module at all (an admin adds one, anyone else asks for one).
+      if (!(await hasAnyFactory(selectedOrganizationId))) {
         if (active) {
           setVisibleModules([])
           setIsLoadingVisibleModules(false)
@@ -203,10 +212,9 @@ export function ModuleNavMenu({ current, variant = "header" }: ModuleNavMenuProp
 
                 <div className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                    Organization
+                    Organization &amp; factory
                   </p>
-                  <OrganizationComboBox className="w-full text-xs" />
-                  <FactorySwitcher className="mt-2 w-full max-w-none" />
+                  <FactorySwitcher className="w-full max-w-none" />
                 </div>
 
                 <ScrollArea className="flex-1">
@@ -384,10 +392,9 @@ export function ModuleNavMenu({ current, variant = "header" }: ModuleNavMenuProp
 
                 <div className="border-b border-slate-200 px-4 py-3 dark:border-white/10">
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  Organization
+                  Organization &amp; factory
                 </p>
-                <OrganizationComboBox className="w-full text-xs" />
-                  <FactorySwitcher className="mt-2 w-full max-w-none" />
+                <FactorySwitcher className="w-full max-w-none" />
               </div>
 
                 <ScrollArea className="flex-1">

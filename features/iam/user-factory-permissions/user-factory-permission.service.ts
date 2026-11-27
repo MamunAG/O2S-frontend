@@ -141,3 +141,20 @@ export async function fetchMyFactories({ apiUrl, accessToken, organizationId }: 
 
   return payload.data
 }
+
+/** Asks the organization's admins for factories: they get a notification and an email. Returns how many were told. */
+export async function requestFactoryPermission({
+  apiUrl,
+  accessToken,
+  organizationId,
+  message,
+}: RequestContext & { message: string }): Promise<number> {
+  const url = buildApiUrl(apiUrl, "/api/v1/user-factory-permission/request")
+  const response = await fetch(url, {
+    method: "POST",
+    headers: buildRequestHeaders({ accessToken, organizationId, contentType: "application/json" }),
+    body: JSON.stringify({ message: message.trim() || null }),
+  })
+  const payload = await readJsonResponse<{ sentTo: number }>(response)
+  return payload.data?.sentTo ?? 0
+}
