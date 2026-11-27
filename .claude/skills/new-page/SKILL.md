@@ -210,6 +210,9 @@ clear a lookup or image; display-only objects (`unit`, `image`) are never sent b
 - Auth: `access_token` read from `localStorage` per call; "session expired" / "unauthorized" clears the stored
   tokens and `router.replace("/sign-in")` (`handleAuthFailure`).
 - Organization: reload on `SELECTED_ORGANIZATION_CHANGED_EVENT`; pass `organizationId: selectedOrganizationId || undefined`.
+  The adapter always sends a call to the organization selected **now**; a call whose `organizationId` differs (state
+  kept from before a switch) is refused with a 409 "The selected organization changed. Close this form and try
+  again." A screen that works on a company the user picks names it in its own rule's path / body / query.
 - Any mutation calls `triggerRefresh()`. Feedback through `toast.success` / `toast.error` (`sonner`); form errors also inside the dialog.
 - Delete is soft first (confirm dialog → amber "recently deleted" banner with Restore / Delete permanently);
   the deleted section offers the same two actions per row.
