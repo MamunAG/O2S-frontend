@@ -40,6 +40,9 @@ type ActiveExchangeRateSectionProps = {
   onDelete: (rows: ExchangeRateMatrixRow[]) => void
 }
 
+// A column kept in view while the table scrolls sideways (left offsets: select 2.5rem, date 6rem).
+const PINNED = "sticky z-10 bg-white dark:bg-slate-950"
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 /** "1-Jan-26" from the rate's date (its UTC date, sent without an offset). */
@@ -305,12 +308,15 @@ export function ActiveExchangeRateSection({
       enableColumnResizing={false}
       leadingColumnIds={["select"]}
       trailingColumnIds={["actions"]}
+      // Every currency column has a fixed width, so with many currencies the table scrolls sideways (the table is
+      // table-fixed: its width grows to the columns' sum) instead of squeezing the rates; select, date and currency
+      // stay pinned on the left while it scrolls.
       columnClassNames={{
-        select: "h-8 w-10 py-1",
-        date: "h-8 w-24 py-1",
-        currency: "h-8 w-32 py-1",
+        select: `${PINNED} left-0 h-8 w-10 py-1`,
+        date: `${PINNED} left-10 h-8 w-24 py-1`,
+        currency: `${PINNED} left-34 h-8 w-28 py-1 shadow-[1px_0_0_0_rgba(148,163,184,0.25)]`,
         actions: "h-8 w-12 py-1",
-        ...Object.fromEntries(currencies.map((to) => [`to-${to}`, "h-8 py-1"])),
+        ...Object.fromEntries(currencies.map((to) => [`to-${to}`, "h-8 w-24 py-1"])),
       }}
       headerBadges={
         <>

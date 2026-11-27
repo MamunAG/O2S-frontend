@@ -233,7 +233,12 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
       setEditorError("")
       try {
         const saved = await createExchangeRate({ apiUrl, accessToken: token, values, organizationId })
-        toast.success(`${saved.fromCurrencyCode} → ${saved.toCurrencyCode} rate added, with its reverse.`)
+        // A pair that already had a rate that day is updated rather than added (the server says so by stamping it).
+        toast.success(
+          saved.updated_by_id
+            ? `The ${saved.fromCurrencyCode} → ${saved.toCurrencyCode} rate of that day was updated to ${saved.rate}, with its reverse.`
+            : `${saved.fromCurrencyCode} → ${saved.toCurrencyCode} rate added, with its reverse.`,
+        )
         setEditorOpen(false)
         triggerRefresh()
       } catch (caught) {
@@ -380,25 +385,29 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
         <div className="space-y-4 p-2 sm:p-3 lg:p-4">
           {header}
 
-          <ActiveExchangeRateSection
-            data={rows}
-            currencies={currencies}
-            meta={meta}
-            loading={loading}
-            page={page}
-            limit={limit}
-            filters={filters}
-            selectedKeys={selectedKeys}
-            onSelectedKeysChange={(keys) => setSelection({ key: requestKey, keys })}
-            onFilterChange={(next) => {
-              setFilters(next)
-              setPage(1)
-            }}
-            onPageChange={setPage}
-            onLimitChange={setLimit}
-            onSaveRate={saveRate}
-            onDelete={setDeleteTargets}
-          />
+          {/* Inline-size containment: the wide currency grid scrolls inside its card instead of widening the page
+              (the ScrollArea content grows to its widest child). */}
+          <div className="min-w-0 [contain:inline-size]">
+            <ActiveExchangeRateSection
+              data={rows}
+              currencies={currencies}
+              meta={meta}
+              loading={loading}
+              page={page}
+              limit={limit}
+              filters={filters}
+              selectedKeys={selectedKeys}
+              onSelectedKeysChange={(keys) => setSelection({ key: requestKey, keys })}
+              onFilterChange={(next) => {
+                setFilters(next)
+                setPage(1)
+              }}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+              onSaveRate={saveRate}
+              onDelete={setDeleteTargets}
+            />
+          </div>
         </div>
       </ScrollArea>
 
