@@ -58,7 +58,7 @@ export function ApprovalWorkflowEntryForm({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 sm:max-w-5xl">
-        <div className="flex max-h-[90dvh] sm:max-h-[calc(100vh-2rem)] flex-col">
+        <div className="flex max-h-[95dvh] sm:max-h-[calc(100vh-2rem)] flex-col">
           <DialogHeader className="border-b px-6 py-5">
             <DialogTitle>
               {mode === "create"

@@ -20,7 +20,7 @@ export function LeaveFormDialog({ open, values, employees, leaveTypes, durationO
   open: boolean; values: LeaveFormValues; employees: HrOption[]; leaveTypes: HrOption[]; durationOptions: HrOption[]; preview: LeavePreview | null; previewing: boolean; submitting: boolean; error: string; onOpenChange: (open: boolean) => void; onChange: <K extends keyof LeaveFormValues>(name: K, value: LeaveFormValues[K]) => void; onSubmit: () => void
 }) {
   const rules = preview?.policy
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[90dvh] sm:max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[95dvh] sm:max-h-[92vh] overflow-y-auto sm:max-w-3xl">
     <DialogHeader><DialogTitle>Apply for leave</DialogTitle><DialogDescription>Dates are treated as local business dates. The server calculates the authoritative charge.</DialogDescription></DialogHeader>
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Employee" required><AppSelect value={values.employeeId} onValueChange={(value) => onChange("employeeId", value)} options={employees} placeholder="Select employee" triggerClassName={inputClass} /></Field>
