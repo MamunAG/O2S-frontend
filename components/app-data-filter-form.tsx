@@ -58,6 +58,12 @@ type AppDataFilterFormProps = {
 /** The standard pause (ms) before a typed filter applies. */
 export const FILTER_DEBOUNCE_MS = 400
 
+/**
+ * `block`: an inline <input> sits on the text baseline and leaves descender space under it, so its cell
+ * ends a few px below the box and the Reset button (aligned to the cell's bottom) looks lower than the input.
+ */
+const FILTER_INPUT_CLASS = "block h-7 rounded-md px-2 text-xs"
+
 /** A text filter that keeps what is typed locally and reports it once typing pauses. */
 function DebouncedTextInput({
   id,
@@ -96,7 +102,7 @@ function DebouncedTextInput({
     <Input
       id={id}
       value={draft}
-      className="h-7 rounded-md px-2 text-xs"
+      className={FILTER_INPUT_CLASS}
       placeholder={placeholder}
       onChange={(event) => setDraft(event.target.value)}
     />
@@ -128,7 +134,7 @@ export function AppDataFilterForm({
         <div key={field.id} className={field.className ?? "min-w-0 space-y-1"}>
           <label
             htmlFor={field.id}
-            className="text-xs font-medium text-slate-700 dark:text-slate-300"
+            className="block text-xs font-medium text-slate-700 dark:text-slate-300"
           >
             {field.label}
           </label>
@@ -144,7 +150,7 @@ export function AppDataFilterForm({
             <Input
               id={field.id}
               value={field.value}
-              className="h-7 rounded-md px-2 text-xs"
+              className={FILTER_INPUT_CLASS}
               placeholder={field.placeholder}
               onChange={(event) => field.onValueChange(event.target.value)}
             />
