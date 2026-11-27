@@ -266,22 +266,34 @@ function readUserId() {
   }
 }
 
+// The routes that issue or end a session. The web app calls them through its own origin (/o2s-api, which
+// next.config.mjs forwards to the API) and asks for the refresh token as an HttpOnly cookie: the cookie is then
+// first-party (SameSite=Strict) and JavaScript never sees the refresh token.
+const SESSION_ROUTE = /^\/api\/v1\/account\/(login|refresh|logout|logout-all|change-password|google\/mobile|apple\/mobile)(\?|$)/
+export const REFRESH_TRANSPORT_HEADER = "x-refresh-transport"
+
+function sessionBase() {
+  return typeof window !== "undefined" && apiBase() ? `${window.location.origin}${API_PROXY_PATH}` : sendBase()
+}
+
 let refreshing: Promise<boolean> | null = null
 
 async function refreshAccessToken(original: FetchFn): Promise<boolean> {
-  const refreshToken = window.localStorage.getItem("refresh_token")
-  if (!refreshToken) return false
   refreshing ??= (async () => {
     try {
-      const response = await original(`${sendBase()}/api/v1/account/refresh`, {
+      // The cookie carries the refresh token. A token a session stored before the cookie existed is sent once more
+      // (the answer moves it into the cookie) and then dropped from localStorage.
+      const legacy = window.localStorage.getItem("refresh_token")
+      const response = await original(`${sessionBase()}/api/v1/account/refresh`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ refreshToken }),
+        headers: { "Content-Type": "application/json", Accept: "application/json", [REFRESH_TRANSPORT_HEADER]: "cookie" },
+        body: JSON.stringify(legacy ? { refreshToken: legacy } : {}),
+        credentials: "same-origin",
       })
       const { ok, data } = await readO2s(response)
       if (!ok || !isRecord(data) || typeof data.token !== "string") return false
       window.localStorage.setItem("access_token", data.token)
-      if (typeof data.refreshToken === "string") window.localStorage.setItem("refresh_token", data.refreshToken)
+      window.localStorage.removeItem("refresh_token")
       return true
     } catch {
       return false
@@ -303,9 +315,15 @@ async function sendToO2s(original: FetchFn, path: string, init: RequestInit, all
   if (menuName) headers.set("x-menu-name", menuName)
   const token = window.localStorage.getItem("access_token")
   if (headers.has("Authorization") && token) headers.set("Authorization", `Bearer ${token}`)
+  const isSessionRoute = SESSION_ROUTE.test(path)
+  if (isSessionRoute) headers.set(REFRESH_TRANSPORT_HEADER, "cookie")
   let response: Response
   try {
-    response = await original(`${sendBase()}${path}`, { ...init, headers })
+    response = await original(`${isSessionRoute ? sessionBase() : sendBase()}${path}`, {
+      ...init,
+      headers,
+      ...(isSessionRoute ? { credentials: "same-origin" as const } : {}),
+    })
   } catch (error) {
     // No answer at all (offline, DNS, or IIS's own error page without CORS headers): fetch throws a TypeError.
     if (error instanceof TypeError) throw new O2sError(OFFLINE_MESSAGE, 503)

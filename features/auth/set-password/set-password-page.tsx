@@ -96,7 +96,6 @@ export function SetPasswordPage() {
     try {
       const session = await setNewPassword({ apiUrl, accessToken, currentPassword, newPassword })
       if (session.access_token) window.localStorage.setItem("access_token", session.access_token)
-      if (session.refresh_token) window.localStorage.setItem("refresh_token", session.refresh_token)
       if (session.user) window.localStorage.setItem("auth_user", JSON.stringify(session.user))
       document.cookie = serializeAuthSessionCookie()
       markPasswordChangeRequired(false)
