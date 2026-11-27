@@ -294,7 +294,7 @@ Known state of the reference pages (update this list when you fix one):
 |---|---|
 | Factory (`features/app-config/factory/`) | None. Brought to R1–R14 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters — Code filter removed at the user's request, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`, deleted section collapsible and collapsed by default). |
 | Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections), R14 (deleted section not collapsible) — not yet audited for the rest |
-| Exchange Rates (`features/app-config/exchange-rates/`) | R13: the table's `description` repeats `pageSummary` (keep only its "1 row currency × rate = the column currency" note). Otherwise a matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
+| Exchange Rates (`features/app-config/exchange-rates/`) | None known. Made phone-friendly on 2026-11-27 (the whole page container has inline-size containment, short header description, the table's `description` is only the "1 row currency × rate = the column currency" note, compact badges, `h-7` date filters). A matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
 | Other CRUD pages | not yet audited |
 
 ## Verify
@@ -321,4 +321,7 @@ Known state of the reference pages (update this list when you fix one):
   widths in `columnClassNames` (the table is `table-fixed`, so it grows to their sum and scrolls inside its card), pin
   the identity columns with `sticky left-… z-10 bg-white dark:bg-slate-950`, and wrap the section in
   `<div className="min-w-0 [contain:inline-size]">` — otherwise the page's `ScrollArea` content grows to the table and
-  the header buttons fall off the right edge.
+  the header buttons fall off the right edge. Put the containment on the page container itself
+  (`min-w-0 space-y-4 p-2 [contain:inline-size] sm:p-3 lg:p-4`), not only around the table: any one-line `truncate`
+  text (a long header description) has its full width as its intrinsic width and widens the page the same way, which
+  on a phone pushes everything off the right edge.

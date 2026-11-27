@@ -290,7 +290,7 @@ export function ActiveExchangeRateSection({
   return (
     <AppDataSection
       title="Saved rates"
-      description={`${pageSummary} · 1 row currency × rate = the column currency`}
+      description="1 row currency × rate = the column currency"
       data={data}
       columns={columns}
       loading={loading}
@@ -321,7 +321,7 @@ export function ActiveExchangeRateSection({
       }}
       headerBadges={
         <>
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
             Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
           </Badge>
           <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
@@ -369,7 +369,7 @@ export function ActiveExchangeRateSection({
                   value={filters.fromCurrencyDate}
                   max={filters.toCurrencyDate || undefined}
                   onValueChange={(value) => onFilterChange({ ...filters, fromCurrencyDate: value })}
-                  className="h-9 rounded-xl"
+                  className="h-7 rounded-xl"
                 />
               ),
             },
@@ -383,7 +383,7 @@ export function ActiveExchangeRateSection({
                   value={filters.toCurrencyDate}
                   min={filters.fromCurrencyDate || undefined}
                   onValueChange={(value) => onFilterChange({ ...filters, toCurrencyDate: value })}
-                  className="h-9 rounded-xl"
+                  className="h-7 rounded-xl"
                 />
               ),
             },
