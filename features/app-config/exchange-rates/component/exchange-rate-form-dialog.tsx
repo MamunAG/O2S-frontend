@@ -63,7 +63,8 @@ export function ExchangeRateFormDialog({
             <DialogHeader>
               <DialogTitle>Add exchange rate</DialogTitle>
               <DialogDescription>
-                A rate added here counts as edited by hand: the daily job leaves it as it is, and Rerun latest replaces it only on today&apos;s date.
+                If the pair already has a rate on that day, it is updated with this one; otherwise a new rate is added. Either way it
+                counts as edited by hand: the daily job leaves it as it is, and Rerun latest replaces it only on today&apos;s date.
               </DialogDescription>
             </DialogHeader>
 

@@ -233,7 +233,12 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
       setEditorError("")
       try {
         const saved = await createExchangeRate({ apiUrl, accessToken: token, values, organizationId })
-        toast.success(`${saved.fromCurrencyCode} → ${saved.toCurrencyCode} rate added, with its reverse.`)
+        // A pair that already had a rate that day is updated rather than added (the server says so by stamping it).
+        toast.success(
+          saved.updated_by_id
+            ? `The ${saved.fromCurrencyCode} → ${saved.toCurrencyCode} rate of that day was updated to ${saved.rate}, with its reverse.`
+            : `${saved.fromCurrencyCode} → ${saved.toCurrencyCode} rate added, with its reverse.`,
+        )
         setEditorOpen(false)
         triggerRefresh()
       } catch (caught) {
