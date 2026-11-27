@@ -141,7 +141,7 @@ export function TnaRevisionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] overflow-hidden p-0 sm:max-w-[58rem]">
+      <DialogContent className="max-h-[90dvh] sm:max-h-[calc(100vh-2rem)] overflow-hidden p-0 sm:max-w-[58rem]">
         <DialogHeader className="border-b border-slate-200/70 px-4 pb-3 pt-4 text-left dark:border-white/10">
           <div className="flex items-center gap-2.5">
             <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">

@@ -335,7 +335,7 @@ function FormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 sm:max-w-4xl">
         <form
-          className="flex max-h-[calc(100vh-2rem)] flex-col"
+          className="flex max-h-[90dvh] sm:max-h-[calc(100vh-2rem)] flex-col"
           onSubmit={(event) => {
             event.preventDefault()
             onSubmit(draft)

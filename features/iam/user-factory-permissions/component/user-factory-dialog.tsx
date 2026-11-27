@@ -71,7 +71,7 @@ export function UserFactoryDialog({
   return (
     // The workspace remounts the dialog (key) each time it opens, so the search starts empty.
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(44rem,calc(100dvh-2rem))] flex-col gap-3 sm:max-w-xl">
+      <DialogContent className="flex max-h-[min(44rem,90dvh)] sm:max-h-[min(44rem,calc(100dvh-2rem))] flex-col gap-3 sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Factory access</DialogTitle>
           <DialogDescription>

@@ -51,7 +51,7 @@ export function FactoryRequiredDialog({
 
   return (
     <Dialog open={open} onOpenChange={() => undefined}>
-      <DialogContent showCloseButton={false} className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
+      <DialogContent showCloseButton={false} className="max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>A factory is needed</DialogTitle>
           <DialogDescription>
