@@ -123,6 +123,35 @@ export function clearAuthUserAvatarCookie() {
   return `${AUTH_USER_AVATAR_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`
 }
 
+/** sessionStorage flag: the sign-in page tells the user their session expired. */
+export const SESSION_EXPIRED_FLAG = "o2s_session_expired"
+
+let endingSession = false
+
+/**
+ * The session is over (the API refused the token and it could not be refreshed): forget the stored tokens and the
+ * login cookies, then go to the sign-in page. Tokens first: the sign-in page sends anyone with a stored token home, and
+ * the middleware sends /sign-in home while the auth_session cookie is set. Safe to call many times.
+ */
+export function endSession() {
+  if (typeof window === "undefined" || endingSession) return
+  endingSession = true
+  clearStoredAuthSession()
+  document.cookie = clearAuthSessionCookie()
+  document.cookie = clearAuthUserLabelCookie()
+  document.cookie = clearAuthUserAvatarCookie()
+  if (window.location.pathname.startsWith("/sign-in")) {
+    endingSession = false
+    return
+  }
+  try {
+    window.sessionStorage.setItem(SESSION_EXPIRED_FLAG, "1")
+  } catch {
+    // private mode: the sign-in page just won't say why
+  }
+  window.location.replace("/sign-in")
+}
+
 export function readAuthUserLabelCookie(value: string | undefined | null) {
   if (!value) {
     return "User"

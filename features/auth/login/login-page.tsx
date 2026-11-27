@@ -2,12 +2,14 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 import {
   clearAuthUserAvatarCookie,
   getAuthUserImageUrl,
   getAuthUserLabel,
   parseStoredAuthUser,
+  SESSION_EXPIRED_FLAG,
   serializeAuthSessionCookie,
   serializeAuthUserAvatarCookie,
   serializeAuthUserLabelCookie,
@@ -33,6 +35,16 @@ export function LoginPage() {
 
   useEffect(() => {
     if (!hasStoredAuth()) {
+      // Sent here by endSession(): say why, once.
+      try {
+        if (window.sessionStorage.getItem(SESSION_EXPIRED_FLAG)) {
+          window.sessionStorage.removeItem(SESSION_EXPIRED_FLAG)
+          // after the layout's Toaster has mounted (this effect runs before the parent's)
+          window.setTimeout(() => toast.warning("Your session expired. Please sign in again."), 0)
+        }
+      } catch {
+        // storage blocked: nothing to say
+      }
       return
     }
 

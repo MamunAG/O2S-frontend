@@ -10,9 +10,11 @@
 //   - turns O2S's `{ IsError, ErrorMessage, Data }` (or a bare 201 body) into `{ success, message, data }`,
 //     O2S pages `{ pageNumber, pageSize, totalItems, totalPages, data }` into `{ items, meta }`, and numeric
 //     ids into strings (code-crafter used uuids, the screens compare ids as strings);
-//   - refreshes the access token once on a 401 with the stored refresh token.
+//   - refreshes the access token once on a 401 with the stored refresh token; when that fails (or a signed-in request
+//     is refused again) the session is over: endSession() clears it and goes to /sign-in.
 // A path with no rule is sent unchanged (its envelope is still translated).
 
+import { endSession } from "@/lib/auth-session"
 import { readSelectedOrganizationId } from "@/lib/organization-selection"
 
 /** A page sent an organization other than the selected one (its state is from before a switch). */
@@ -303,8 +305,11 @@ async function sendToO2s(original: FetchFn, path: string, init: RequestInit, all
     if (error instanceof TypeError) throw new O2sError(OFFLINE_MESSAGE, 503)
     throw error
   }
-  if (response.status === 401 && allowRefresh && headers.has("Authorization") && (await refreshAccessToken(original))) {
-    return sendToO2s(original, path, init, false)
+  if (response.status === 401 && headers.has("Authorization")) {
+    if (allowRefresh && (await refreshAccessToken(original))) return sendToO2s(original, path, init, false)
+    // A signed-in request still refused: the session expired or was ended (password changed, user deactivated).
+    // Requests without a token (sign-in with a wrong password, …) never get here.
+    endSession()
   }
   return response
 }
