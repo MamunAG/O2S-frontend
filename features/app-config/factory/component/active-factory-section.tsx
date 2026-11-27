@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 
-import { Download, MoreHorizontal, Plus, Upload } from "lucide-react"
+import { MoreHorizontal, Plus } from "lucide-react"
 import type { ColumnDef } from "@tanstack/react-table"
 
 import { AppDataFilterForm, FILTER_DEBOUNCE_MS } from "@/components/app-data-filter-form"
@@ -17,19 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import type { FactoryFilterValues, FactoryRecord, PaginationMeta } from "../factory.types"
+import { EMPTY_FILTERS, type FactoryFilterValues, type FactoryRecord, type PaginationMeta } from "../factory.types"
 
 const ALL_STATUS_VALUE = "__all_statuses__"
-
-const EMPTY_FILTERS: FactoryFilterValues = {
-  name: "",
-  displayName: "",
-  code: "",
-  contact: "",
-  email: "",
-  address: "",
-  isActive: "",
-}
 
 type FactoryTableSectionProps = {
   data: FactoryRecord[]
@@ -43,10 +33,6 @@ type FactoryTableSectionProps = {
   onLimitChange: (nextPageSize: number) => void
   onEdit: (factoryId: string) => void
   onDelete: (factory: FactoryRecord) => void
-  onDownloadTemplate?: () => void
-  onUploadTemplate?: () => void
-  downloadingTemplate?: boolean
-  uploadingTemplate?: boolean
 }
 
 function formatDate(value?: string | null) {
@@ -158,10 +144,6 @@ export function ActiveFactorySection({
   onLimitChange,
   onEdit,
   onDelete,
-  onDownloadTemplate,
-  onUploadTemplate,
-  downloadingTemplate = false,
-  uploadingTemplate = false,
 }: FactoryTableSectionProps) {
   const filterCount = useMemo(
     () => Object.values(filters).filter((value) => value.trim()).length,
@@ -254,7 +236,6 @@ export function ActiveFactorySection({
   return (
     <AppDataSection
       title="Factories table"
-      description={pageSummary}
       data={data}
       columns={columns}
       loading={loading}
@@ -282,33 +263,13 @@ export function ActiveFactorySection({
       }}
       headerBadges={
         <>
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
             Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
           </Badge>
           <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
             {filterCount} active filter{filterCount === 1 ? "" : "s"}
           </Badge>
         </>
-      }
-      headerActions={
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" variant="outline" className="rounded-full">
-              <MoreHorizontal className="size-2.5" />
-              <span className="sr-only">Bulk actions</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem onSelect={onDownloadTemplate} disabled={downloadingTemplate}>
-              <Download className="mr-2 size-3.5" />
-              {downloadingTemplate ? "Downloading template..." : "Download template"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={onUploadTemplate} disabled={uploadingTemplate}>
-              <Upload className="mr-2 size-3.5" />
-              {uploadingTemplate ? "Uploading factories..." : "Upload factories"}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       }
       filters={
         <AppDataFilterForm
@@ -336,22 +297,6 @@ export function ActiveFactorySection({
               value: filters.code,
               placeholder: "Input code",
               onValueChange: (code) => onFilterChange({ ...filters, code }),
-            },
-            {
-              id: "filterFactoryContact",
-              label: "Contact",
-              kind: "text",
-              value: filters.contact,
-              placeholder: "Input contact",
-              onValueChange: (contact) => onFilterChange({ ...filters, contact }),
-            },
-            {
-              id: "filterFactoryEmail",
-              label: "Email",
-              kind: "text",
-              value: filters.email,
-              placeholder: "Input email",
-              onValueChange: (email) => onFilterChange({ ...filters, email }),
             },
             {
               id: "filterFactoryStatus",

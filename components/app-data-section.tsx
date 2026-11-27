@@ -91,13 +91,13 @@ export function AppDataSection<TData>({
   })
 
   return (
-    <Card className="overflow-hidden border-white/60 bg-white/80 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
-      <CardHeader className="border-b border-slate-200/70 py-0 dark:border-white/10">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <CardTitle className="text-base">{title}</CardTitle>
+    <Card className="gap-0 overflow-hidden border-white/60 bg-white/80 py-0 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
+      <CardHeader className="border-b border-slate-200/70 px-3 py-2 sm:px-4 dark:border-white/10 [.border-b]:pb-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <CardTitle className="text-sm font-semibold">{title}</CardTitle>
             {description ? (
-              <CardDescription>{description}</CardDescription>
+              <CardDescription className="truncate">{description}</CardDescription>
             ) : null}
           </div>
           {headerBadges || headerActions ? (
@@ -110,7 +110,7 @@ export function AppDataSection<TData>({
       </CardHeader>
 
       {filters ? (
-        <CardContent className="p-3 sm:p-0 sm:px-2">{filters}</CardContent>
+        <CardContent className="px-3 py-2 sm:px-4">{filters}</CardContent>
       ) : null}
 
       <CardContent

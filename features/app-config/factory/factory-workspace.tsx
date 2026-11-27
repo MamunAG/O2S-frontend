@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Plus, Trash2, Undo2 } from "lucide-react"
 import { toast } from "sonner"
@@ -13,11 +13,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { readSelectedOrganizationId, SELECTED_ORGANIZATION_CHANGED_EVENT } from "@/lib/organization-selection"
 
 import { ActiveFactorySection } from "./component/active-factory-section"
-import { DeletedFactorySection } from "./component/deleted-factory-section"
+import { DeletedFactorySection, type DeletedFactoryActionMode } from "./component/deleted-factory-section"
 import { FactoryFormDialog } from "./component/factory-form-dialog"
 import {
     createFactory,
-    downloadFactoryTemplate,
     fetchFactories,
     fetchFactory,
     permanentlyDeleteFactory,
@@ -25,44 +24,26 @@ import {
     softDeleteFactory,
     updateFactory,
     uploadFactoryImageFile,
-    uploadFactoryTemplate,
 } from "./factory.service"
-import type { FactoryFilterValues, FactoryFormValues, FactoryRecord, PaginationMeta } from "./factory.types"
+import {
+    EMPTY_FILTERS,
+    EMPTY_FORM_VALUES,
+    type FactoryFilterValues,
+    type FactoryFormValues,
+    type FactoryRecord,
+    type PaginationMeta,
+} from "./factory.types"
 
 type FactoryEditorMode = "create" | "edit"
-type PendingDeleteMode = "restore" | "permanent"
 
-const DEFAULT_FILTERS: FactoryFilterValues = {
-    name: "",
-    displayName: "",
-    code: "",
-    contact: "",
-    email: "",
-    address: "",
-    isActive: "",
-}
-
-const DEFAULT_FORM_VALUES: FactoryFormValues = {
-    name: "",
-    displayName: "",
-    code: "",
-    contact: "",
-    email: "",
-    imageId: "",
-    address: "",
-    remarks: "",
-    isActive: true,
-}
+const CARD_CLASS =
+    "overflow-hidden border-white/60 bg-white/85 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/75"
 
 function getFactoryLabel(factory: FactoryRecord) {
     return factory.displayName?.trim() || factory.name
 }
 
-function getFactoryImagePreviewUrl(factory: FactoryRecord | null) {
-    if (!factory) {
-        return ""
-    }
-
+function getFactoryImagePreviewUrl(factory: FactoryRecord) {
     return (
         factory.image?.public_url?.trim() ||
         factory.image?.file_url?.trim() ||
@@ -72,8 +53,13 @@ function getFactoryImagePreviewUrl(factory: FactoryRecord | null) {
     )
 }
 
-function normalizeAuthFailure(message: string) {
-    return message.toLowerCase().includes("session expired") || message.toLowerCase().includes("unauthorized")
+function isAuthFailure(message: string) {
+    const lower = message.toLowerCase()
+    return lower.includes("session expired") || lower.includes("unauthorized")
+}
+
+function errorMessage(caught: unknown, fallback: string) {
+    return caught instanceof Error ? caught.message : fallback
 }
 
 function EmptyState({
@@ -148,7 +134,7 @@ function RecentlyDeletedDialog({
     onConfirm,
 }: {
     open: boolean
-    action: PendingDeleteMode
+    action: DeletedFactoryActionMode
     factory: FactoryRecord | null
     working: boolean
     onOpenChange: (open: boolean) => void
@@ -190,21 +176,19 @@ function WorkspaceSkeleton() {
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
             <ScrollArea className="h-full">
                 <div className="space-y-4 p-2 sm:p-3 lg:p-4">
-                    <Card className="overflow-hidden border-white/60 bg-white/85 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/75">
-                        <CardContent className="p-6 sm:p-8">
-                            <div className="space-y-3">
-                                <div className="h-4 w-48 rounded-full bg-slate-200 dark:bg-slate-800" />
-                                <div className="h-10 w-72 rounded-full bg-slate-200 dark:bg-slate-800" />
-                                <div className="h-4 w-full max-w-2xl rounded-full bg-slate-200 dark:bg-slate-800" />
+                    <Card className={CARD_CLASS}>
+                        <CardContent className="px-3 py-2 sm:px-4">
+                            <div className="space-y-2">
+                                <div className="h-6 w-56 rounded-full bg-slate-200 dark:bg-slate-800" />
+                                <div className="h-4 w-full max-w-md rounded-full bg-slate-200 dark:bg-slate-800" />
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="overflow-hidden border-white/60 bg-white/80 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
+                    <Card className={CARD_CLASS}>
                         <CardContent className="p-6">
                             <div className="space-y-3">
                                 <div className="h-5 w-40 rounded-full bg-slate-200 dark:bg-slate-800" />
-                                <div className="h-4 w-64 rounded-full bg-slate-200 dark:bg-slate-800" />
                                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                     <div className="h-9 rounded-xl bg-slate-200 dark:bg-slate-800" />
                                     <div className="h-9 rounded-xl bg-slate-200 dark:bg-slate-800" />
@@ -215,11 +199,10 @@ function WorkspaceSkeleton() {
                         </CardContent>
                     </Card>
 
-                    <Card className="overflow-hidden border-white/60 bg-white/80 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
+                    <Card className={CARD_CLASS}>
                         <CardContent className="p-6">
                             <div className="space-y-3">
                                 <div className="h-5 w-44 rounded-full bg-slate-200 dark:bg-slate-800" />
-                                <div className="h-4 w-72 rounded-full bg-slate-200 dark:bg-slate-800" />
                                 <div className="h-40 rounded-2xl bg-slate-100 dark:bg-slate-900" />
                             </div>
                         </CardContent>
@@ -232,13 +215,7 @@ function WorkspaceSkeleton() {
 
 export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
     const router = useRouter()
-    const uploadInputRef = useRef<HTMLInputElement | null>(null)
-    const imageInputRef = useRef<HTMLInputElement | null>(null)
 
-    const [loadingFactories, setLoadingFactories] = useState(true)
-    const [loadingDeletedFactories, setLoadingDeletedFactories] = useState(true)
-    const [error, setError] = useState("")
-    const [deletedError, setDeletedError] = useState("")
     const [refreshVersion, setRefreshVersion] = useState(0)
     const [selectedOrganizationId, setSelectedOrganizationId] = useState(() =>
         typeof window === "undefined" ? "" : readSelectedOrganizationId(),
@@ -248,150 +225,119 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
     const [meta, setMeta] = useState<PaginationMeta | null>(null)
     const [page, setPage] = useState(1)
     const [limit, setLimit] = useState(10)
+    const [activeFilters, setActiveFilters] = useState<FactoryFilterValues>(EMPTY_FILTERS)
 
     const [deletedFactories, setDeletedFactories] = useState<FactoryRecord[]>([])
     const [deletedMeta, setDeletedMeta] = useState<PaginationMeta | null>(null)
     const [deletedPage, setDeletedPage] = useState(1)
     const [deletedLimit, setDeletedLimit] = useState(5)
-
-    const [activeFilters, setActiveFilters] = useState<FactoryFilterValues>(DEFAULT_FILTERS)
-    const [deletedFilters, setDeletedFilters] = useState<FactoryFilterValues>(DEFAULT_FILTERS)
+    const [deletedFilters, setDeletedFilters] = useState<FactoryFilterValues>(EMPTY_FILTERS)
 
     const [editorOpen, setEditorOpen] = useState(false)
     const [editorMode, setEditorMode] = useState<FactoryEditorMode>("create")
     const [editorLoading, setEditorLoading] = useState(false)
     const [editorSubmitting, setEditorSubmitting] = useState(false)
     const [editorError, setEditorError] = useState("")
-    const [editorInitialValues, setEditorInitialValues] = useState<FactoryFormValues>(DEFAULT_FORM_VALUES)
+    const [editorValues, setEditorValues] = useState<FactoryFormValues>(EMPTY_FORM_VALUES)
     const [editingId, setEditingId] = useState<string | null>(null)
     const [imagePreviewUrl, setImagePreviewUrl] = useState("")
     const [imageUploading, setImageUploading] = useState(false)
-    const [uploadingTemplate, setUploadingTemplate] = useState(false)
-    const [downloadingTemplate, setDownloadingTemplate] = useState(false)
 
     const [deleteTarget, setDeleteTarget] = useState<FactoryRecord | null>(null)
     const [deleteWorking, setDeleteWorking] = useState(false)
     const [recentlyDeletedFactory, setRecentlyDeletedFactory] = useState<FactoryRecord | null>(null)
     const [pendingActionTarget, setPendingActionTarget] = useState<FactoryRecord | null>(null)
-    const [pendingActionMode, setPendingActionMode] = useState<PendingDeleteMode | null>(null)
+    const [pendingActionMode, setPendingActionMode] = useState<DeletedFactoryActionMode | null>(null)
     const [pendingActionWorking, setPendingActionWorking] = useState(false)
+
+    const organizationId = selectedOrganizationId || undefined
+
+    // Everything the two lists depend on. `loaded` records which request last finished, so "loading" and
+    // "error" are derived instead of set inside the effect (react-hooks/set-state-in-effect).
+    const requestKey = JSON.stringify([
+        page, limit, activeFilters, deletedPage, deletedLimit, deletedFilters, organizationId, refreshVersion,
+    ])
+    const [loaded, setLoaded] = useState<{ key: string; error: string } | null>(null)
+    const loading = loaded?.key !== requestKey
+    const error = !loading && loaded ? loaded.error : ""
 
     const handleAuthFailure = useCallback(
         (message: string) => {
-            if (!normalizeAuthFailure(message)) {
-                return false
-            }
+            if (!isAuthFailure(message)) return false
 
-            if (typeof window !== "undefined") {
-                window.localStorage.removeItem("access_token")
-                window.localStorage.removeItem("refresh_token")
-                window.localStorage.removeItem("auth_user")
-            }
-
+            window.localStorage.removeItem("access_token")
+            window.localStorage.removeItem("refresh_token")
+            window.localStorage.removeItem("auth_user")
             router.replace("/sign-in")
             return true
         },
         [router],
     )
 
+    /** The stored token, or null after sending the user to sign in. */
+    const readToken = useCallback(() => {
+        const token = window.localStorage.getItem("access_token")
+        if (!token) handleAuthFailure("Your session expired. Please sign in again.")
+        return token
+    }, [handleAuthFailure])
+
     useEffect(() => {
-        if (typeof window === "undefined") {
-            return
-        }
-
         function handleOrganizationChange(event: Event) {
-            const nextOrganizationId =
-                event instanceof CustomEvent
-                    ? event.detail?.organizationId
-                    : readSelectedOrganizationId()
-
-            setSelectedOrganizationId(nextOrganizationId || "")
+            const next = event instanceof CustomEvent ? event.detail?.organizationId : readSelectedOrganizationId()
+            setSelectedOrganizationId(next || "")
         }
 
-        window.addEventListener(
-            SELECTED_ORGANIZATION_CHANGED_EVENT,
-            handleOrganizationChange,
-        )
+        window.addEventListener(SELECTED_ORGANIZATION_CHANGED_EVENT, handleOrganizationChange)
+        return () => window.removeEventListener(SELECTED_ORGANIZATION_CHANGED_EVENT, handleOrganizationChange)
+    }, [])
+
+    const triggerRefresh = useCallback(() => setRefreshVersion((current) => current + 1), [])
+
+    // Loads the active and the deleted page together; a newer request cancels the older one's result.
+    useEffect(() => {
+        const token = readToken()
+        if (!token) return
+
+        let cancelled = false
+
+        Promise.all([
+            fetchFactories({ apiUrl, accessToken: token, page, limit, filters: activeFilters, organizationId }),
+            fetchFactories({
+                apiUrl,
+                accessToken: token,
+                page: deletedPage,
+                limit: deletedLimit,
+                filters: deletedFilters,
+                deletedOnly: true,
+                organizationId,
+            }),
+        ])
+            .then(([active, deleted]) => {
+                if (cancelled) return
+                setFactories(active.items)
+                setMeta(active.meta)
+                setDeletedFactories(deleted.items)
+                setDeletedMeta(deleted.meta)
+                setLoaded({ key: requestKey, error: "" })
+            })
+            .catch((caught: unknown) => {
+                if (cancelled) return
+                const message = errorMessage(caught, "Unable to load factory data right now.")
+                if (handleAuthFailure(message)) return
+                toast.error(message)
+                setLoaded({ key: requestKey, error: message })
+            })
 
         return () => {
-            window.removeEventListener(
-                SELECTED_ORGANIZATION_CHANGED_EVENT,
-                handleOrganizationChange,
-            )
+            cancelled = true
         }
-    }, [])
+    }, [apiUrl, activeFilters, deletedFilters, deletedLimit, deletedPage, handleAuthFailure, limit, organizationId, page, readToken, requestKey])
 
-    const triggerRefresh = useCallback(() => {
-        setRefreshVersion((current) => current + 1)
-    }, [])
-
-    const loadFactories = useCallback(async () => {
-        setLoadingFactories(true)
-        setLoadingDeletedFactories(true)
-        setError("")
-        setDeletedError("")
-
-        try {
-            const token = window.localStorage.getItem("access_token")
-
-            if (!token) {
-                handleAuthFailure("Your session expired. Please sign in again.")
-                return
-            }
-
-            const [activeResponse, deletedResponse] = await Promise.all([
-                fetchFactories({
-                    apiUrl,
-                    accessToken: token,
-                    page,
-                    limit,
-                    filters: activeFilters,
-                    organizationId: selectedOrganizationId || undefined,
-                }),
-                fetchFactories({
-                    apiUrl,
-                    accessToken: token,
-                    page: deletedPage,
-                    limit: deletedLimit,
-                    filters: deletedFilters,
-                    deletedOnly: true,
-                    organizationId: selectedOrganizationId || undefined,
-                }),
-            ])
-
-            setFactories(activeResponse.items)
-            setMeta(activeResponse.meta)
-            setDeletedFactories(deletedResponse.items)
-            setDeletedMeta(deletedResponse.meta)
-        } catch (caughtError) {
-            const message =
-                caughtError instanceof Error
-                    ? caughtError.message
-                    : "Unable to load factory data right now."
-
-            if (!handleAuthFailure(message)) {
-                setError(message)
-                toast.error(message)
-            }
-        } finally {
-            setLoadingFactories(false)
-            setLoadingDeletedFactories(false)
-        }
-    }, [apiUrl, activeFilters, deletedFilters, deletedLimit, deletedPage, handleAuthFailure, limit, page, selectedOrganizationId])
-
-    useEffect(() => {
-        if (typeof window === "undefined") {
-            return
-        }
-
-        void loadFactories()
-    }, [loadFactories, refreshVersion])
-
-    async function openCreateDialog() {
+    function openCreateDialog() {
         setEditorMode("create")
         setEditorError("")
         setEditingId(null)
-        setEditorInitialValues(DEFAULT_FORM_VALUES)
+        setEditorValues(EMPTY_FORM_VALUES)
         setImagePreviewUrl("")
         setEditorOpen(true)
     }
@@ -399,43 +345,31 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
     const openEditDialog = useCallback(async (id: string) => {
         setEditorMode("edit")
         setEditingId(id)
+        setEditorValues(EMPTY_FORM_VALUES)
+        setImagePreviewUrl("")
         setEditorOpen(true)
         setEditorLoading(true)
         setEditorError("")
-        setImagePreviewUrl("")
 
         try {
-            const token = window.localStorage.getItem("access_token")
+            const token = readToken()
+            if (!token) return
 
-            if (!token) {
-                handleAuthFailure("Your session expired. Please sign in again.")
-                return
-            }
-
-            const rec = await fetchFactory({
-                apiUrl,
-                accessToken: token,
-                id,
-                organizationId: selectedOrganizationId || undefined,
-            })
-            setEditorInitialValues({
+            const rec = await fetchFactory({ apiUrl, accessToken: token, id, organizationId })
+            setEditorValues({
                 name: rec.name ?? "",
                 displayName: rec.displayName ?? "",
                 code: rec.code ?? "",
                 contact: rec.contact ?? "",
-                imageId: rec.imageId != null ? String(rec.imageId) : "",
                 email: rec.email ?? "",
+                imageId: rec.imageId ?? "",
                 address: rec.address ?? "",
                 remarks: rec.remarks ?? "",
                 isActive: rec.isActive !== false,
             })
             setImagePreviewUrl(getFactoryImagePreviewUrl(rec))
-        } catch (caughtError) {
-            const message =
-                caughtError instanceof Error
-                    ? caughtError.message
-                    : "Unable to load the selected factory."
-
+        } catch (caught) {
+            const message = errorMessage(caught, "Unable to load the selected factory.")
             if (!handleAuthFailure(message)) {
                 setEditorError(message)
                 toast.error(message)
@@ -443,7 +377,7 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
         } finally {
             setEditorLoading(false)
         }
-    }, [apiUrl, handleAuthFailure, selectedOrganizationId])
+    }, [apiUrl, handleAuthFailure, organizationId, readToken])
 
     const submitEditor = useCallback(async (values: FactoryFormValues) => {
         if (!values.name.trim()) {
@@ -460,43 +394,24 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
         setEditorError("")
 
         try {
-            const token = window.localStorage.getItem("access_token")
-
-            if (!token) {
-                handleAuthFailure("Your session expired. Please sign in again.")
-                return
-            }
+            const token = readToken()
+            if (!token) return
 
             if (editorMode === "create") {
-                await createFactory({
-                    apiUrl,
-                    accessToken: token,
-                    payload: values,
-                    organizationId: selectedOrganizationId || undefined,
-                })
+                await createFactory({ apiUrl, accessToken: token, payload: values, organizationId })
                 toast.success("Factory created successfully.")
             } else if (editingId != null) {
-                await updateFactory({
-                    apiUrl,
-                    accessToken: token,
-                    id: editingId,
-                    payload: values,
-                    organizationId: selectedOrganizationId || undefined,
-                })
+                await updateFactory({ apiUrl, accessToken: token, id: editingId, payload: values, organizationId })
                 toast.success("Factory updated successfully.")
             }
 
             setEditorOpen(false)
-            setEditorInitialValues(DEFAULT_FORM_VALUES)
+            setEditorValues(EMPTY_FORM_VALUES)
             setImagePreviewUrl("")
             setEditingId(null)
             triggerRefresh()
-        } catch (caughtError) {
-            const message =
-                caughtError instanceof Error
-                    ? caughtError.message
-                    : "Unable to save the factory right now."
-
+        } catch (caught) {
+            const message = errorMessage(caught, "Unable to save the factory right now.")
             if (!handleAuthFailure(message)) {
                 setEditorError(message)
                 toast.error(message)
@@ -504,278 +419,125 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
         } finally {
             setEditorSubmitting(false)
         }
-    }, [apiUrl, editingId, editorMode, handleAuthFailure, selectedOrganizationId, triggerRefresh])
+    }, [apiUrl, editingId, editorMode, handleAuthFailure, organizationId, readToken, triggerRefresh])
 
-    const uploadFactoryImage = useCallback(
-        async (file: File | null | undefined) => {
-            if (!file) {
-                return
-            }
+    const uploadFactoryImage = useCallback(async (file: File | null | undefined) => {
+        if (!file) return
 
-            if (!file.type.startsWith("image/")) {
-                toast.error("Please choose an image file.")
-                return
-            }
-
-            setImageUploading(true)
-
-            try {
-                const token = window.localStorage.getItem("access_token")
-
-                if (!token) {
-                    handleAuthFailure("Your session expired. Please sign in again.")
-                    return
-                }
-
-                const fileRecord = await uploadFactoryImageFile({
-                    apiUrl,
-                    accessToken: token,
-                    file,
-                })
-
-                const uploadedPreviewUrl =
-                    fileRecord.public_url?.trim() ||
-                    fileRecord.file_url?.trim() ||
-                    fileRecord.thumbnail_url?.trim() ||
-                    ""
-
-                setEditorInitialValues((current) => ({
-                    ...current,
-                    imageId: String(fileRecord.file_id),
-                }))
-                setImagePreviewUrl(uploadedPreviewUrl)
-
-                toast.success(`Factory image uploaded successfully. File ID ${fileRecord.file_id} will be saved with the factory.`)
-            } catch (caughtError) {
-                const message =
-                    caughtError instanceof Error
-                        ? caughtError.message
-                        : "Unable to upload the factory image right now."
-
-                if (!handleAuthFailure(message)) {
-                    toast.error(message)
-                }
-            } finally {
-                setImageUploading(false)
-            }
-        },
-        [apiUrl, handleAuthFailure],
-    )
-
-    const downloadTemplateFile = useCallback(async () => {
-        setDownloadingTemplate(true)
-
-        try {
-            const token = window.localStorage.getItem("access_token")
-
-            if (!token) {
-                handleAuthFailure("Your session expired. Please sign in again.")
-                return
-            }
-
-            const blob = await downloadFactoryTemplate({
-                apiUrl,
-                accessToken: token,
-                organizationId: selectedOrganizationId || undefined,
-            })
-
-            const url = window.URL.createObjectURL(blob)
-            const anchor = document.createElement("a")
-            anchor.href = url
-            anchor.download = "factory-upload-template.csv"
-            anchor.click()
-            window.URL.revokeObjectURL(url)
-        } catch (caughtError) {
-            const message =
-                caughtError instanceof Error
-                    ? caughtError.message
-                    : "Unable to download the factory template right now."
-
-            if (!handleAuthFailure(message)) {
-                toast.error(message)
-            }
-        } finally {
-            setDownloadingTemplate(false)
-        }
-    }, [apiUrl, handleAuthFailure, selectedOrganizationId])
-
-    const uploadTemplate = useCallback(async (file?: File) => {
-        if (!file) {
+        if (!file.type.startsWith("image/")) {
+            toast.error("Please choose an image file.")
             return
         }
 
-        setUploadingTemplate(true)
+        setImageUploading(true)
 
         try {
-            const token = window.localStorage.getItem("access_token")
+            const token = readToken()
+            if (!token) return
 
-            if (!token) {
-                handleAuthFailure("Your session expired. Please sign in again.")
-                return
-            }
-
-            await uploadFactoryTemplate({
-                apiUrl,
-                accessToken: token,
-                file,
-                organizationId: selectedOrganizationId || undefined,
-            })
-            toast.success("Factory template uploaded successfully.")
-            triggerRefresh()
-        } catch (caughtError) {
-            const message =
-                caughtError instanceof Error
-                    ? caughtError.message
-                    : "Unable to upload the factory template right now."
-
-            if (!handleAuthFailure(message)) {
-                toast.error(message)
-            }
+            const fileRecord = await uploadFactoryImageFile({ apiUrl, accessToken: token, file })
+            setEditorValues((current) => ({ ...current, imageId: String(fileRecord.file_id) }))
+            setImagePreviewUrl(
+                fileRecord.public_url?.trim() || fileRecord.file_url?.trim() || fileRecord.thumbnail_url?.trim() || "",
+            )
+            toast.success("Factory image uploaded. It will be saved with the factory.")
+        } catch (caught) {
+            const message = errorMessage(caught, "Unable to upload the factory image right now.")
+            if (!handleAuthFailure(message)) toast.error(message)
         } finally {
-            setUploadingTemplate(false)
-            if (uploadInputRef.current) {
-                uploadInputRef.current.value = ""
-            }
+            setImageUploading(false)
         }
-    }, [apiUrl, handleAuthFailure, selectedOrganizationId, triggerRefresh])
-
-    async function requestSoftDelete(item: FactoryRecord) {
-        setDeleteTarget(item)
-    }
+    }, [apiUrl, handleAuthFailure, readToken])
 
     const confirmSoftDelete = useCallback(async () => {
-        if (!deleteTarget || deleteWorking) {
-            return
-        }
-
+        if (!deleteTarget || deleteWorking) return
         setDeleteWorking(true)
 
         try {
-            const token = window.localStorage.getItem("access_token")
+            const token = readToken()
+            if (!token) return
 
-            if (!token) {
-                handleAuthFailure("Your session expired. Please sign in again.")
-                return
-            }
-
-            await softDeleteFactory({
-                apiUrl,
-                accessToken: token,
-                id: deleteTarget.id,
-                organizationId: selectedOrganizationId || undefined,
-            })
-
+            await softDeleteFactory({ apiUrl, accessToken: token, id: deleteTarget.id, organizationId })
             setRecentlyDeletedFactory(deleteTarget)
             setDeleteTarget(null)
             toast.success("Factory moved to recently deleted.")
             triggerRefresh()
-        } catch (caughtError) {
-            const message =
-                caughtError instanceof Error
-                    ? caughtError.message
-                    : "Unable to delete the factory right now."
-
-            if (!handleAuthFailure(message)) {
-                toast.error(message)
-            }
+        } catch (caught) {
+            const message = errorMessage(caught, "Unable to delete the factory right now.")
+            if (!handleAuthFailure(message)) toast.error(message)
         } finally {
             setDeleteWorking(false)
         }
-    }, [apiUrl, deleteTarget, deleteWorking, handleAuthFailure, selectedOrganizationId, triggerRefresh])
+    }, [apiUrl, deleteTarget, deleteWorking, handleAuthFailure, organizationId, readToken, triggerRefresh])
 
-    function openPendingActionDialog(factory: FactoryRecord, action: PendingDeleteMode) {
+    function openPendingActionDialog(factory: FactoryRecord, action: DeletedFactoryActionMode) {
         setPendingActionTarget(factory)
         setPendingActionMode(action)
     }
 
     const confirmPendingAction = useCallback(async () => {
-        if (!pendingActionTarget || !pendingActionMode || pendingActionWorking) {
-            return
-        }
-
+        if (!pendingActionTarget || !pendingActionMode || pendingActionWorking) return
         setPendingActionWorking(true)
 
         try {
-            const token = window.localStorage.getItem("access_token")
-
-            if (!token) {
-                handleAuthFailure("Your session expired. Please sign in again.")
-                return
-            }
+            const token = readToken()
+            if (!token) return
 
             if (pendingActionMode === "restore") {
-                await restoreFactory({
-                    apiUrl,
-                    accessToken: token,
-                    id: pendingActionTarget.id,
-                    organizationId: selectedOrganizationId || undefined,
-                })
+                await restoreFactory({ apiUrl, accessToken: token, id: pendingActionTarget.id, organizationId })
                 toast.success("Factory restored successfully.")
             } else {
-                await permanentlyDeleteFactory({
-                    apiUrl,
-                    accessToken: token,
-                    id: pendingActionTarget.id,
-                    organizationId: selectedOrganizationId || undefined,
-                })
+                await permanentlyDeleteFactory({ apiUrl, accessToken: token, id: pendingActionTarget.id, organizationId })
                 toast.success("Factory deleted permanently.")
             }
 
-            if (recentlyDeletedFactory?.id === pendingActionTarget.id) {
-                setRecentlyDeletedFactory(null)
-            }
-
+            if (recentlyDeletedFactory?.id === pendingActionTarget.id) setRecentlyDeletedFactory(null)
             setPendingActionTarget(null)
             setPendingActionMode(null)
             triggerRefresh()
-        } catch (caughtError) {
-            const message =
-                caughtError instanceof Error
-                    ? caughtError.message
-                    : "Unable to complete the delete action right now."
-
-            if (!handleAuthFailure(message)) {
-                toast.error(message)
-            }
+        } catch (caught) {
+            const message = errorMessage(caught, "Unable to complete the delete action right now.")
+            if (!handleAuthFailure(message)) toast.error(message)
         } finally {
             setPendingActionWorking(false)
         }
-    }, [apiUrl, handleAuthFailure, pendingActionMode, pendingActionTarget, pendingActionWorking, recentlyDeletedFactory, selectedOrganizationId, triggerRefresh])
+    }, [apiUrl, handleAuthFailure, organizationId, pendingActionMode, pendingActionTarget, pendingActionWorking, readToken, recentlyDeletedFactory, triggerRefresh])
 
-    const deletedTotal = deletedMeta?.total ?? deletedFactories.length
     const activeTotal = meta?.total ?? factories.length
-    const activeCount = useMemo(
-        () => factories.filter((factory) => factory.deleted_at == null).length,
-        [factories],
-    )
+    const deletedTotal = deletedMeta?.total ?? deletedFactories.length
+    const activeOnPage = factories.filter((factory) => factory.isActive !== false).length
 
-    if (
-        loadingFactories &&
-        factories.length === 0 &&
-        loadingDeletedFactories &&
-        deletedFactories.length === 0 &&
-        !error &&
-        !deletedError
-    ) {
+    // Nothing has finished loading yet (also while redirecting to sign-in).
+    if (!loaded) {
         return <WorkspaceSkeleton />
     }
+
+    const header = (
+        <ModulePageHeader
+            eyebrow="App configuration"
+            title="Factory Setup"
+            description="Create, review, and maintain factory records."
+            badges={
+                error
+                    ? []
+                    : [
+                          { label: `Total ${activeTotal}`, variant: "secondary" },
+                          { label: `Active ${activeOnPage}` },
+                          { label: `Deleted ${deletedTotal}` },
+                          ...(recentlyDeletedFactory ? [{ label: "Recently deleted", variant: "destructive" as const }] : []),
+                      ]
+            }
+            onRefresh={triggerRefresh}
+            onCreate={error ? undefined : openCreateDialog}
+            createLabel="New factory"
+        />
+    )
 
     if (error) {
         return (
             <div className="space-y-4 p-2 sm:p-3 lg:p-4">
-                <ModulePageHeader
-                    eyebrow="App configuration"
-                    title="Factory Setup"
-                    description="Manage factory master data."
-                    onRefresh={triggerRefresh}
-                />
-
-                <EmptyState
-                    title="Unable to load factories"
-                    description={error}
-                    actionLabel="Try again"
-                    onAction={triggerRefresh}
-                />
+                {header}
+                <EmptyState title="Unable to load factories" description={error} actionLabel="Try again" onAction={triggerRefresh} />
             </div>
         )
     }
@@ -784,20 +546,7 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
             <ScrollArea className="h-full">
                 <div className="space-y-4 p-2 sm:p-3 lg:p-4">
-                    <ModulePageHeader
-                        eyebrow="App configuration"
-                        title="Factory Setup"
-                        description="Create, review, and maintain factory records."
-                        badges={[
-                            { label: `Total ${activeTotal}`, variant: "secondary" },
-                            { label: `Active ${activeCount}` },
-                            { label: `Deleted ${deletedTotal}` },
-                            ...(recentlyDeletedFactory ? [{ label: "Recently deleted", variant: "destructive" as const }] : []),
-                        ]}
-                        onRefresh={triggerRefresh}
-                        onCreate={openCreateDialog}
-                        createLabel="New factory"
-                    />
+                    {header}
 
                     {recentlyDeletedFactory ? (
                         <Card className="border-amber-200 bg-amber-50/80 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10">
@@ -839,7 +588,7 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
                     <ActiveFactorySection
                         data={factories}
                         meta={meta}
-                        loading={loadingFactories}
+                        loading={loading}
                         page={page}
                         limit={limit}
                         filters={activeFilters}
@@ -850,23 +599,13 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
                         onPageChange={setPage}
                         onLimitChange={setLimit}
                         onEdit={openEditDialog}
-                        onDelete={requestSoftDelete}
-                        onDownloadTemplate={downloadTemplateFile}
-                        onUploadTemplate={() => uploadInputRef.current?.click()}
-                    />
-
-                    <input
-                        ref={uploadInputRef}
-                        type="file"
-                        accept=".csv,text/csv,application/vnd.ms-excel"
-                        className="hidden"
-                        onChange={(event) => void uploadTemplate(event.target.files?.[0])}
+                        onDelete={setDeleteTarget}
                     />
 
                     <DeletedFactorySection
                         data={deletedFactories}
                         meta={deletedMeta}
-                        loading={loadingDeletedFactories}
+                        loading={loading}
                         page={deletedPage}
                         limit={deletedLimit}
                         filters={deletedFilters}
@@ -876,7 +615,7 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
                         }}
                         onPageChange={setDeletedPage}
                         onLimitChange={setDeletedLimit}
-                        onOpenAction={(factory: FactoryRecord, mode) => openPendingActionDialog(factory, mode)}
+                        onOpenAction={openPendingActionDialog}
                     />
                 </div>
             </ScrollArea>
@@ -887,14 +626,15 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
                 submitting={editorSubmitting}
                 error={editorError}
                 mode={editorMode}
-                initialValues={editorInitialValues}
+                values={editorValues}
+                onValuesChange={setEditorValues}
                 imagePreviewUrl={imagePreviewUrl}
                 imageUploading={imageUploading}
                 onOpenChange={(open) => {
                     setEditorOpen(open)
 
                     if (!open) {
-                        setEditorInitialValues(DEFAULT_FORM_VALUES)
+                        setEditorValues(EMPTY_FORM_VALUES)
                         setImagePreviewUrl("")
                         setEditorError("")
                         setEditorLoading(false)
@@ -911,9 +651,7 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
                 factory={deleteTarget}
                 working={deleteWorking}
                 onOpenChange={(open) => {
-                    if (!open) {
-                        setDeleteTarget(null)
-                    }
+                    if (!open) setDeleteTarget(null)
                 }}
                 onConfirm={confirmSoftDelete}
             />

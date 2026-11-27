@@ -482,7 +482,7 @@ export function AppDataTable<TData>({
         <div className="p-4 sm:p-6">{emptyState}</div>
       )}
 
-      <div className="flex flex-col gap-3 border-t border-slate-200/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10">
+      <div className="flex flex-col gap-2 border-t border-slate-200/70 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-4 dark:border-white/10">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {pageSummary}

@@ -63,14 +63,19 @@ export type FactoryRecord = {
     deleted_at?: string | null
 }
 
+/** Only properties of the backend's FactoryParams; anything else is ignored by O2S. */
 export type FactoryFilterValues = {
     name: string
     displayName: string
     code: string
-    contact: string
-    email: string
-    address: string
     isActive: string
+}
+
+export const EMPTY_FILTERS: FactoryFilterValues = {
+    name: "",
+    displayName: "",
+    code: "",
+    isActive: "",
 }
 
 export type FactoryFormValues = {
@@ -85,12 +90,14 @@ export type FactoryFormValues = {
     isActive: boolean
 }
 
-export type FactoryDialogSectionId =
-    | "basic-info"
-    | "contact-info"
-    | "remarks-status"
-
-export type FactoryFormError = {
-    message: string
-    section: FactoryDialogSectionId
+export const EMPTY_FORM_VALUES: FactoryFormValues = {
+    name: "",
+    displayName: "",
+    code: "",
+    contact: "",
+    email: "",
+    imageId: "",
+    address: "",
+    remarks: "",
+    isActive: true,
 }

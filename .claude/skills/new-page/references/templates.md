@@ -598,7 +598,6 @@ export function Active__Thing__Section({
   return (
     <AppDataSection
       title="__Labels__ table"
-      description={pageSummary}
       data={data}
       columns={columns}
       loading={loading}
@@ -625,7 +624,7 @@ export function Active__Thing__Section({
       }}
       headerBadges={
         <>
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
             Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
           </Badge>
           <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
@@ -875,7 +874,6 @@ export function Deleted__Thing__Section({
   return (
     <AppDataSection
       title="Deleted __labels__"
-      description={pageSummary}
       data={data}
       columns={columns}
       loading={loading}
@@ -894,7 +892,7 @@ export function Deleted__Thing__Section({
       mobileSkeletonClassName="h-28 rounded-2xl"
       headerBadges={
         <>
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
             {meta?.total ?? data.length} deleted
           </Badge>
           <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
@@ -967,9 +965,8 @@ export function Deleted__Thing__Section({
 Group fields as Factory does: required identity fields full-width first, short optional fields two per row
 (`grid gap-4 md:grid-cols-2`), long text full-width, the Active switch last in a bordered row.
 
-The dialog is **controlled**: the workspace owns the values (`values` / `onValuesChange`). Factory instead
-copies `initialValues` into a local draft in a `useEffect`, which fails the `react-hooks/set-state-in-effect`
-lint rule — don't copy that.
+The dialog is **controlled**: the workspace owns the values (`values` / `onValuesChange`). Never copy
+`initialValues` into a local draft in a `useEffect`: it fails the `react-hooks/set-state-in-effect` lint rule.
 
 ```tsx
 "use client"
@@ -1311,11 +1308,10 @@ function WorkspaceSkeleton() {
       <ScrollArea className="h-full">
         <div className="space-y-4 p-2 sm:p-3 lg:p-4">
           <Card className={CARD_CLASS}>
-            <CardContent className="p-6 sm:p-8">
-              <div className="space-y-3">
-                <div className="h-4 w-48 rounded-full bg-slate-200 dark:bg-slate-800" />
-                <div className="h-10 w-72 rounded-full bg-slate-200 dark:bg-slate-800" />
-                <div className="h-4 w-full max-w-2xl rounded-full bg-slate-200 dark:bg-slate-800" />
+            <CardContent className="px-3 py-2 sm:px-4">
+              <div className="space-y-2">
+                <div className="h-6 w-56 rounded-full bg-slate-200 dark:bg-slate-800" />
+                <div className="h-4 w-full max-w-md rounded-full bg-slate-200 dark:bg-slate-800" />
               </div>
             </CardContent>
           </Card>
@@ -1766,7 +1762,7 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
 > changes `requestKey` and reloads (an older request's result is discarded). The filter row has only
 > **Reset**; **New** lives in the page header only.
 >
-> **Don't bring back `setLoading(true)` / `void loadAll()` in an effect** (Factory's shape): it fails
+> **Don't bring back `setLoading(true)` / `void loadAll()` in an effect**: it fails
 > `react-hooks/set-state-in-effect`. Anything new the lists depend on goes into `requestKey` and the effect's deps.
 
 ---

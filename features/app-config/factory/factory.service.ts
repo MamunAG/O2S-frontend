@@ -77,20 +77,14 @@ function appendFilterParams(url: URL, filters: Partial<FactoryFilterValues>) {
     if (filters.name?.trim()) url.searchParams.set("name", filters.name.trim())
     if (filters.displayName?.trim()) url.searchParams.set("displayName", filters.displayName.trim())
     if (filters.code?.trim()) url.searchParams.set("code", filters.code.trim())
-    if (filters.contact?.trim()) url.searchParams.set("contact", filters.contact.trim())
-    if (filters.email?.trim()) url.searchParams.set("email", filters.email.trim())
-    if (filters.address?.trim()) url.searchParams.set("address", filters.address.trim())
     if (filters.isActive?.trim()) url.searchParams.set("isActive", filters.isActive.trim())
 }
 
+// null, not undefined: PATCH merges into the stored record and JSON.stringify drops undefined,
+// so an emptied field would otherwise keep its old value.
 function optionalString(value: string) {
     const trimmedValue = value.trim()
-    return trimmedValue || undefined
-}
-
-function optionalNumber(value: string) {
-    const trimmedValue = value.trim()
-    return trimmedValue ? Number(trimmedValue) : undefined
+    return trimmedValue || null
 }
 
 function buildFactoryPayload(payload: FactoryFormValues) {
@@ -100,7 +94,7 @@ function buildFactoryPayload(payload: FactoryFormValues) {
         code: optionalString(payload.code),
         contact: optionalString(payload.contact),
         email: optionalString(payload.email),
-        imageId: (payload.imageId ? String(payload.imageId) : null),
+        imageId: payload.imageId || null,
         address: optionalString(payload.address),
         remarks: optionalString(payload.remarks),
         isActive: payload.isActive,
@@ -314,48 +308,4 @@ export async function permanentlyDeleteFactory({
     })
 
     await readJsonResponse(response)
-}
-
-export async function downloadFactoryTemplate({
-    apiUrl,
-    accessToken,
-    organizationId,
-}: {
-    apiUrl: string
-    accessToken: string
-    organizationId?: string
-}) {
-    const response = await fetch(buildApiUrl(apiUrl, "/api/v1/factory/template/upload"), {
-        method: "GET",
-        headers: buildRequestHeaders({ accessToken, organizationId }),
-    })
-
-    if (!response.ok) {
-        throw new Error("Unable to download factory template.")
-    }
-
-    return response.blob()
-}
-
-export async function uploadFactoryTemplate({
-    apiUrl,
-    accessToken,
-    file,
-    organizationId,
-}: {
-    apiUrl: string
-    accessToken: string
-    file: File
-    organizationId?: string
-}) {
-    const formData = new FormData()
-    formData.append("file", file)
-
-    const response = await fetch(buildApiUrl(apiUrl, "/api/v1/factory/upload"), {
-        method: "POST",
-        headers: buildRequestHeaders({ accessToken, organizationId }),
-        body: formData,
-    })
-
-    return readJsonResponse(response)
 }

@@ -35,31 +35,32 @@ export function ModulePageHeader({
       size="sm"
       className="overflow-hidden border-white/60 bg-white/85 py-0 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur dark:border-white/10 dark:bg-slate-950/75"
     >
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <CardContent className="px-3 py-2 sm:px-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">
-              {eyebrow}
-            </p>
-            <h1 className="mt-0.5 text-xl font-semibold tracking-tight sm:text-2xl">
-              {title}
-            </h1>
-            <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-600 sm:text-sm dark:text-slate-300">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <h1 className="text-base leading-6 font-semibold tracking-tight sm:text-lg">
+                {title}
+              </h1>
+              <span className="text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400">
+                {eyebrow}
+              </span>
+              {badges.map((badge, index) => (
+                <Badge
+                  key={index}
+                  variant={badge.variant ?? "outline"}
+                  className="rounded-full px-2 py-0.5 text-[10px]"
+                >
+                  {badge.label}
+                </Badge>
+              ))}
+            </div>
+            <p
+              className="max-w-3xl truncate text-xs leading-5 text-slate-600 dark:text-slate-300"
+              title={description}
+            >
               {description}
             </p>
-            {badges.length ? (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {badges.map((badge, index) => (
-                  <Badge
-                    key={index}
-                    variant={badge.variant ?? "outline"}
-                    className="rounded-full px-2 py-0.5 text-[10px]"
-                  >
-                    {badge.label}
-                  </Badge>
-                ))}
-              </div>
-            ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             {onRefresh ? (

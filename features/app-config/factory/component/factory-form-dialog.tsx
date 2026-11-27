@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useRef, type ReactNode } from "react"
 import { Loader2, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -25,7 +25,8 @@ type FactoryFormDialogProps = {
     submitting: boolean
     error: string
     mode: "create" | "edit"
-    initialValues: FactoryFormValues
+    values: FactoryFormValues
+    onValuesChange: (values: FactoryFormValues) => void
     imagePreviewUrl: string
     imageUploading: boolean
     onOpenChange: (open: boolean) => void
@@ -37,7 +38,7 @@ function FieldLabel({
     children,
     required = false,
 }: {
-    children: React.ReactNode
+    children: ReactNode
     required?: boolean
 }) {
     return (
@@ -54,14 +55,14 @@ export function FactoryFormDialog({
     submitting,
     error,
     mode,
-    initialValues,
+    values: draft,
+    onValuesChange,
     imagePreviewUrl,
     imageUploading,
     onOpenChange,
     onImageUpload,
     onSubmit,
 }: FactoryFormDialogProps) {
-    const [draft, setDraft] = useState(initialValues)
     const imageInputRef = useRef<HTMLInputElement | null>(null)
     const title = mode === "create" ? "Create factory" : "Edit factory"
     const description =
@@ -69,14 +70,8 @@ export function FactoryFormDialog({
             ? "Add a factory master record."
             : "Update the selected factory master record."
 
-    useEffect(() => {
-        if (open) {
-            setDraft(initialValues)
-        }
-    }, [initialValues, open])
-
     function update<K extends keyof FactoryFormValues>(key: K, value: FactoryFormValues[K]) {
-        setDraft((current) => ({ ...current, [key]: value }))
+        onValuesChange({ ...draft, [key]: value })
     }
 
     return (
@@ -171,10 +166,11 @@ export function FactoryFormDialog({
 
                             <div className="space-y-2">
                                 <FieldLabel>Factory image</FieldLabel>
-                                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/3">
                                     <div className="grid gap-4 md:grid-cols-[11rem_minmax(0,1fr)] md:items-center">
                                         <div className="overflow-hidden rounded-xl border border-dashed border-slate-200 bg-white dark:border-white/10 dark:bg-slate-950/40">
                                             {imagePreviewUrl ? (
+                                                // eslint-disable-next-line @next/next/no-img-element -- O2S file URLs are not configured for next/image
                                                 <img
                                                     src={imagePreviewUrl}
                                                     alt="Uploaded factory preview"
@@ -233,7 +229,7 @@ export function FactoryFormDialog({
                                 />
                             </div>
 
-                            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/3">
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="space-y-1">
                                         <FieldLabel>Active</FieldLabel>

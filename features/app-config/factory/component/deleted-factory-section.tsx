@@ -17,21 +17,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import type { FactoryFilterValues, FactoryRecord, PaginationMeta } from "../factory.types"
+import { EMPTY_FILTERS, type FactoryFilterValues, type FactoryRecord, type PaginationMeta } from "../factory.types"
 
 const ALL_STATUS_VALUE = "__all_deleted_statuses__"
 
-const EMPTY_FILTERS: FactoryFilterValues = {
-  name: "",
-  displayName: "",
-  code: "",
-  contact: "",
-  email: "",
-  address: "",
-  isActive: "",
-}
-
-type DeletedFactoryActionMode = "restore" | "permanent"
+export type DeletedFactoryActionMode = "restore" | "permanent"
 
 type DeletedFactorySectionProps = {
   data: FactoryRecord[]
@@ -194,7 +184,6 @@ export function DeletedFactorySection({
   return (
     <AppDataSection
       title="Deleted factories"
-      description={deletedPageSummary}
       data={data}
       columns={columns}
       loading={loading}
@@ -213,7 +202,7 @@ export function DeletedFactorySection({
       mobileSkeletonClassName="h-28 rounded-2xl"
       headerBadges={
         <>
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
+          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
             {meta?.total ?? data.length} deleted
           </Badge>
           <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
@@ -247,22 +236,6 @@ export function DeletedFactorySection({
               value: filters.code,
               placeholder: "Input code",
               onValueChange: (code) => onFilterChange({ ...filters, code }),
-            },
-            {
-              id: "deletedFactoryContact",
-              label: "Contact",
-              kind: "text",
-              value: filters.contact,
-              placeholder: "Input contact",
-              onValueChange: (contact) => onFilterChange({ ...filters, contact }),
-            },
-            {
-              id: "deletedFactoryEmail",
-              label: "Email",
-              kind: "text",
-              value: filters.email,
-              placeholder: "Input email",
-              onValueChange: (email) => onFilterChange({ ...filters, email }),
             },
             {
               id: "deletedFactoryStatus",

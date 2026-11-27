@@ -18,7 +18,7 @@ description: >
 
 A new page is **1 route file + 6 feature files**, and **2–3 edits** to shared files.
 
-**One set of rules, every page, every time.** All of "Rules (R1–R12)" below apply to every page, new or existing,
+**One set of rules, every page, every time.** All of "Rules (R1–R13)" below apply to every page, new or existing,
 whenever the user asks to create **or** modify it — there are no separate rules for new pages and existing ones,
 no rule that only some pages follow, and no "later". Whatever the request (a new page, a field, a column, a
 bug fix, a restyle), the page comes out of it meeting all of them (see "Applying the rules").
@@ -91,8 +91,7 @@ Collect these. Read the backend slice first — most answers are there. Ask the 
 > `SoftDeleteRoutes.Map<…>` for the deleted list / restore / permanent delete).
 
 > **Filters must exist in `<Thing>Params`.** The list handler forwards every non-empty query key to
-> O2S; a key O2S does not bind is silently ignored, so the filter box appears to do nothing. (The Factory
-> page filters on `contact` and `email`, which `FactoryParams` does not have — don't copy that.)
+> O2S; a key O2S does not bind is silently ignored, so the filter box appears to do nothing.
 > Strings filter with case-insensitive *contains*, bools and numbers exactly.
 
 ### Field kinds
@@ -135,12 +134,12 @@ upload, Excel upload) are in **`references/add-ons.md`**. Write each file from i
    { label: "<Title>", href: "<route>", permissionMenuName: "<Title>" },
    ```
    **Always set `permissionMenuName`.** An item without one is shown only to global admins
-   (`filterSidebarItemsByPermissions` drops it for everyone else). The Factory item has this bug.
+   (`filterSidebarItemsByPermissions` drops it for everyone else).
 10. **Menu name** — if `<Title>` is not exactly the O2S `menuName`, add `"<Title>": "<O2S menuName>",`
     to `MENU_NAME_TO_O2S` in `lib/o2s/menus.ts`. Without it, non-admin users with the O2S permission
     still don't see the item.
 
-## Rules (R1–R12) — one set for every page
+## Rules (R1–R13) — one set for every page
 
 Every CRUD page follows all of these, new or existing, on every request to create or modify it. The templates
 already meet them; a page built another way is brought to them in the same change — see "Applying the rules".
@@ -184,8 +183,9 @@ finished; a newer request cancels the older one's result. The form dialog is con
 **R3 — Filters only for `<Thing>Params` properties.** Read `O2S-backend/.../<Thing>.Params.cs`; a filter O2S
 doesn't bind is silently ignored. Status filter values are `"true"` / `"false"`, `""` = all.
 
-**R4 — No Excel upload / template download unless the backend has those routes** (add-on C). Under plain
-`crudRules` they always error.
+**R4 — No Excel upload / template download unless the user asks for it and the backend has those routes.**
+It stays available as an on-demand feature: add-on C in `references/add-ons.md` has the full code. Under plain
+`crudRules` the routes always error.
 
 **R5 — Navigation is permission-aware.** The sidebar item has `permissionMenuName`; if it differs from the
 O2S `menuName`, `MENU_NAME_TO_O2S` maps it. Without both, non-admins don't see the page.
@@ -240,13 +240,30 @@ backend's rule that every outbound HTTP call is a Refit client).
   and never pass `position` to move a toast against this rule.
 - Don't add a second `<Toaster>`; the one in `app/layout.tsx` takes no `position` prop.
 
+**R13 — Compact page header and table cards.** The spacing lives in the shared components, so every page gets
+it by using them as they are (R1).
+- **Page header** (`ModulePageHeader`): title, eyebrow and badges share one line, with Refresh / actions / New on
+  the right. The description is one line, cut off with `truncate` (the full text shows on hover), so keep it to
+  one short sentence such as "Create, review, and maintain <label> records." Pass no second description line,
+  extra wrapper `<Card>` or padding classes.
+- **Table card** (`AppDataSection`): the card has no padding of its own (`gap-0 py-0`). Its header bar is
+  `px-3 py-2` with a `text-sm` title, the filter row `px-3 py-2`, and the pager under the table (`AppDataTable`)
+  `px-3 py-2`. A page doesn't override any of these.
+- **No `description` on `AppDataSection`** for the page summary: "Showing x–y of n" goes to `pageSummary` only,
+  and the pager under the table already shows it. Pass a `description` only for a note the table can't show
+  elsewhere; it's cut to one line too.
+- **Header badges** in `headerBadges` ("Page X of Y", "N active filters") are all
+  `w-fit rounded-full px-2.5 py-0.5 text-[11px]`.
+- **The workspace skeleton's header card** matches the compact header: `CardContent className="px-3 py-2 sm:px-4"`
+  with a `h-6 w-56` title bar and a `h-4 max-w-md` description bar, not the old `p-6 sm:p-8` / `h-10` bars.
+
 ## Applying the rules
 
 The same steps for every request, whether it creates a page or modifies one (a new field, a filter, a column,
 a bug fix, a restyle):
 
 1. **Do the requested change** (a new page: the Steps above, from the templates).
-2. **Audit the whole page against R1–R12**, not only the lines the request touched — its route, feature
+2. **Audit the whole page against R1–R13**, not only the lines the request touched — its route, feature
    folder, adapter rule, sidebar item and menu-name entry. Run `npx eslint <feature folder>` and read the
    backend `<Thing>Params` / DTO.
 3. **Fix every rule the page breaks**, in the same change, using the templates as the target shape. Keep the
@@ -255,21 +272,21 @@ a bug fix, a restyle):
 4. **Ask before removing anything users can see.** R3 (a filter the backend ignores) and R4 (a bulk-upload
    menu that always errors) remove visible controls: list them and get a yes before deleting them. If the
    user says keep, leave them and note it in the summary.
-5. **Report** a short R1–R12 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
+5. **Report** a short R1–R13 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
 
 Known state of the reference pages (update this list when you fix one):
 
 | Page | Open rule breaks |
 |---|---|
-| Factory (`features/app-config/factory/`) | R2 (loader effect, dialog draft effect), R3 (`contact` / `email` filters), R4 (bulk upload menu), R5 (no `permissionMenuName`), R9 (`factory.workspace.tsx` re-export), R10 (unused `imageInputRef`, `uploadingTemplate`, `downloadingTemplate`, `optionalNumber`; `<img>` warning in the dialog). R1 done. |
-| Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`) — not yet audited for the rest |
-| Exchange Rates (`features/app-config/exchange-rates/`) | None. A matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
+| Factory (`features/app-config/factory/`) | None. Brought to R1–R13 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`). |
+| Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections) — not yet audited for the rest |
+| Exchange Rates (`features/app-config/exchange-rates/`) | R13: the table's `description` repeats `pageSummary` (keep only its "1 row currency × rate = the column currency" note). Otherwise a matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
 | Other CRUD pages | not yet audited |
 
 ## Verify
 
 1. R10: `npm run typecheck` and `npx eslint <the new and touched files>` — no errors and no warnings.
-2. Re-check R1–R12 against the finished files: this is the report in step 5 of "Applying the rules".
+2. Re-check R1–R13 against the finished files: this is the report in step 5 of "Applying the rules".
 3. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
    `http://localhost:3000<route>` and walk through: list loads → filter → create → edit → delete →
    restore from the banner → delete → permanently delete from the deleted card.
