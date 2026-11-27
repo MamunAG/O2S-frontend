@@ -185,7 +185,8 @@ doesn't bind is silently ignored. Status filter values are `"true"` / `"false"`,
 
 **R4 — No Excel upload / template download unless the user asks for it and the backend has those routes.**
 It stays available as an on-demand feature: add-on C in `references/add-ons.md` has the full code. Under plain
-`crudRules` the routes always error.
+`crudRules` the routes always error. When the user asks for it, the template download / upload dropdown goes in the **page header**
+(`ModulePageHeader`'s `actions`, between Refresh and New), never in the table section (R15).
 
 **R5 — Navigation is permission-aware.** The sidebar item has `permissionMenuName`; if it differs from the
 O2S `menuName`, `MENU_NAME_TO_O2S` maps it. Without both, non-admins don't see the page.

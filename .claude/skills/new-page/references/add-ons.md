@@ -273,17 +273,45 @@ const uploadTemplate = useCallback(async (file?: File) => {
 }, [apiUrl, handleAuthFailure, organizationId, readToken, triggerRefresh])
 ```
 
-Pass the flags and callbacks to the active section, and render the input next to it:
+**5. The dropdown goes in the page header** (R15), never in the table section: build it in the workspace and pass it
+as `ModulePageHeader`'s `actions`, so it shows between Refresh and New. The active section gets no template props.
+Import `ChevronDown`, `Download`, `FileSpreadsheet`, `Upload` and the `DropdownMenu*` pieces in the workspace.
 
 ```tsx
-<Active__Thing__Section
-  /* …the usual props… */
-  onDownloadTemplate={downloadTemplate}
-  onUploadTemplate={() => uploadInputRef.current?.click()}
-  downloadingTemplate={downloadingTemplate}
-  uploadingTemplate={uploadingTemplate}
-/>
+const templateMenu = (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button type="button" variant="outline" size="sm" className="rounded-xl" disabled={downloadingTemplate || uploadingTemplate}>
+        {downloadingTemplate || uploadingTemplate ? <Loader2 className="size-3.5 animate-spin" /> : <FileSpreadsheet className="size-3.5" />}
+        Bulk upload
+        <ChevronDown className="size-3.5" />
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end" className="w-52">
+      <DropdownMenuItem onSelect={() => void downloadTemplate()} disabled={downloadingTemplate}>
+        <Download className="mr-2 size-3.5" />
+        {downloadingTemplate ? "Downloading template..." : "Download template"}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onSelect={() => uploadInputRef.current?.click()} disabled={uploadingTemplate}>
+        <Upload className="mr-2 size-3.5" />
+        {uploadingTemplate ? "Uploading __labels__..." : "Upload __labels__"}
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+)
 
+const header = (
+  <ModulePageHeader
+    /* …eyebrow, title, description, badges, onRefresh, onCreate, createLabel… */
+    actions={error ? undefined : templateMenu}
+  />
+)
+```
+
+Render the hidden file input once in the workspace (next to the dialogs), outside the header card:
+
+```tsx
 <input
   ref={uploadInputRef}
   type="file"
@@ -293,32 +321,4 @@ Pass the flags and callbacks to the active section, and render the input next to
 />
 ```
 
-**5. Active section.** Add the four props (`onDownloadTemplate`, `onUploadTemplate`, `downloadingTemplate`,
-`uploadingTemplate`), import `Download`, `Upload` and the dropdown pieces, and put the menu in
-`AppDataSection`'s `headerActions`:
-
-```tsx
-headerActions={
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button type="button" variant="outline" className="rounded-full" disabled={downloadingTemplate || uploadingTemplate}>
-        <MoreHorizontal className="size-2.5" />
-        <span className="sr-only">Bulk actions</span>
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="w-52">
-      <DropdownMenuItem onSelect={onDownloadTemplate} disabled={downloadingTemplate}>
-        <Download className="mr-2 size-3.5" />
-        {downloadingTemplate ? "Downloading template..." : "Download template"}
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem onSelect={onUploadTemplate} disabled={uploadingTemplate}>
-        <Upload className="mr-2 size-3.5" />
-        {uploadingTemplate ? "Uploading __labels__..." : "Upload __labels__"}
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-}
-```
-
-Every piece above must be used: a flag the section never reads breaks R10.
+Every piece above must be used: a flag or import nobody reads breaks R10.
