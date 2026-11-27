@@ -18,7 +18,7 @@ description: >
 
 A new page is **1 route file + 6 feature files**, and **2–3 edits** to shared files.
 
-**One set of rules, every page, every time.** All of "Rules (R1–R15)" below apply to every page, new or existing,
+**One set of rules, every page, every time.** All of "Rules (R1–R16)" below apply to every page, new or existing,
 whenever the user asks to create **or** modify it — there are no separate rules for new pages and existing ones,
 no rule that only some pages follow, and no "later". Whatever the request (a new page, a field, a column, a
 bug fix, a restyle), the page comes out of it meeting all of them (see "Applying the rules").
@@ -139,7 +139,7 @@ upload, Excel upload) are in **`references/add-ons.md`**. Write each file from i
     to `MENU_NAME_TO_O2S` in `lib/o2s/menus.ts`. Without it, non-admin users with the O2S permission
     still don't see the item.
 
-## Rules (R1–R15) — one set for every page
+## Rules (R1–R16) — one set for every page
 
 Every CRUD page follows all of these, new or existing, on every request to create or modify it. The templates
 already meet them; a page built another way is brought to them in the same change — see "Applying the rules".
@@ -294,13 +294,28 @@ when open, `aria-expanded`); clicking anywhere on the header or the chevron open
 - The deleted section keeps its header (title, "N deleted", chevron): R14 needs it to collapse.
 - Row menus (the `…` per row) stay in the row.
 
+**R16 — Dialogs: at most 90% of the screen height on mobile; full-size footer buttons.**
+- **Every** dialog (entry / edit forms, details, confirmations, pickers) is at most **90% of the screen height on
+  mobile**: `max-h-[90dvh]` below `sm`, its desktop cap after `sm:` (the form dialog:
+  `max-h-[90dvh] sm:max-h-[calc(100vh-2rem)]` on the `<form>` inside `DialogContent`). Use `dvh`, not `vh` (the
+  phone's address bar). Never `h-[100dvh]` / `max-h-[100dvh]` full-screen sheets on mobile: a big editor is a
+  90% dialog too.
+- Header and footer stay put; only the body scrolls: `DialogContent` gets `overflow-hidden p-0`, the form is
+  `flex flex-col` with the cap above, the body is `<ScrollArea className="min-h-0 flex-1">`, the footer sits in its own
+  bordered `div` under it.
+- The footer's Save and Cancel are full-size buttons, the same on desktop and mobile: Cancel
+  `className="h-9 min-w-24 rounded-xl px-4 text-sm"`, Save `className="h-9 min-w-28 rounded-xl px-4 text-sm"` (the
+  spinner `size-4`). The default `Button` size (`h-7`) is too thin for a dialog footer. `DialogFooter` stacks them
+  full width on mobile (Save on top) and puts them on the right on desktop.
+- Reference: `features/app-config/factory/component/factory-form-dialog.tsx` (2026-11-27).
+
 ## Applying the rules
 
 The same steps for every request, whether it creates a page or modifies one (a new field, a filter, a column,
 a bug fix, a restyle):
 
 1. **Do the requested change** (a new page: the Steps above, from the templates).
-2. **Audit the whole page against R1–R15**, not only the lines the request touched — its route, feature
+2. **Audit the whole page against R1–R16**, not only the lines the request touched — its route, feature
    folder, adapter rule, sidebar item and menu-name entry. Run `npx eslint <feature folder>` and read the
    backend `<Thing>Params` / DTO.
 3. **Fix every rule the page breaks**, in the same change, using the templates as the target shape. Keep the
@@ -309,21 +324,21 @@ a bug fix, a restyle):
 4. **Ask before removing anything users can see.** R3 (a filter the backend ignores) and R4 (a bulk-upload
    menu that always errors) remove visible controls: list them and get a yes before deleting them. If the
    user says keep, leave them and note it in the summary.
-5. **Report** a short R1–R15 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
+5. **Report** a short R1–R16 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
 
 Known state of the reference pages (update this list when you fix one):
 
 | Page | Open rule breaks |
 |---|---|
-| Factory (`features/app-config/factory/`) | None. Brought to R1–R15 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters — Code filter removed at the user's request, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`, deleted section collapsible and collapsed by default, active section without a header bar and no "Page X of Y" / "N active filters" badges anywhere, R15). |
+| Factory (`features/app-config/factory/`) | None. Brought to R1–R16 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters — Code filter removed at the user's request, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`, deleted section collapsible and collapsed by default, active section without a header bar and no "Page X of Y" / "N active filters" badges anywhere, R15). |
 | Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections), R14 (deleted section not collapsible), R15 (active section has a header bar) — not yet audited for the rest |
 | Exchange Rates (`features/app-config/exchange-rates/`) | R15: the "Saved rates" header bar (badges, the "1 row currency × rate" note, the selection Clear / Delete in `headerActions`) is not yet moved to the page header. Made phone-friendly on 2026-11-27 (the whole page container has inline-size containment, short header description, the table's `description` is only the "1 row currency × rate = the column currency" note, compact badges, `h-7` date filters). A matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
-| Other CRUD pages | not yet audited (R15 is new on 2026-11-27: every other page still has the active section's header bar) |
+| Other CRUD pages | not yet audited (R15 is new on 2026-11-27: every other page still has the active section's header bar). R16 (new on 2026-11-27): the centered dialogs already have the 90% mobile cap; their footer buttons are still the thin default size, and the big editors (Job, Style, Employee, TNA, Order Placement, GMT costing / budget / booking, Buyer, Fabric Process, GMT Cost Scope, TNA Task, Attendance pull) are still full-screen on mobile. |
 
 ## Verify
 
 1. R10: `npm run typecheck` and `npx eslint <the new and touched files>` — no errors and no warnings.
-2. Re-check R1–R15 against the finished files: this is the report in step 5 of "Applying the rules".
+2. Re-check R1–R16 against the finished files: this is the report in step 5 of "Applying the rules".
 3. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
    `http://localhost:3000<route>` and walk through: list loads → filter → create → edit → delete →
    restore from the banner → delete → expand the deleted card (collapsed at first, R14) → permanently delete from it.
