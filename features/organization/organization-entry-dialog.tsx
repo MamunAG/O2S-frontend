@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect } from "react"
 
 import { Loader2, LogOut } from "lucide-react"
@@ -206,7 +205,7 @@ export function OrganizationEntryDialog({
                 {isEditMode
                   ? "Update the selected organization using the same fields exposed by the organization API."
                   : showLogoutAction
-                    ? "No organizations are mapped to this account yet. Create one, request access to an existing organization, or log out."
+                    ? "No organizations are mapped to this account yet. Create one, or log out."
                     : "Add a new organization using the same fields exposed by the organization API."}
               </DialogDescription>
             </DialogHeader>
@@ -313,7 +312,8 @@ export function OrganizationEntryDialog({
             <DialogFooter>
               {showLogoutAction ? (
                 <>
-                  {/* Logout sits in the left corner; Request access and Save stay on the right. */}
+                  {/* Logout sits in the left corner; Save stays on the right. Requesting access is a card of the
+                      onboarding dialog (features/onboarding), not part of this form. */}
                   <Button
                     type="button"
                     variant="outline"
@@ -322,14 +322,6 @@ export function OrganizationEntryDialog({
                   >
                     <LogOut className="size-3.5" />
                     Logout
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    asChild
-                    className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
-                  >
-                    <Link href="/organization-access-request">Request access</Link>
                   </Button>
                 </>
               ) : (

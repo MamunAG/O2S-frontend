@@ -15,7 +15,8 @@ import {
   readAuthUserAvatarCookie,
 } from "@/lib/auth-session"
 import { cn } from "@/lib/utils"
-import { OrganizationComboBox } from "./organization-combobox"
+import { FactorySwitcher } from "./factory-switcher"
+import { WorkspaceGate } from "./workspace-gate"
 
 type EntryTopNavProps = {
   current:
@@ -66,13 +67,15 @@ export async function EntryTopNav({ current }: EntryTopNavProps) {
           <div className="lg:hidden">
             <ModuleNavMenu current={current} />
           </div>
-          <div className="hidden lg:block">
-            <OrganizationComboBox />
+          <div className="hidden items-center gap-2 lg:flex">
+            <FactorySwitcher />
           </div>
         </div>
 
         {isAuthenticated ? (
           <div className="flex items-center gap-2">
+            {/* Picks the organization; an account without one gets the onboarding choice. */}
+            <WorkspaceGate />
             <Link
               href="/"
               aria-label="Home"

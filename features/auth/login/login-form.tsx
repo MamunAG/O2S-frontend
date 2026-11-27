@@ -13,6 +13,9 @@ import {
   serializeAuthUserAvatarCookie,
   serializeAuthUserLabelCookie,
 } from "@/lib/auth-session"
+import type { AuthUser } from "@/lib/auth-session"
+import { resolveReturnPath } from "@/lib/return-path"
+
 import { requestConfirmEmailCode } from "../confirm-email/confirm-email.service"
 import { loginUser } from "./login.service"
 import type { LoggedInUser } from "./login.types"
@@ -105,7 +108,11 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
       setMessage(payload.message || "Login successful")
       setPassword("")
       shouldRedirect = true
-      router.push("/")
+      // back to the page the session ended on, when this user may still open it; else home
+      const target = accessToken
+        ? await resolveReturnPath({ apiUrl, accessToken, user: (payload.data?.user ?? null) as AuthUser | null })
+        : "/"
+      router.push(target)
     } catch (error) {
       const fallback = "Login failed. Please check your credentials."
       const errorMessage = error instanceof Error ? error.message : fallback

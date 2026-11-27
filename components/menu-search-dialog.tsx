@@ -18,6 +18,8 @@ import {
 import { fetchMenuPermissions } from "@/features/iam/menu-permissions/menu-permission.service"
 import { isGlobalAdmin, parseStoredAuthUser } from "@/lib/auth-session"
 import { MENU_SEARCH_OPEN_EVENT } from "@/lib/app-hotkeys"
+import { canOpenIam, withIamAccess } from "@/lib/iam-access"
+import { hasAnyFactory } from "@/lib/my-factories"
 import {
   readSelectedOrganizationId,
   SELECTED_ORGANIZATION_CHANGED_EVENT,
@@ -122,6 +124,15 @@ export function MenuSearchDialog() {
         return
       }
 
+      // No factory in the selected organization: no module at all (an admin adds one, anyone else asks for one).
+      if (!(await hasAnyFactory(selectedOrganizationId))) {
+        if (active) {
+          setVisibleModules([])
+          setIsLoadingVisibleModules(false)
+        }
+        return
+      }
+
       if (isAdmin) {
         if (active) {
           setVisibleModules(MODULE_NAVIGATION)
@@ -143,22 +154,34 @@ export function MenuSearchDialog() {
       }
 
       try {
-        const permissions = await fetchMenuPermissions({
-          apiUrl,
-          accessToken,
-          userId: storedUser.id,
-          organizationId: selectedOrganizationId,
-        })
+        const [permissions, iamAllowed] = await Promise.all([
+          fetchMenuPermissions({
+            apiUrl,
+            accessToken,
+            userId: storedUser.id,
+            organizationId: selectedOrganizationId,
+          }),
+          canOpenIam({
+            apiUrl,
+            accessToken,
+            user: storedUser,
+            organizationId: selectedOrganizationId,
+          }).catch(() => false),
+        ])
 
         if (!active) {
           return
         }
 
+        // IAM only for the organization's admins, whatever its menus' permissions say.
         setVisibleModules(
-          filterModuleNavigationByPermissions(
-            MODULE_NAVIGATION,
-            permissions,
-            false
+          withIamAccess(
+            filterModuleNavigationByPermissions(
+              MODULE_NAVIGATION,
+              permissions,
+              false
+            ),
+            iamAllowed
           )
         )
       } catch {

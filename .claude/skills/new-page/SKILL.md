@@ -187,6 +187,13 @@ doesn't bind is silently ignored. Status filter values are `"true"` / `"false"`,
 It stays available as an on-demand feature: add-on C in `references/add-ons.md` has the full code. Under plain
 `crudRules` the routes always error. When the user asks for it, the template download / upload dropdown goes in the **page header**
 (`ModulePageHeader`'s `actions`, between Refresh and New), never in the table section (R15).
+When it is added, it follows add-on C's rules **U1–U6** on every page: template download and step 1 (**verify**,
+saves nothing) need only **Read** on the page; a failed verify opens the **upload report dialog** (missing records
+with row numbers + cell errors) whose **quick add** buttons show only where the user has Create / Update on **that
+record's own menu**; step 2 (**save**) re-verifies on the server and needs **Create on the page's upload menu**, a separate menu named
+`<Page title> Upload` (Factory Setup → "Factory Setup Upload"); any user granted it may save. Anyone else gets the **upload access notice** in the dialog (add-on C, U2):
+"This upload file is OK, but to save it you need the permission below." then "Menu name: <Page title> Upload" and
+"Access: Create" (the server's answer is a 403).
 
 **R5 — Navigation is permission-aware.** The sidebar item has `permissionMenuName`; if it differs from the
 O2S `menuName`, `MENU_NAME_TO_O2S` maps it. Without both, non-admins don't see the page.
@@ -203,6 +210,9 @@ clear a lookup or image; display-only objects (`unit`, `image`) are never sent b
 - Auth: `access_token` read from `localStorage` per call; "session expired" / "unauthorized" clears the stored
   tokens and `router.replace("/sign-in")` (`handleAuthFailure`).
 - Organization: reload on `SELECTED_ORGANIZATION_CHANGED_EVENT`; pass `organizationId: selectedOrganizationId || undefined`.
+  The adapter always sends a call to the organization selected **now**; a call whose `organizationId` differs (state
+  kept from before a switch) is refused with a 409 "The selected organization changed. Close this form and try
+  again." A screen that works on a company the user picks names it in its own rule's path / body / query.
 - Any mutation calls `triggerRefresh()`. Feedback through `toast.success` / `toast.error` (`sonner`); form errors also inside the dialog.
 - Delete is soft first (confirm dialog → amber "recently deleted" banner with Restore / Delete permanently);
   the deleted section offers the same two actions per row.

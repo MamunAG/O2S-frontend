@@ -32,6 +32,12 @@ type FactoryFormDialogProps = {
     onOpenChange: (open: boolean) => void
     onImageUpload: (file: File | null | undefined) => void
     onSubmit: (values: FactoryFormValues) => void
+    /** Overrides the header (the first factory after creating an organization). */
+    title?: string
+    description?: string
+    cancelLabel?: string
+    /** false: no Cancel, no close button, Escape / outside clicks ignored (a factory is required). */
+    dismissible?: boolean
 }
 
 function FieldLabel({
@@ -62,21 +68,26 @@ export function FactoryFormDialog({
     onOpenChange,
     onImageUpload,
     onSubmit,
+    title: titleOverride,
+    description: descriptionOverride,
+    cancelLabel,
+    dismissible = true,
 }: FactoryFormDialogProps) {
     const imageInputRef = useRef<HTMLInputElement | null>(null)
-    const title = mode === "create" ? "Create factory" : "Edit factory"
+    const title = titleOverride ?? (mode === "create" ? "Create factory" : "Edit factory")
     const description =
-        mode === "create"
+        descriptionOverride ??
+        (mode === "create"
             ? "Add a factory master record."
-            : "Update the selected factory master record."
+            : "Update the selected factory master record.")
 
     function update<K extends keyof FactoryFormValues>(key: K, value: FactoryFormValues[K]) {
         onValuesChange({ ...draft, [key]: value })
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="overflow-hidden p-0 sm:max-w-2xl">
+        <Dialog open={open} onOpenChange={dismissible ? onOpenChange : () => undefined}>
+            <DialogContent showCloseButton={dismissible} className="overflow-hidden p-0 sm:max-w-2xl">
                 <form
                     className="flex max-h-[calc(100vh-2rem)] flex-col"
                     onSubmit={(event) => {
@@ -249,14 +260,16 @@ export function FactoryFormDialog({
 
                     <div className="border-t border-slate-200/70 px-6 py-4 dark:border-white/10">
                         <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => onOpenChange(false)}
-                                className="rounded-xl"
-                            >
-                                Cancel
-                            </Button>
+                            {dismissible ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => onOpenChange(false)}
+                                    className="rounded-xl"
+                                >
+                                    {cancelLabel ?? "Cancel"}
+                                </Button>
+                            ) : null}
                             <Button type="submit" disabled={loading || submitting} className="rounded-xl">
                                 {submitting ? <Loader2 className="size-3.5 animate-spin" /> : null}
                                 {mode === "create" ? "Save factory" : "Save changes"}

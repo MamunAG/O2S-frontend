@@ -4,15 +4,22 @@
 // code-crafter's envelope `{ success, message, data }`. Instead of rewriting each service, this module wraps
 // window.fetch once (lib/o2s/index.ts, mounted by components/o2s-api-bridge.tsx) and, for requests to the API:
 //   - finds the rule for the code-crafter path (lib/o2s/rules/*) and calls the O2S route instead, with the
-//     selected organization as the route's {companyId} (O2S has no x-organization-id header);
+//     organization selected now as the route's {companyId} (O2S has no x-organization-id header; a page that
+//     sends a different one, i.e. stale state from before a switch, is refused with a 409);
 //   - maps request bodies and query strings (page/limit -> pageNumber/pageSize, "" ids -> null);
 //   - turns O2S's `{ IsError, ErrorMessage, Data }` (or a bare 201 body) into `{ success, message, data }`,
 //     O2S pages `{ pageNumber, pageSize, totalItems, totalPages, data }` into `{ items, meta }`, and numeric
 //     ids into strings (code-crafter used uuids, the screens compare ids as strings);
-//   - refreshes the access token once on a 401 with the stored refresh token.
+//   - refreshes the access token once on a 401 with the stored refresh token; when that fails (or a signed-in request
+//     is refused again) the session is over: endSession() clears it and goes to /sign-in.
 // A path with no rule is sent unchanged (its envelope is still translated).
 
+import { endSession } from "@/lib/auth-session"
+import { currentPageMenuName, readSelectedFactoryId } from "@/lib/factory-selection"
 import { readSelectedOrganizationId } from "@/lib/organization-selection"
+
+/** A page sent an organization other than the selected one (its state is from before a switch). */
+export const ORGANIZATION_CHANGED_MESSAGE = "The selected organization changed. Close this form and try again."
 
 export type O2sContext = {
   /** The selected organization (O2S company id), "" when none is selected. */
@@ -289,6 +296,11 @@ async function refreshAccessToken(original: FetchFn): Promise<boolean> {
 async function sendToO2s(original: FetchFn, path: string, init: RequestInit, allowRefresh = true): Promise<Response> {
   const headers = new Headers(init.headers)
   headers.delete("x-organization-id")
+  // The factory chosen in the top bar and the page's menu: the backend scopes the factory-based screens by them.
+  const factoryId = readSelectedFactoryId()
+  if (factoryId) headers.set("x-factory-id", factoryId)
+  const menuName = currentPageMenuName()
+  if (menuName) headers.set("x-menu-name", menuName)
   const token = window.localStorage.getItem("access_token")
   if (headers.has("Authorization") && token) headers.set("Authorization", `Bearer ${token}`)
   let response: Response
@@ -299,8 +311,11 @@ async function sendToO2s(original: FetchFn, path: string, init: RequestInit, all
     if (error instanceof TypeError) throw new O2sError(OFFLINE_MESSAGE, 503)
     throw error
   }
-  if (response.status === 401 && allowRefresh && headers.has("Authorization") && (await refreshAccessToken(original))) {
-    return sendToO2s(original, path, init, false)
+  if (response.status === 401 && headers.has("Authorization")) {
+    if (allowRefresh && (await refreshAccessToken(original))) return sendToO2s(original, path, init, false)
+    // A signed-in request still refused: the session expired or was ended (password changed, user deactivated).
+    // Requests without a token (sign-in with a wrong password, …) never get here.
+    endSession()
   }
   return response
 }
@@ -346,8 +361,15 @@ export function createO2sFetch(original: FetchFn, rules: O2sRule[]): FetchFn {
       }
     }
 
-    const fromHeader = (headers.get("x-organization-id") ?? "").trim()
-    const companyId = (fromHeader && fromHeader !== "null" && fromHeader !== "undefined" ? fromHeader : "") || readSelectedOrganizationId()
+    // Every call goes to the organization selected now (the switcher in the top bar), never to the one a page
+    // remembers: a page that still sends an older id (x-organization-id, from state kept since before a switch) is
+    // refused, so a save cannot land in another company. Screens that act on a company the user picks (Company
+    // Menus, User Menu Permission, memberships) name it in the path / body / query of their own rule instead.
+    const companyId = readSelectedOrganizationId()
+    const requested = (headers.get("x-organization-id") ?? "").trim()
+    if (requested && requested !== "null" && requested !== "undefined" && companyId && requested !== companyId) {
+      return codeCrafterResponse(409, false, ORGANIZATION_CHANGED_MESSAGE, null)
+    }
     const ctx: O2sContext = {
       companyId,
       method,

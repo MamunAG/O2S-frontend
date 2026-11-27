@@ -279,6 +279,31 @@ export const configurationRules: O2sRule[] = [
     },
   },
 
+  // --- a user's per-factory limits on the factory-based menus (IAM screen) ---
+  {
+    methods: ["GET"],
+    match: /^\/api\/v1\/menu-permission\/factory-limits$/,
+    handle: async (_m, ctx) => {
+      const companyId = encodeURIComponent(ctx.query.get("organizationId") || ctx.companyId)
+      const userId = encodeURIComponent(ctx.query.get("userId") ?? "")
+      const [rows, factories] = (await Promise.all([
+        ctx.call(`/api/v1/${companyId}/configuration/user-menu-permission/user/${userId}`),
+        ctx.call(`/api/v1/${companyId}/configuration/user-menu-permission/user/${userId}/factories`),
+      ])) as [Rec[], Rec]
+      const scoped = (rows ?? []).filter((r) => r.isFactoryScoped)
+      const all = (Array.isArray(factories?.factories) ? factories.factories : []) as Rec[]
+      return {
+        data: {
+          choices: all
+            .filter((f) => factories?.isUnrestricted || f.isAssigned)
+            .map((f) => ({ id: String(f.factoryId), name: f.name, displayName: f.displayName })),
+          scopedMenuIds: scoped.map((r) => String(r.menuId)),
+          limits: Object.fromEntries(scoped.map((r) => [String(r.menuId), ((r.factoryIds as unknown[]) ?? []).map(String)])),
+        },
+      }
+    },
+  },
+
   // --- menu permissions of a user (IAM screen) ---
   {
     methods: ["PUT", "POST"],
@@ -290,7 +315,11 @@ export const configurationRules: O2sRule[] = [
       const rows = (Array.isArray(body.permissions) ? body.permissions : []) as Rec[]
       const saved = (await ctx.call(`/api/v1/${companyId}/configuration/user-menu-permission/user/${encodeURIComponent(userId)}`, {
         method: "PUT",
-        body: rows.map((p) => ({ menuId: p.menuId, isAccess: !!p.canView, isInsert: !!p.canCreate, isUpdate: !!p.canUpdate, isDelete: !!p.canDelete })),
+        // factoryIds only on factory-based menus; left out (null) = the limit stays as it is.
+        body: rows.map((p) => ({
+          menuId: p.menuId, isAccess: !!p.canView, isInsert: !!p.canCreate, isUpdate: !!p.canUpdate, isDelete: !!p.canDelete,
+          ...(Array.isArray(p.factoryIds) ? { factoryIds: (p.factoryIds as unknown[]).map(String) } : {}),
+        })),
       })) as Rec[]
       return {
         data: (saved ?? []).filter((p) => p.isAccess).map((p) => ({
@@ -301,6 +330,52 @@ export const configurationRules: O2sRule[] = [
         })),
         message: "Menu permissions saved",
       }
+    },
+  },
+
+  // --- the factories a user may work with (IAM "User Factory Permission"; O2S is strict: none = no factory) ---
+  {
+    methods: ["GET"],
+    match: /^\/api\/v1\/user-factory-permission$/,
+    handle: async (_m, ctx) => {
+      const q = new URLSearchParams()
+      ctx.query.forEach((value, key) => {
+        if (key === "organizationId" || value === "" || value === "all") return
+        if (key === "page") q.set("pageNumber", value)
+        else if (key === "limit") q.set("pageSize", value)
+        else q.set(key, value)
+      })
+      const data = await ctx.call(companyPath(ctx, `/configuration/user-factory-permission/summary?${q}`))
+      return { data: pageOf(data, ctx.query) }
+    },
+  },
+  // "Request factory permission" (the factory menu): the organization's admins are notified and emailed
+  {
+    methods: ["POST"],
+    match: /^\/api\/v1\/user-factory-permission\/request$/,
+    to: (_m, ctx) => companyPath(ctx, "/configuration/user-factory-permission/request"),
+  },
+  // the caller's own factories (the top bar's factory switcher); before the /{userId} rule below
+  {
+    methods: ["GET"],
+    match: /^\/api\/v1\/user-factory-permission\/mine$/,
+    to: (_m, ctx) => companyPath(ctx, "/configuration/user-factory-permission/mine"),
+  },
+  {
+    methods: ["GET"],
+    match: /^\/api\/v1\/user-factory-permission\/([^/]+)$/,
+    to: (m, ctx) => companyPath(ctx, `/configuration/user-factory-permission/user/${m[1]}`),
+  },
+  {
+    methods: ["PUT"],
+    match: /^\/api\/v1\/user-factory-permission\/([^/]+)$/,
+    handle: async (m, ctx) => {
+      const ids = (ctx.body as Rec)?.factoryIds
+      const data = await ctx.call(companyPath(ctx, `/configuration/user-factory-permission/user/${m[1]}`), {
+        method: "PUT",
+        body: { factoryIds: Array.isArray(ids) ? ids.map(String) : [] },
+      })
+      return { data, message: "Factory access saved" }
     },
   },
 

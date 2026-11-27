@@ -1,6 +1,7 @@
 import type {
   ApiResponse,
   ManageableUserMappingRecord,
+  MenuFactoryLimits,
   MenuOrganizationMapRecord,
   MenuPermissionRecord,
   MenuPermissionValue,
@@ -258,6 +259,40 @@ export async function saveMenuOrganizationMaps({
 
   if (!Array.isArray(responseData.data)) {
     throw new Error("The organization menu mappings were saved, but the updated records were not returned.")
+  }
+
+  return responseData.data
+}
+
+/** The user's factory limits on the factory-based menus of one organization, with the factories they can name. */
+export async function fetchMenuFactoryLimits({
+  apiUrl,
+  accessToken,
+  userId,
+  organizationId,
+}: {
+  apiUrl: string
+  accessToken: string
+  userId: string
+  organizationId: string
+}): Promise<MenuFactoryLimits> {
+  const url = buildApiUrl(apiUrl, "/api/v1/menu-permission/factory-limits")
+  url.searchParams.set("userId", userId)
+  url.searchParams.set("organizationId", organizationId)
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  })
+
+  const responseData = await readJsonResponse<MenuFactoryLimits>(response, "Unable to load the user's factory limits right now.")
+
+  if (!responseData.data || !Array.isArray(responseData.data.choices)) {
+    throw new Error("The factory limits were returned without data.")
   }
 
   return responseData.data
