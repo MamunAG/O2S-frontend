@@ -15,6 +15,7 @@
 // A path with no rule is sent unchanged (its envelope is still translated).
 
 import { endSession } from "@/lib/auth-session"
+import { currentPageMenuName, readSelectedFactoryId } from "@/lib/factory-selection"
 import { readSelectedOrganizationId } from "@/lib/organization-selection"
 
 /** A page sent an organization other than the selected one (its state is from before a switch). */
@@ -295,6 +296,11 @@ async function refreshAccessToken(original: FetchFn): Promise<boolean> {
 async function sendToO2s(original: FetchFn, path: string, init: RequestInit, allowRefresh = true): Promise<Response> {
   const headers = new Headers(init.headers)
   headers.delete("x-organization-id")
+  // The factory chosen in the top bar and the page's menu: the backend scopes the factory-based screens by them.
+  const factoryId = readSelectedFactoryId()
+  if (factoryId) headers.set("x-factory-id", factoryId)
+  const menuName = currentPageMenuName()
+  if (menuName) headers.set("x-menu-name", menuName)
   const token = window.localStorage.getItem("access_token")
   if (headers.has("Authorization") && token) headers.set("Authorization", `Bearer ${token}`)
   let response: Response

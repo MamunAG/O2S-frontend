@@ -15,6 +15,7 @@ import {
   readAuthUserAvatarCookie,
 } from "@/lib/auth-session"
 import { cn } from "@/lib/utils"
+import { FactorySwitcher } from "./factory-switcher"
 import { OrganizationComboBox } from "./organization-combobox"
 
 type EntryTopNavProps = {
@@ -66,8 +67,9 @@ export async function EntryTopNav({ current }: EntryTopNavProps) {
           <div className="lg:hidden">
             <ModuleNavMenu current={current} />
           </div>
-          <div className="hidden lg:block">
+          <div className="hidden items-center gap-2 lg:flex">
             <OrganizationComboBox />
+            <FactorySwitcher />
           </div>
         </div>
 

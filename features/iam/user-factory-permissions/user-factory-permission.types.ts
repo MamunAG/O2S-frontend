@@ -62,3 +62,10 @@ export const EMPTY_FILTERS: UserFactoryFilterValues = {
   search: "",
   isActive: "",
 }
+
+/** The caller's own factories in the selected organization (the top bar's factory switcher). */
+export type MyFactoriesRecord = {
+  /** A global or organization admin: may also work in "all factories". */
+  isUnrestricted: boolean
+  factories: { id: string; name: string; displayName: string; code?: string | null }[]
+}

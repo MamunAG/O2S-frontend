@@ -43,4 +43,22 @@ export type MenuPermissionValue = {
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
+  /** Factory-based screens only: the factories the user may use it in; [] = every factory they have. */
+  factoryIds?: string[]
+}
+
+export type MenuFactoryChoice = {
+  id: string
+  name: string
+  displayName: string
+}
+
+/** A user's per-factory menu limits in one organization (O2S SEC_USER_MENU_FACTORY). */
+export type MenuFactoryLimits = {
+  /** The factories a limit can name: the user's own (all of the organization's for an admin). */
+  choices: MenuFactoryChoice[]
+  /** The menus that work per factory (Employee Setup, Payroll Processing, Job, Order Placement, Create Budget). */
+  scopedMenuIds: string[]
+  /** menuId -> factory ids; a missing or empty list = every factory the user has. */
+  limits: Record<string, string[]>
 }

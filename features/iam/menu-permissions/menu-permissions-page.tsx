@@ -24,19 +24,24 @@ import type { OrganizationRecord } from "@/features/organization/organization.ty
 import { getAuthInitials, parseStoredAuthUser } from "@/lib/auth-session"
 import {
   fetchManageableUserMappings,
+  fetchMenuFactoryLimits,
   fetchMenuOrganizationMaps,
   fetchMenuPermissions,
   saveMenuOrganizationMaps,
   saveMenuPermissions,
 } from "./menu-permission.service"
+import { MenuFactoryPicker } from "./menu-factory-picker"
 import type {
   ManageableUserMappingRecord,
+  MenuFactoryLimits,
   MenuPermissionRecord,
   MenuPermissionValue,
   UserOptionRecord,
 } from "./menu-permission.types"
 
 type PermissionKey = "canView" | "canCreate" | "canUpdate" | "canDelete"
+
+const NO_FACTORY_LIMITS: MenuFactoryLimits = { choices: [], scopedMenuIds: [], limits: {} }
 type MenuFilterMode = "all" | "mapped" | "unmapped"
 type UserOption = UserOptionRecord & {
   label: string
@@ -81,6 +86,8 @@ export function MenuPermissionsPage() {
   const [menus, setMenus] = useState<MenuRecord[]>([])
   const [mappedMenuIds, setMappedMenuIds] = useState<string[]>([])
   const [permissions, setPermissions] = useState<MenuPermissionValue[]>([])
+  // The factory-based menus' per-factory limits for the selected user + organization.
+  const [factoryLimits, setFactoryLimits] = useState<MenuFactoryLimits>(NO_FACTORY_LIMITS)
   const [selectedUserId, setSelectedUserId] = useState("")
   const [selectedOrganizationId, setSelectedOrganizationId] = useState("")
   const [loading, setLoading] = useState(true)
@@ -146,6 +153,7 @@ export function MenuPermissionsPage() {
     if (!apiUrl || !accessToken || !userId || !organizationId) {
       setMappedMenuIds([])
       setPermissions(buildDefaultPermissions(menuList, []))
+      setFactoryLimits(NO_FACTORY_LIMITS)
       return
     }
 
@@ -153,7 +161,7 @@ export function MenuPermissionsPage() {
     setError("")
 
     try {
-      const [menuMaps, existingPermissions] = await Promise.all([
+      const [menuMaps, existingPermissions, nextFactoryLimits] = await Promise.all([
         fetchMenuOrganizationMaps({
           apiUrl,
           accessToken,
@@ -165,10 +173,12 @@ export function MenuPermissionsPage() {
           userId,
           organizationId,
         }),
+        fetchMenuFactoryLimits({ apiUrl, accessToken, userId, organizationId }),
       ])
 
       setMappedMenuIds(menuMaps.map((mapping) => mapping.menuId))
       setPermissions(buildDefaultPermissions(menuList, existingPermissions))
+      setFactoryLimits(nextFactoryLimits)
     } catch (loadError) {
       const message = loadError instanceof Error ? loadError.message : "Unable to load menu access."
       setError(message)
@@ -393,7 +403,14 @@ export function MenuPermissionsPage() {
         accessToken,
         userId: selectedUserId,
         organizationId: selectedOrganizationId,
-        permissions: permissions.filter((permission) => nextMappedMenuIds.includes(permission.menuId)),
+        // A factory-based menu carries its factories ([] = all of the user's factories).
+        permissions: permissions
+          .filter((permission) => nextMappedMenuIds.includes(permission.menuId))
+          .map((permission) =>
+            factoryLimits.scopedMenuIds.includes(permission.menuId)
+              ? { ...permission, factoryIds: factoryLimits.limits[permission.menuId] ?? [] }
+              : permission,
+          ),
       })
 
       setMappedMenuIds(nextMappedMenuIds)
@@ -640,6 +657,7 @@ export function MenuPermissionsPage() {
               filteredMenus.map((menu) => {
                 const permission = permissionByMenuId.get(menu.id)
                 const isMapped = mappedMenuIdSet.has(menu.id)
+                const isFactoryScoped = factoryLimits.scopedMenuIds.includes(menu.id)
 
                 return (
                   <article
@@ -688,6 +706,19 @@ export function MenuPermissionsPage() {
                           {item.label}
                         </label>
                       ))}
+                      {isFactoryScoped ? (
+                        <div className="col-span-2 sm:col-span-5 sm:justify-self-end">
+                          <MenuFactoryPicker
+                            menuName={menu.menuName}
+                            choices={factoryLimits.choices}
+                            value={factoryLimits.limits[menu.id] ?? []}
+                            disabled={!isMapped || !permission?.canView}
+                            onChange={(factoryIds) =>
+                              setFactoryLimits((current) => ({ ...current, limits: { ...current.limits, [menu.id]: factoryIds } }))
+                            }
+                          />
+                        </div>
+                      ) : null}
                     </div>
                   </article>
                 )

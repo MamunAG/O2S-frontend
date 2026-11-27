@@ -1,5 +1,6 @@
 import type {
   ApiResponse,
+  MyFactoriesRecord,
   PaginatedResponse,
   UserFactoryAccessRecord,
   UserFactoryFilterValues,
@@ -119,6 +120,23 @@ export async function saveUserFactoryAccess({
 
   if (!payload.data) {
     throw new Error("The saved factory access was returned without data.")
+  }
+
+  return payload.data
+}
+
+/** The caller's own factories in the selected organization (no menu permission needed). */
+export async function fetchMyFactories({ apiUrl, accessToken, organizationId }: RequestContext): Promise<MyFactoriesRecord> {
+  const url = buildApiUrl(apiUrl, "/api/v1/user-factory-permission/mine")
+  const response = await fetch(url, {
+    method: "GET",
+    headers: buildRequestHeaders({ accessToken, organizationId }),
+    cache: "no-store",
+  })
+  const payload = await readJsonResponse<MyFactoriesRecord>(response)
+
+  if (!payload.data || !Array.isArray(payload.data.factories)) {
+    throw new Error("Your factories were returned without data.")
   }
 
   return payload.data

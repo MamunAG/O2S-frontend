@@ -279,6 +279,31 @@ export const configurationRules: O2sRule[] = [
     },
   },
 
+  // --- a user's per-factory limits on the factory-based menus (IAM screen) ---
+  {
+    methods: ["GET"],
+    match: /^\/api\/v1\/menu-permission\/factory-limits$/,
+    handle: async (_m, ctx) => {
+      const companyId = encodeURIComponent(ctx.query.get("organizationId") || ctx.companyId)
+      const userId = encodeURIComponent(ctx.query.get("userId") ?? "")
+      const [rows, factories] = (await Promise.all([
+        ctx.call(`/api/v1/${companyId}/configuration/user-menu-permission/user/${userId}`),
+        ctx.call(`/api/v1/${companyId}/configuration/user-menu-permission/user/${userId}/factories`),
+      ])) as [Rec[], Rec]
+      const scoped = (rows ?? []).filter((r) => r.isFactoryScoped)
+      const all = (Array.isArray(factories?.factories) ? factories.factories : []) as Rec[]
+      return {
+        data: {
+          choices: all
+            .filter((f) => factories?.isUnrestricted || f.isAssigned)
+            .map((f) => ({ id: String(f.factoryId), name: f.name, displayName: f.displayName })),
+          scopedMenuIds: scoped.map((r) => String(r.menuId)),
+          limits: Object.fromEntries(scoped.map((r) => [String(r.menuId), ((r.factoryIds as unknown[]) ?? []).map(String)])),
+        },
+      }
+    },
+  },
+
   // --- menu permissions of a user (IAM screen) ---
   {
     methods: ["PUT", "POST"],
@@ -290,7 +315,11 @@ export const configurationRules: O2sRule[] = [
       const rows = (Array.isArray(body.permissions) ? body.permissions : []) as Rec[]
       const saved = (await ctx.call(`/api/v1/${companyId}/configuration/user-menu-permission/user/${encodeURIComponent(userId)}`, {
         method: "PUT",
-        body: rows.map((p) => ({ menuId: p.menuId, isAccess: !!p.canView, isInsert: !!p.canCreate, isUpdate: !!p.canUpdate, isDelete: !!p.canDelete })),
+        // factoryIds only on factory-based menus; left out (null) = the limit stays as it is.
+        body: rows.map((p) => ({
+          menuId: p.menuId, isAccess: !!p.canView, isInsert: !!p.canCreate, isUpdate: !!p.canUpdate, isDelete: !!p.canDelete,
+          ...(Array.isArray(p.factoryIds) ? { factoryIds: (p.factoryIds as unknown[]).map(String) } : {}),
+        })),
       })) as Rec[]
       return {
         data: (saved ?? []).filter((p) => p.isAccess).map((p) => ({
@@ -319,6 +348,12 @@ export const configurationRules: O2sRule[] = [
       const data = await ctx.call(companyPath(ctx, `/configuration/user-factory-permission/summary?${q}`))
       return { data: pageOf(data, ctx.query) }
     },
+  },
+  // the caller's own factories (the top bar's factory switcher); before the /{userId} rule below
+  {
+    methods: ["GET"],
+    match: /^\/api\/v1\/user-factory-permission\/mine$/,
+    to: (_m, ctx) => companyPath(ctx, "/configuration/user-factory-permission/mine"),
   },
   {
     methods: ["GET"],

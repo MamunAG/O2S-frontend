@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { FactorySwitcher } from "@/components/factory-switcher"
 import { OrganizationComboBox } from "@/components/organization-combobox"
 import {
   NavigationMenu,
@@ -205,6 +206,7 @@ export function ModuleNavMenu({ current, variant = "header" }: ModuleNavMenuProp
                     Organization
                   </p>
                   <OrganizationComboBox className="w-full text-xs" />
+                  <FactorySwitcher className="mt-2 w-full max-w-none" />
                 </div>
 
                 <ScrollArea className="flex-1">
@@ -385,6 +387,7 @@ export function ModuleNavMenu({ current, variant = "header" }: ModuleNavMenuProp
                   Organization
                 </p>
                 <OrganizationComboBox className="w-full text-xs" />
+                  <FactorySwitcher className="mt-2 w-full max-w-none" />
               </div>
 
                 <ScrollArea className="flex-1">
