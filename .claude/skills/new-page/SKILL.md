@@ -190,8 +190,9 @@ It stays available as an on-demand feature: add-on C in `references/add-ons.md` 
 When it is added, it follows add-on C's rules **U1–U6** on every page: template download and step 1 (**verify**,
 saves nothing) need only **Read** on the page; a failed verify opens the **upload report dialog** (missing records
 with row numbers + cell errors) whose **quick add** buttons show only where the user has Create / Update on **that
-record's own menu**; step 2 (**save**) re-verifies on the server and is allowed only for an **admin of the current
-company** — anyone else sees "This file is valid, but only an admin of this company can save it." (a 403).
+record's own menu**; step 2 (**save**) re-verifies on the server and needs **Create on the page's upload menu**, a separate menu named
+`<Page title> Upload` (Factory Setup → "Factory Setup Upload"); any user granted it may save — anyone else sees
+"This file is valid, but saving it needs the Create permission on "<Page title> Upload"." (a 403).
 
 **R5 — Navigation is permission-aware.** The sidebar item has `permissionMenuName`; if it differs from the
 O2S `menuName`, `MENU_NAME_TO_O2S` maps it. Without both, non-admins don't see the page.

@@ -182,20 +182,28 @@ needs the backend routes (R4). **Every template upload follows the rules below**
 | Download the template | any signed-in user with **Read** on the page's menu | the route's `PermissionFilter(menuName, Read)` |
 | Step 1 — verify a file | any signed-in user with **Read** on the page's menu | the route's `PermissionFilter(menuName, Read)` |
 | Quick add a missing record from the report | a user with **Create** (new record) / **Update** (e.g. re-activate one) on **that record's own menu** (Color, Size, Unit, …), not the page's | the backend sends `canCreate` / `canUpdate` per kind; the entity's own POST / PUT checks again |
-| Step 2 — save the file | an **admin of the current company**: role `admin` in `SEC_USER_TO_COMPANY` for the route's `{companyId}` (a global admin, role admin, counts too) | the save route, after `PermissionFilter(menuName, Create)` |
+| Step 2 — save the file | **any user with Create on the page's upload menu**: a menu of its own named `<Page title> Upload` (Factory Setup → **"Factory Setup Upload"**), granted on User Menu Permission like any other menu | the save route's `PermissionFilter(uploadMenuName, Create)` |
 
 The frontend hides nothing it can't check, but the **backend is the authority** for every row of this table: a button
-the page shows is a convenience, never the check.
+the page shows is a convenience, never the check. The page's own Create does **not** allow saving an upload, and the
+upload menu's Create allows nothing else: they are granted separately. As with every menu, a company admin (and a user
+whose menu checks are off) has it without a grant.
+
+**The upload menu** is a real menu: a `public const string uploadMenuName = "<Page title> Upload";` on the backend
+endpoints class, a `SEC_MENU` row in the page's module (seeded by a migration, `MenuSeed`), and a name the frontend
+checks with `fetchCurrentMenuPermission({ menuName: "<Page title> Upload" })`. It is not a sidebar item (no
+`module-navigation.ts` entry, no `MENU_NAME_TO_O2S` entry). See `production-feature`'s "Template upload" for the backend.
 
 **U2 — Two steps, two routes; the save never trusts step 1.**
 - Step 1 `POST .../upload/verify` (multipart `file`) reads and checks every row against the page's rules and the
   company's data and **saves nothing**. Valid → 200 `{ valid: true, rowCount, rows }` (`rows` = a preview the page may
   show). Invalid → **400** whose `Data` is the **upload report** (U3) and whose `ErrorMessage` is one sentence.
-- Step 2 `POST .../upload` (multipart `file`, the same file) runs step 1's check again on the server, then the admin
-  check, then saves every row in **one** `SaveChangesAsync` (all or nothing).
+- Step 2 `POST .../upload` (multipart `file`, the same file) is refused first without Create on the upload menu (U1),
+  then runs step 1's check again on the server, then saves every row in **one** `SaveChangesAsync` (all or nothing).
   - Invalid → 400 + the report (as step 1; the data may have changed since).
-  - Valid but the caller is not a company admin → **403** with the message
-    **"This file is valid, but only an admin of this company can save it. Ask a company admin to upload it."**
+  - No Create on the upload menu → **403** (the permission filter's own answer, before the file is read). The page
+    offers Save only after a successful verify, so it shows its own message for it:
+    **"This file is valid, but saving it needs the Create permission on "<Page title> Upload". Ask an admin to grant it."**
     (403, never 401: the adapter treats a 401 as an expired session and signs the user out.)
   - Saved → 200 `{ inserted, updated, skipped }`.
 
@@ -243,9 +251,8 @@ inactive / deleted; needs Update to re-activate or Delete-menu restore).
   page — only the final save does.
 
 **U5 — After a successful verify** the same dialog shows "All <rowCount> rows are valid." and:
-- for a **company admin** (U1; the frontend knows it from the selected company's row of `/api/v1/account/companies`,
-  `role === "admin"`, or `isGlobalAdmin(user)`): a **Save <labels>** button → step 2 → `toast.success("<n> <labels> saved.")`,
-  close, `triggerRefresh()`;
+- for a user with **Create on the upload menu** (U1; `canSaveUpload`, C.4): a **Save <labels>** button → step 2 →
+  `toast.success("<n> <labels> saved.")`, close, `triggerRefresh()`;
 - for anyone else: no Save button, and an amber access notice with U2's 403 message. If the server still answers 403
   (the role changed meanwhile), show the same notice instead of a toast.
 
@@ -283,7 +290,7 @@ export class __Thing__UploadReportError extends Error {
   }
 }
 
-/** 403 on save: the file is valid but the caller is not an admin of this company (U2). */
+/** 403 on save: the file is valid but the caller has no Create on the upload menu (U2). */
 export class __Thing__UploadForbiddenError extends Error {}
 
 export async function download__Thing__Template({ apiUrl, accessToken, organizationId }: {
@@ -334,14 +341,16 @@ Types (`__file__.types.ts`): `__Thing__UploadReport` / `…MissingGroup` / `…M
 ### C.4 Workspace (`__file__-workspace.tsx`)
 
 State: the hidden input's ref, `downloadingTemplate`, the upload dialog's state
-`{ file: File; phase: "verifying" | "report" | "verified" | "saving"; report?: …; verified?: …; forbidden?: string } | null`,
-and `isCompanyAdmin` (loaded with the page's other access data, keyed to `selectedOrganizationId` — no setState in an
-effect beyond the loader's own pattern, R2).
+`{ file: File; phase: "verifying" | "report" | "verified" | "saving"; report?: …; verified?: …; forbidden?: boolean } | null`,
+and `canSaveUpload` (Create on the upload menu, `fetchCurrentMenuPermission({ menuName: "<Page title> Upload" })`,
+loaded with the page's other access data, keyed to `selectedOrganizationId` — no setState in an effect beyond the
+loader's own pattern, R2).
 
 - picking a file → `phase: "verifying"` → `verify__Thing__Upload` → `"verified"` or, on `__Thing__UploadReportError`, `"report"`;
 - **Verify again** → the same with `upload.file`;
-- **Save** (admins only) → `"saving"` → `save__Thing__Upload` → success toast, close, `triggerRefresh()`;
-  `__Thing__UploadReportError` → back to `"report"`; `__Thing__UploadForbiddenError` → `forbidden = error.message`;
+- **Save** (only with `canSaveUpload`) → `"saving"` → `save__Thing__Upload` → success toast, close, `triggerRefresh()`;
+  `__Thing__UploadReportError` → back to `"report"`; `__Thing__UploadForbiddenError` → `forbidden: true` (the notice shows
+  U2's message, not the server's text);
 - clear the input's value after reading the file, so the same file can be picked again.
 
 ### C.5 The dropdown goes in the page header
@@ -403,4 +412,5 @@ Every piece above must be used: a flag or import nobody reads breaks R10.
 
 Download the template as a Read-only user → upload a file with a missing record and a bad cell → the report lists
 both with row numbers → quick add the record (button only with that entity's Create) → Verify again → "All rows are
-valid" → as a non-admin: the access notice, no Save → as a company admin: Save → toast, list refreshed.
+valid" → without Create on "<Page title> Upload": the access notice, no Save → grant it on User Menu Permission →
+Save → toast, list refreshed.
