@@ -1,0 +1,72 @@
+# Posts every Vercel Production deploy of the frontend to Discord: succeeded (green) or failed (red).
+#
+# Vercel's GitHub integration creates a GitHub deployment for each build and sets its status when the build
+# ends; this workflow runs on that status change. It must be on the default branch (master) to run.
+#
+# Repository secret (Settings -> Secrets and variables -> Actions -> Secrets):
+#   O2S_DISCORD_DEPLOY_WEBHOOK   the Discord channel webhook (Channel -> Edit -> Integrations -> Webhooks).
+#                                Without it the workflow does nothing.
+#
+# Preview deploys (branches / pull requests) are skipped; drop the environment check in `if:` to post them too.
+
+name: Deploy notification
+
+on: deployment_status
+
+permissions:
+  contents: read
+  deployments: read
+
+jobs:
+  notify:
+    if: >-
+      startsWith(github.event.deployment.environment, 'Production') &&
+      contains(fromJSON('["success", "failure", "error"]'), github.event.deployment_status.state)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tell Discord
+        env:
+          WEBHOOK: ${{ secrets.O2S_DISCORD_DEPLOY_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
+          STATE: ${{ github.event.deployment_status.state }}
+          ENVIRONMENT: ${{ github.event.deployment.environment }}
+          SITE_URL: ${{ github.event.deployment_status.environment_url }}
+          LOG_URL: ${{ github.event.deployment_status.target_url }}
+          SHA: ${{ github.event.deployment.sha }}
+          REF: ${{ github.event.deployment.ref }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::warning::Secret O2S_DISCORD_DEPLOY_WEBHOOK is not set; no notification sent"
+            exit 0
+          fi
+
+          commit=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA" --jq '.commit.message | split("\n")[0]' || echo "")
+          author=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA" --jq '.commit.author.name' || echo "")
+
+          if [ "$STATE" = "success" ]; then
+            title="✅ Frontend deployed"; color=3066993
+          else
+            title="❌ Frontend deploy failed"; color=15158332
+          fi
+
+          payload=$(jq -n \
+            --arg title "$title" --argjson color "$color" \
+            --arg env "$ENVIRONMENT" --arg site "$SITE_URL" --arg log "$LOG_URL" \
+            --arg sha "${SHA:0:7}" --arg ref "$REF" --arg commit "$commit" --arg author "$author" \
+            --arg commit_url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$SHA" \
+            '{embeds: [{
+              title: $title,
+              color: $color,
+              url: (if $site != "" then $site else $log end),
+              description: ("[`" + $sha + "`](" + $commit_url + ") " + $commit),
+              fields: ([
+                {name: "Environment", value: $env, inline: true},
+                {name: "Branch", value: $ref, inline: true},
+                {name: "Author", value: (if $author != "" then $author else "-" end), inline: true}
+              ] + (if $site != "" then [{name: "Site", value: $site}] else [] end)
+                + (if $log != "" then [{name: "Vercel log", value: $log}] else [] end)),
+              timestamp: (now | todate)
+            }]}')
+
+          curl -fsS -H "Content-Type: application/json" -d "$payload" "$WEBHOOK" \
+            || echo "::warning::Discord did not accept the notification"
