@@ -18,7 +18,7 @@ description: >
 
 A new page is **1 route file + 6 feature files**, and **2–3 edits** to shared files.
 
-**One set of rules, every page, every time.** All of "Rules (R1–R11)" below apply to every page, new or existing,
+**One set of rules, every page, every time.** All of "Rules (R1–R12)" below apply to every page, new or existing,
 whenever the user asks to create **or** modify it — there are no separate rules for new pages and existing ones,
 no rule that only some pages follow, and no "later". Whatever the request (a new page, a field, a column, a
 bug fix, a restyle), the page comes out of it meeting all of them (see "Applying the rules").
@@ -140,7 +140,7 @@ upload, Excel upload) are in **`references/add-ons.md`**. Write each file from i
     to `MENU_NAME_TO_O2S` in `lib/o2s/menus.ts`. Without it, non-admin users with the O2S permission
     still don't see the item.
 
-## Rules (R1–R11) — one set for every page
+## Rules (R1–R12) — one set for every page
 
 Every CRUD page follows all of these, new or existing, on every request to create or modify it. The templates
 already meet them; a page built another way is brought to them in the same change — see "Applying the rules".
@@ -224,13 +224,22 @@ backend's rule that every outbound HTTP call is a Refit client).
   raw response text. The adapter already turns an HTML answer (the deploy's `app_offline.htm`, IIS error pages)
   or no answer at all into a plain sentence; don't read `response.text()` into a toast to get around it.
 
+**R12 — Toast placement: errors and warnings at the top middle, everything else at the bottom right.**
+- A failure the user must notice is `toast.error(...)`; a caution is `toast.warning(...)`. Both show at the **top
+  middle**. A success, an info note, a loading toast or a plain `toast(...)` shows at the **bottom right**.
+- This is set once in `components/ui/sonner.tsx` (the `Toaster` defaults to bottom right; `toast.error` /
+  `toast.warning` default to top center) for every `import { toast } from "sonner"`, so a page passes **no
+  `position`**. Never report an error with `toast.success` / `toast.info` / `toast(...)` to change where it shows,
+  and never pass `position` to move a toast against this rule.
+- Don't add a second `<Toaster>`; the one in `app/layout.tsx` takes no `position` prop.
+
 ## Applying the rules
 
 The same steps for every request, whether it creates a page or modifies one (a new field, a filter, a column,
 a bug fix, a restyle):
 
 1. **Do the requested change** (a new page: the Steps above, from the templates).
-2. **Audit the whole page against R1–R11**, not only the lines the request touched — its route, feature
+2. **Audit the whole page against R1–R12**, not only the lines the request touched — its route, feature
    folder, adapter rule, sidebar item and menu-name entry. Run `npx eslint <feature folder>` and read the
    backend `<Thing>Params` / DTO.
 3. **Fix every rule the page breaks**, in the same change, using the templates as the target shape. Keep the
@@ -239,7 +248,7 @@ a bug fix, a restyle):
 4. **Ask before removing anything users can see.** R3 (a filter the backend ignores) and R4 (a bulk-upload
    menu that always errors) remove visible controls: list them and get a yes before deleting them. If the
    user says keep, leave them and note it in the summary.
-5. **Report** a short R1–R11 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
+5. **Report** a short R1–R12 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
 
 Known state of the reference pages (update this list when you fix one):
 
@@ -253,7 +262,7 @@ Known state of the reference pages (update this list when you fix one):
 ## Verify
 
 1. R10: `npm run typecheck` and `npx eslint <the new and touched files>` — no errors and no warnings.
-2. Re-check R1–R11 against the finished files: this is the report in step 5 of "Applying the rules".
+2. Re-check R1–R12 against the finished files: this is the report in step 5 of "Applying the rules".
 3. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
    `http://localhost:3000<route>` and walk through: list loads → filter → create → edit → delete →
    restore from the banner → delete → permanently delete from the deleted card.

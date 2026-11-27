@@ -38,7 +38,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <O2sApiBridge />
         <ThemeProvider>{children}</ThemeProvider>
-        <Toaster position="top-center" richColors closeButton />
+        <Toaster richColors closeButton />
       </body>
     </html>
   )
