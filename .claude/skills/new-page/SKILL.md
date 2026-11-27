@@ -18,7 +18,7 @@ description: >
 
 A new page is **1 route file + 6 feature files**, and **2–3 edits** to shared files.
 
-**One set of rules, every page, every time.** All of "Rules (R1–R14)" below apply to every page, new or existing,
+**One set of rules, every page, every time.** All of "Rules (R1–R15)" below apply to every page, new or existing,
 whenever the user asks to create **or** modify it — there are no separate rules for new pages and existing ones,
 no rule that only some pages follow, and no "later". Whatever the request (a new page, a field, a column, a
 bug fix, a restyle), the page comes out of it meeting all of them (see "Applying the rules").
@@ -139,7 +139,7 @@ upload, Excel upload) are in **`references/add-ons.md`**. Write each file from i
     to `MENU_NAME_TO_O2S` in `lib/o2s/menus.ts`. Without it, non-admin users with the O2S permission
     still don't see the item.
 
-## Rules (R1–R14) — one set for every page
+## Rules (R1–R15) — one set for every page
 
 Every CRUD page follows all of these, new or existing, on every request to create or modify it. The templates
 already meet them; a page built another way is brought to them in the same change — see "Applying the rules".
@@ -149,7 +149,7 @@ already meet them; a page built another way is brought to them in the same chang
 | Part of the page | Shared component |
 |---|---|
 | Page header: eyebrow, title, description, badges, **Refresh** and **New** buttons | `ModulePageHeader` (`components/module-page-header.tsx`), which renders `AppRefreshButton` / `AppAddNewButton` |
-| Table card: header with badges, desktop table, mobile cards, skeletons, pager | `AppDataSection` (`components/app-data-section.tsx`) |
+| Table card: filters, desktop table, mobile cards, skeletons, pager (no header bar on the active section, R15) | `AppDataSection` (`components/app-data-section.tsx`) |
 | Filter fields + **Reset** button | `AppDataFilterForm` (`components/app-data-filter-form.tsx`), passed as `AppDataSection`'s `filters`, with `debounceMs={FILTER_DEBOUNCE_MS}` |
 | Selects, lookups | `AppSelect`, `AppCombobox` |
 | Dates (form fields, filters, grid cells) | `AppDatePicker` (`components/app-date-picker.tsx`) — never `<Input type="date">` |
@@ -160,8 +160,8 @@ already meet them; a page built another way is brought to them in the same chang
 with Backspace / Delete. Ref, `onKeyDown`, `onFocus` and `data-*` go to its Button, so in a keyboard grid widen the
 handler types to `HTMLElement` and call `select()` only on real inputs.
 
-A control the shared components lack (e.g. the bulk-actions dropdown) goes in `AppDataSection`'s
-`headerActions` or `ModulePageHeader`'s `actions`. No hand-written `<Card>` table sections, filter `<form>`s,
+A control the shared components lack (e.g. the bulk-actions dropdown) goes in `ModulePageHeader`'s `actions`
+(R15); `AppDataSection`'s `headerActions` only on a section that keeps its header (the deleted one). No hand-written `<Card>` table sections, filter `<form>`s,
 Search / Reset / New / Refresh `<Button>`s or mobile pagers. Live examples: Factory and Designation sections.
 
 **R1a — Filters apply on their own; no Search button; New only in the header** (active *and* deleted sections).
@@ -252,8 +252,8 @@ it by using them as they are (R1).
 - **No `description` on `AppDataSection`** for the page summary: "Showing x–y of n" goes to `pageSummary` only,
   and the pager under the table already shows it. Pass a `description` only for a note the table can't show
   elsewhere; it's cut to one line too.
-- **Header badges** in `headerBadges` ("Page X of Y", "N active filters") are all
-  `w-fit rounded-full px-2.5 py-0.5 text-[11px]`.
+- **Header badges** in `headerBadges` (the deleted section's "N deleted", "N active filters") are all
+  `w-fit rounded-full px-2.5 py-0.5 text-[11px]`. The active section has none (R15).
 - **The workspace skeleton's header card** matches the compact header: `CardContent className="px-3 py-2 sm:px-4"`
   with a `h-6 w-56` title bar and a `h-4 max-w-md` description bar, not the old `p-6 sm:p-8` / `h-10` bars.
 - **Filter row lines up**: every filter control and the Reset button are `h-7`, and Reset's bottom edge is level
@@ -271,13 +271,24 @@ when open, `aria-expanded`); clicking anywhere on the header or the chevron open
 - `headerActions` clicks don't toggle the section (`AppDataSection` stops their propagation).
 - The active section is never collapsible.
 
+**R15 — The active table section has no header bar; its badges and dropdowns live in the page header.**
+- Give the active section's `AppDataSection` **no `title`** (and no `headerBadges`, `headerActions`, `description` or
+  `collapsible`): without a title it renders no header bar, so the card starts with the filter row.
+- Its badges go into `ModulePageHeader`'s `badges`, after Total / Active / Deleted: `Page X of Y` and
+  `N active filter(s)` (counted in the workspace from the active filters).
+- Any dropdown or button that sat in the table header (a bulk-actions menu, "N selected" + Clear / Delete, Rerun,
+  Export, …) goes into `ModulePageHeader`'s `actions` (shown between Refresh and New). Its state (e.g. the selected
+  rows) moves up to the workspace, or the section gets it as a prop.
+- The deleted section keeps its header (title, "N deleted", "N active filters", chevron): R14 needs it to collapse.
+- Row menus (the `…` per row) stay in the row.
+
 ## Applying the rules
 
 The same steps for every request, whether it creates a page or modifies one (a new field, a filter, a column,
 a bug fix, a restyle):
 
 1. **Do the requested change** (a new page: the Steps above, from the templates).
-2. **Audit the whole page against R1–R14**, not only the lines the request touched — its route, feature
+2. **Audit the whole page against R1–R15**, not only the lines the request touched — its route, feature
    folder, adapter rule, sidebar item and menu-name entry. Run `npx eslint <feature folder>` and read the
    backend `<Thing>Params` / DTO.
 3. **Fix every rule the page breaks**, in the same change, using the templates as the target shape. Keep the
@@ -286,21 +297,21 @@ a bug fix, a restyle):
 4. **Ask before removing anything users can see.** R3 (a filter the backend ignores) and R4 (a bulk-upload
    menu that always errors) remove visible controls: list them and get a yes before deleting them. If the
    user says keep, leave them and note it in the summary.
-5. **Report** a short R1–R14 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
+5. **Report** a short R1–R15 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
 
 Known state of the reference pages (update this list when you fix one):
 
 | Page | Open rule breaks |
 |---|---|
-| Factory (`features/app-config/factory/`) | None. Brought to R1–R14 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters — Code filter removed at the user's request, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`, deleted section collapsible and collapsed by default). |
-| Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections), R14 (deleted section not collapsible) — not yet audited for the rest |
-| Exchange Rates (`features/app-config/exchange-rates/`) | None known. Made phone-friendly on 2026-11-27 (the whole page container has inline-size containment, short header description, the table's `description` is only the "1 row currency × rate = the column currency" note, compact badges, `h-7` date filters). A matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
-| Other CRUD pages | not yet audited |
+| Factory (`features/app-config/factory/`) | None. Brought to R1–R15 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters — Code filter removed at the user's request, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`, deleted section collapsible and collapsed by default, active section without a header bar — its Page / active-filter badges in the page header, R15). |
+| Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections), R14 (deleted section not collapsible), R15 (active section has a header bar) — not yet audited for the rest |
+| Exchange Rates (`features/app-config/exchange-rates/`) | R15: the "Saved rates" header bar (badges, the "1 row currency × rate" note, the selection Clear / Delete in `headerActions`) is not yet moved to the page header. Made phone-friendly on 2026-11-27 (the whole page container has inline-size containment, short header description, the table's `description` is only the "1 row currency × rate = the column currency" note, compact badges, `h-7` date filters). A matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
+| Other CRUD pages | not yet audited (R15 is new on 2026-11-27: every other page still has the active section's header bar) |
 
 ## Verify
 
 1. R10: `npm run typecheck` and `npx eslint <the new and touched files>` — no errors and no warnings.
-2. Re-check R1–R14 against the finished files: this is the report in step 5 of "Applying the rules".
+2. Re-check R1–R15 against the finished files: this is the report in step 5 of "Applying the rules".
 3. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
    `http://localhost:3000<route>` and walk through: list loads → filter → create → edit → delete →
    restore from the banner → delete → expand the deleted card (collapsed at first, R14) → permanently delete from it.

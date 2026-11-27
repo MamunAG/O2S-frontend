@@ -507,11 +507,6 @@ export function Active__Thing__Section({
   onEdit,
   onDelete,
 }: Active__Thing__SectionProps) {
-  const filterCount = useMemo(
-    () => Object.values(filters).filter((value) => value.trim()).length,
-    [filters],
-  )
-
   const pageSummary = useMemo(() => {
     if (!meta || meta.total === 0) return "No __labels__ found"
     const start = (meta.page - 1) * meta.limit + 1
@@ -596,8 +591,8 @@ export function Active__Thing__Section({
   )
 
   return (
+    // No title: the active section has no header bar (R15) — its badges and any dropdown are in the page header.
     <AppDataSection
-      title="__Labels__ table"
       data={data}
       columns={columns}
       loading={loading}
@@ -622,16 +617,6 @@ export function Active__Thing__Section({
         updated: "h-8 py-1",
         actions: "h-8 py-1",
       }}
-      headerBadges={
-        <>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
-          </Badge>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            {filterCount} active filter{filterCount === 1 ? "" : "s"}
-          </Badge>
-        </>
-      }
       filters={
         <AppDataFilterForm
           // FIELDS: one entry per filter — kind "text" for strings, "select" for isActive / enums,
@@ -1595,6 +1580,8 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
   const activeTotal = meta?.total ?? __things__.length
   const deletedTotal = deletedMeta?.total ?? deleted__Things__.length
   const activeOnPage = __things__.filter((row) => row.isActive !== false).length
+  // The active table section has no header bar (R15): its badges are in the page header.
+  const activeFilterCount = Object.values(activeFilters).filter((value) => value.trim()).length
 
   // Nothing has finished loading yet (also while redirecting to sign-in).
   if (!loaded) {
@@ -1602,7 +1589,8 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
   }
 
   // Shared header: eyebrow, title, description, badges, and the Refresh / New buttons
-  // (AppRefreshButton / AppAddNewButton inside ModulePageHeader).
+  // (AppRefreshButton / AppAddNewButton inside ModulePageHeader). A dropdown or bulk action for the table goes in
+  // `actions` (R15), never in the active section.
   const header = (
     <ModulePageHeader
       eyebrow="__EYEBROW__"
@@ -1615,6 +1603,8 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
               { label: `Total ${activeTotal}`, variant: "secondary" },
               { label: `Active ${activeOnPage}` },
               { label: `Deleted ${deletedTotal}` },
+              { label: `Page ${meta?.totalPages ? meta.page : 0} of ${meta?.totalPages ?? 0}` },
+              { label: `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}` },
               ...(recentlyDeleted ? [{ label: "Recently deleted", variant: "destructive" as const }] : []),
             ]
       }

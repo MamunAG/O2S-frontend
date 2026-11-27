@@ -19,7 +19,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 
 export type AppDataSectionProps<TData> = {
-  title: ReactNode
+  /**
+   * Leave out (with no `collapsible`) for a section without a header bar: the filters come first. Its badges and
+   * actions then belong in the page header (`ModulePageHeader` badges / `actions`); `headerBadges`, `headerActions`
+   * and `description` are not shown.
+   */
+  title?: ReactNode
   description?: ReactNode
   data: TData[]
   columns: ColumnDef<TData>[]
@@ -92,6 +97,7 @@ export function AppDataSection<TData>({
   const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed)
   const expanded = !collapsible || !collapsed
   const toggle = () => setCollapsed((value) => !value)
+  const showHeader = title != null || collapsible
 
   // TanStack Table intentionally returns non-memoizable functions; the table stays local to this render boundary.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -103,6 +109,7 @@ export function AppDataSection<TData>({
 
   return (
     <Card className="gap-0 overflow-hidden border-white/60 bg-white/80 py-0 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
+      {showHeader ? (
       <CardHeader
         className={`px-3 py-2 sm:px-4 ${expanded ? "border-b border-slate-200/70 dark:border-white/10 [.border-b]:pb-2" : ""} ${collapsible ? "cursor-pointer select-none" : ""}`}
         onClick={collapsible ? toggle : undefined}
@@ -143,6 +150,7 @@ export function AppDataSection<TData>({
           ) : null}
         </div>
       </CardHeader>
+      ) : null}
 
       {expanded ? (
       <>

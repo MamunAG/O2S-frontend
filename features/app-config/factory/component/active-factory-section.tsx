@@ -145,11 +145,6 @@ export function ActiveFactorySection({
   onEdit,
   onDelete,
 }: FactoryTableSectionProps) {
-  const filterCount = useMemo(
-    () => Object.values(filters).filter((value) => value.trim()).length,
-    [filters],
-  )
-
   const pageSummary = useMemo(() => {
     if (!meta || meta.total === 0) return "No factories found"
     const start = (meta.page - 1) * meta.limit + 1
@@ -235,7 +230,6 @@ export function ActiveFactorySection({
 
   return (
     <AppDataSection
-      title="Factories table"
       data={data}
       columns={columns}
       loading={loading}
@@ -261,16 +255,6 @@ export function ActiveFactorySection({
         updated: "h-8 py-1",
         actions: "h-8 py-1",
       }}
-      headerBadges={
-        <>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
-          </Badge>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            {filterCount} active filter{filterCount === 1 ? "" : "s"}
-          </Badge>
-        </>
-      }
       filters={
         <AppDataFilterForm
           fields={[
