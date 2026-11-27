@@ -11,7 +11,7 @@ import { OnboardingChoiceDialog } from "@/features/onboarding/onboarding-choice-
 import { RequestFactoryPermissionDialog } from "@/features/onboarding/request-factory-permission-dialog"
 import { SwitchOrganizationDialog } from "@/features/onboarding/switch-organization-dialog"
 import { fetchCurrentUserOrganizations } from "@/features/organization/organization.service"
-import { parseStoredAuthUser } from "@/lib/auth-session"
+import { isPasswordChangeRequired, parseStoredAuthUser, SET_PASSWORD_PATH } from "@/lib/auth-session"
 import { loadMyFactories } from "@/lib/my-factories"
 import { readSelectedOrganizationId, writeSelectedOrganizationId } from "@/lib/organization-selection"
 
@@ -43,6 +43,11 @@ export function WorkspaceGate() {
     const accessToken = window.localStorage.getItem("access_token") ?? ""
     const user = parseStoredAuthUser(window.localStorage.getItem("auth_user"))
     if (!apiUrl || !accessToken || !user?.id) return
+    // A one-time password: a new one first (the backend refuses everything else meanwhile).
+    if (isPasswordChangeRequired()) {
+      window.location.replace(SET_PASSWORD_PATH)
+      return
+    }
 
     let cancelled = false
 

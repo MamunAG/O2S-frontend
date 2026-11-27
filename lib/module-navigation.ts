@@ -565,6 +565,12 @@ export const MODULE_NAVIGATION: ModuleNavigationItem[] = [
             ],
           },
           {
+            label: "User Setup",
+            href: "/iam/identity/user-setup",
+            permissionMenuName: "User Setup",
+            description: "Create logins with a one-time password and manage the organization's users.",
+          },
+          {
             label: "Teams",
             href: "/iam/identity/teams",
             children: [

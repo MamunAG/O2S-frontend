@@ -157,7 +157,18 @@ export const accountRules: O2sRule[] = [
     request: (body) => ({ userName: (body as Rec).email ?? (body as Rec).user_name, password: (body as Rec).password }),
     response: (data) => {
       const d = data as Rec
-      return { access_token: d.token, refresh_token: d.refreshToken, user: toCodeCrafterUser(d) }
+      return { access_token: d.token, refresh_token: d.refreshToken, user: toCodeCrafterUser(d), must_change_password: d.mustChangePassword === true }
+    },
+  },
+  // Set a new password (after a one-time password, or from the profile): a fresh session comes back.
+  {
+    methods: ["POST"],
+    match: /^\/api\/v1\/auth\/change-password$/,
+    to: () => "/api/v1/account/change-password",
+    request: (body) => ({ currentPassword: (body as Rec).currentPassword, newPassword: (body as Rec).newPassword }),
+    response: (data) => {
+      const d = data as Rec
+      return { access_token: d.token, refresh_token: d.refreshToken, user: toCodeCrafterUser(d), must_change_password: d.mustChangePassword === true }
     },
   },
   {

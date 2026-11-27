@@ -12,6 +12,8 @@ import {
   serializeAuthSessionCookie,
   serializeAuthUserAvatarCookie,
   serializeAuthUserLabelCookie,
+  markPasswordChangeRequired,
+  SET_PASSWORD_PATH,
 } from "@/lib/auth-session"
 import type { AuthUser } from "@/lib/auth-session"
 import { resolveReturnPath } from "@/lib/return-path"
@@ -108,6 +110,13 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
       setMessage(payload.message || "Login successful")
       setPassword("")
       shouldRedirect = true
+      // A one-time password (User Setup): a new password first, nothing else works until then.
+      const mustChange = (payload.data as { must_change_password?: boolean } | undefined)?.must_change_password === true
+      markPasswordChangeRequired(mustChange)
+      if (mustChange) {
+        router.push(SET_PASSWORD_PATH)
+        return
+      }
       // back to the page the session ended on, when this user may still open it; else home
       const target = accessToken
         ? await resolveReturnPath({ apiUrl, accessToken, user: (payload.data?.user ?? null) as AuthUser | null })
