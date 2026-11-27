@@ -1,4 +1,4 @@
-// A code-crafter CRUD resource (`/api/v1/<resource>`) on an O2S slice (`/api/v1/{companyId}<o2sPath>`):
+// A code-crafter CRUD resource (`/api/v1/<resource>`) on an O2S slice (`/api/v1/{organizationId}<o2sPath>`):
 //   GET    /<resource>                -> GET /paginated-list   (deletedOnly=true -> the soft-deleted rows)
 //   GET    /<resource>/{id}           -> GET /{id}
 //   POST   /<resource>                -> POST /
@@ -9,7 +9,7 @@
 //   POST   /<resource>/upload, GET /template/upload -> a clear "not in O2S" error
 // Every record gets code-crafter's audit names (created_at, created_by_user, organizationId, ...).
 
-import { companyPath, isRecord, mapItems, O2sError, singularNavs, type O2sContext, type O2sRule } from "./adapter"
+import { organizationPath, isRecord, mapItems, O2sError, singularNavs, type O2sContext, type O2sRule } from "./adapter"
 
 type Rec = Record<string, unknown>
 
@@ -30,7 +30,7 @@ export type CrudOptions = {
 export function withAuditNames(r: Rec): Rec {
   return {
     ...r,
-    organizationId: r.companyId ?? r.organizationId,
+    organizationId: r.organizationId ?? r.organizationId,
     created_by_id: r.createdBy ?? null,
     updated_by_id: r.updatedBy ?? null,
     created_by_user: r.createdBy ? { id: r.createdBy, name: r.createdByName ?? r.createdBy } : null,
@@ -66,27 +66,27 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
     {
       methods: ["POST"],
       match: new RegExp(`^/api/v1/${esc}/([^/]+)/restore$`),
-      to: (m, ctx) => companyPath(ctx, `${o2sPath}/${m[1]}/restore`),
+      to: (m, ctx) => organizationPath(ctx, `${o2sPath}/${m[1]}/restore`),
       method: "POST",
       response: () => ({ restored: true }),
     },
     {
       methods: ["DELETE"],
       match: new RegExp(`^/api/v1/${esc}/([^/]+)/permanent$`),
-      to: (m, ctx) => companyPath(ctx, `${o2sPath}/${m[1]}/permanent`),
+      to: (m, ctx) => organizationPath(ctx, `${o2sPath}/${m[1]}/permanent`),
       response: () => ({ deleted: true }),
     },
     { methods: ["GET"], match: base, handle: crudListHandler(o2sPath, options) },
     {
       methods: ["GET"],
       match: one,
-      to: (m, ctx) => companyPath(ctx, `${o2sPath}/${m[1]}`),
+      to: (m, ctx) => organizationPath(ctx, `${o2sPath}/${m[1]}`),
       response: (data, ctx) => from(data, ctx),
     },
     {
       methods: ["POST"],
       match: base,
-      to: (_m, ctx) => companyPath(ctx, o2sPath),
+      to: (_m, ctx) => organizationPath(ctx, o2sPath),
       request: (body, ctx) => to(body, ctx),
       response: (data, ctx) => from(data, ctx),
     },
@@ -94,7 +94,7 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
       methods: ["PATCH", "PUT"],
       match: one,
       handle: async (m, ctx) => {
-        const path = companyPath(ctx, `${o2sPath}/${m[1]}`)
+        const path = organizationPath(ctx, `${o2sPath}/${m[1]}`)
         const stored = (await ctx.call(path)) as Rec
         const changes = to(ctx.body, ctx, stored) as Rec
         await ctx.call(path, { method: "PUT", body: { ...stored, ...changes } })
@@ -104,7 +104,7 @@ export function crudRules(resource: string, o2sPath: string, options: CrudOption
     {
       methods: ["DELETE"],
       match: one,
-      to: (m, ctx) => companyPath(ctx, `${o2sPath}/${m[1]}`),
+      to: (m, ctx) => organizationPath(ctx, `${o2sPath}/${m[1]}`),
       response: () => ({ deleted: true }),
     },
   ]
@@ -122,7 +122,7 @@ export function crudListHandler(o2sPath: string, options: CrudOptions = {}): Non
       else q.set(options.queryNames?.[key] ?? key, value)
     })
     if (!q.has("pageSize")) q.set("pageSize", "1000")
-    const data = await ctx.call(companyPath(ctx, `${o2sPath}/paginated-list?${q}`))
+    const data = await ctx.call(organizationPath(ctx, `${o2sPath}/paginated-list?${q}`))
     const page = pageOf(data, ctx.query)
     return {
       data: mapItems(page, (r) => {

@@ -1,7 +1,7 @@
 // Step 2: App Config (countries ... materials, departments, designations, module / menu entry) and IAM
 // (memberships, menu permissions, organization menus, access requests) plus the audit log.
 
-import { companyPath, isRecord, O2sError, type O2sContext, type O2sRule } from "../adapter"
+import { organizationPath, isRecord, O2sError, type O2sContext, type O2sRule } from "../adapter"
 import { crudListHandler, crudRules, pageOf, withAuditNames } from "../crud"
 import { fromO2sModuleName } from "../menus"
 
@@ -17,41 +17,41 @@ function kebab(text: string) {
   return text.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
 }
 
-// ---------- memberships (O2S company users) ----------
+// ---------- memberships (O2S organization users) ----------
 
-function toMembership(row: Rec, companyId: string): Rec {
+function toMembership(row: Rec, organizationId: string): Rec {
   return {
     userId: row.userId,
-    organizationId: row.companyId ?? companyId,
+    organizationId: row.organizationId ?? organizationId,
     role: row.role,
     isDefault: row.isDefault,
-    organization: { id: row.companyId ?? companyId, name: row.companyName, isActive: row.isCompanyActive ?? true },
+    organization: { id: row.organizationId ?? organizationId, name: row.organizationName, isActive: row.isOrganizationActive ?? true },
     user: { id: row.userId, name: row.fullName ?? row.userName, email: row.email, user_name: row.userName },
   }
 }
 
-async function companyMembers(ctx: O2sContext, companyId: string): Promise<Rec[]> {
-  const page = (await ctx.call(`/api/v1/${encodeURIComponent(companyId)}/configuration/company-user/paginated-list?pageSize=1000`)) as Rec
+async function organizationMembers(ctx: O2sContext, organizationId: string): Promise<Rec[]> {
+  const page = (await ctx.call(`/api/v1/${encodeURIComponent(organizationId)}/configuration/organization-user/paginated-list?pageSize=1000`)) as Rec
   return (Array.isArray(page?.data) ? page.data : []) as Rec[]
 }
 
-/** A user's memberships: one's own from /account/companies; another user's by looking in each company. */
+/** A user's memberships: one's own from /account/organizations; another user's by looking in each organization. */
 async function userMemberships(ctx: O2sContext, userId: string): Promise<Rec[]> {
   if (userId === ctx.userId) {
-    const own = (await ctx.call("/api/v1/account/companies")) as Rec[]
-    return own.map((row) => toMembership({ ...row, userId }, String(row.companyId)))
+    const own = (await ctx.call("/api/v1/account/organizations")) as Rec[]
+    return own.map((row) => toMembership({ ...row, userId }, String(row.organizationId)))
   }
-  const companies = (await ctx.call(companyPath(ctx, "/configuration/company/paginated-list?pageSize=1000"))) as Rec
+  const organizations = (await ctx.call(organizationPath(ctx, "/configuration/organization/paginated-list?pageSize=1000"))) as Rec
   const rows: Rec[] = []
-  for (const company of (company_rows(companies))) {
-    const members = await companyMembers(ctx, String(company.id)).catch(() => [])
+  for (const organization of (organization_rows(organizations))) {
+    const members = await organizationMembers(ctx, String(organization.id)).catch(() => [])
     const found = members.find((m) => m.userId === userId)
-    if (found) rows.push(toMembership({ ...found, companyName: found.companyName ?? company.name }, String(company.id)))
+    if (found) rows.push(toMembership({ ...found, organizationName: found.organizationName ?? organization.name }, String(organization.id)))
   }
   return rows
 }
 
-function company_rows(page: Rec): Rec[] {
+function organization_rows(page: Rec): Rec[] {
   return (Array.isArray(page?.data) ? page.data : []) as Rec[]
 }
 
@@ -81,7 +81,7 @@ function toAccessRequest(r: Rec, ctx: O2sContext): Rec {
 
 async function findAccessRequest(ctx: O2sContext, id: string): Promise<Rec> {
   for (const list of ["pending", "mine"]) {
-    const rows = (await ctx.call(`/api/v1/account/company-access-requests/${list}`)) as Rec[]
+    const rows = (await ctx.call(`/api/v1/account/organization-access-requests/${list}`)) as Rec[]
     const found = rows.find((r) => String(r.id) === id)
     if (found) return found
   }
@@ -106,7 +106,7 @@ function auditFeed(page: Rec, q: URLSearchParams): Rec {
       cronOnSchedule: events.filter((e) => e.scheduleStatus === "ON_SCHEDULE").length,
       issues: events.filter((e) => e.status === "ERROR" || (e.scheduleStatus && e.scheduleStatus !== "ON_SCHEDULE")).length,
     },
-    events: events.map((e) => ({ ...e, organizationId: e.companyId ?? null, schedule: null, runId: null })),
+    events: events.map((e) => ({ ...e, organizationId: e.organizationId ?? null, schedule: null, runId: null })),
   }
 }
 
@@ -120,7 +120,7 @@ export const configurationRules: O2sRule[] = [
         methods: ["GET"],
         match: /^\/api\/v1\/currency\/exchange-rates\/([^/]+)\/([^/]+)$/,
         to: (m, ctx) =>
-          companyPath(ctx, m[1] === "latest"
+          organizationPath(ctx, m[1] === "latest"
             ? `/configuration/currency/exchange-rates/latest/${m[2]}`
             : `/configuration/currency/exchange-rates/${m[1]}/${m[2]}`),
         response: (data) => {
@@ -133,12 +133,12 @@ export const configurationRules: O2sRule[] = [
         // The rate to convert `from` into `to` (amount x rate): ?from=USD&to=BDT[&date=yyyy-MM-dd].
         methods: ["GET"],
         match: /^\/api\/v1\/currency\/exchange-rates\/rate$/,
-        to: (_m, ctx) => companyPath(ctx, `/configuration/currency/exchange-rates/rate?${ctx.query}`),
+        to: (_m, ctx) => organizationPath(ctx, `/configuration/currency/exchange-rates/rate?${ctx.query}`),
       },
       {
         methods: ["POST"],
         match: /^\/api\/v1\/currency\/exchange-rates\/update$/,
-        to: (_m, ctx) => companyPath(ctx, "/configuration/currency/exchange-rates/update"),
+        to: (_m, ctx) => organizationPath(ctx, "/configuration/currency/exchange-rates/update"),
       },
     ],
   }),
@@ -159,7 +159,7 @@ export const configurationRules: O2sRule[] = [
             else if (key === "limit") q.set("pageSize", value)
             else q.set(key, value)
           })
-          const d = (await ctx.call(companyPath(ctx, `/configuration/exchange-rate/matrix?${q}`))) as Rec
+          const d = (await ctx.call(organizationPath(ctx, `/configuration/exchange-rate/matrix?${q}`))) as Rec
           const page = (d.pageNumber as number) || 1
           const limit = (d.pageSize as number) || 10
           const totalPages = (d.totalPages as number) || 0
@@ -182,12 +182,12 @@ export const configurationRules: O2sRule[] = [
       {
         methods: ["DELETE"],
         match: /^\/api\/v1\/exchange-rate\/selected$/,
-        to: (_m, ctx) => companyPath(ctx, "/configuration/exchange-rate/selected"),
+        to: (_m, ctx) => organizationPath(ctx, "/configuration/exchange-rate/selected"),
       },
       {
         methods: ["POST"],
         match: /^\/api\/v1\/exchange-rate\/rerun$/,
-        to: (_m, ctx) => companyPath(ctx, "/configuration/exchange-rate/rerun"),
+        to: (_m, ctx) => organizationPath(ctx, "/configuration/exchange-rate/rerun"),
       },
     ],
   }),
@@ -237,11 +237,11 @@ export const configurationRules: O2sRule[] = [
     queryNames: { moduleName: "moduleName" },
   }),
 
-  // --- organization memberships (O2S company users) ---
+  // --- organization memberships (O2S organization users) ---
   {
     methods: ["GET"],
     match: /^\/api\/v1\/user-to-oranization-map\/organization\/([^/]+)\/mappings$/,
-    handle: async (m, ctx) => ({ data: (await companyMembers(ctx, m[1])).map((r) => toMembership(r, m[1])) }),
+    handle: async (m, ctx) => ({ data: (await organizationMembers(ctx, m[1])).map((r) => toMembership(r, m[1])) }),
   },
   {
     methods: ["GET"],
@@ -258,24 +258,24 @@ export const configurationRules: O2sRule[] = [
   {
     methods: ["GET"],
     match: /^\/api\/v1\/user-to-oranization-map\/admin\/users$/,
-    handle: async (_m, ctx) => ({ data: (await companyMembers(ctx, ctx.companyId)).map((r) => toMembership(r, ctx.companyId)) }),
+    handle: async (_m, ctx) => ({ data: (await organizationMembers(ctx, ctx.organizationId)).map((r) => toMembership(r, ctx.organizationId)) }),
   },
   {
     methods: ["DELETE"],
     match: /^\/api\/v1\/user-to-oranization-map\/mapping\/([^/]+)\/([^/]+)$/,
-    to: (m) => `/api/v1/${m[2]}/configuration/company-user/${m[1]}`,
+    to: (m) => `/api/v1/${m[2]}/configuration/organization-user/${m[1]}`,
   },
   {
     match: /^\/api\/v1\/user-to-oranization-map\/mapping\/([^/]+)\/([^/]+)\/role$/,
     handle: async (m, ctx) => {
-      const [userId, companyId] = [decodeURIComponent(m[1]), m[2]]
-      const current = (await companyMembers(ctx, companyId)).find((r) => r.userId === userId)
+      const [userId, organizationId] = [decodeURIComponent(m[1]), m[2]]
+      const current = (await organizationMembers(ctx, organizationId)).find((r) => r.userId === userId)
       if (!current) throw new O2sError("This user is not a member of the organization.", 404)
-      const saved = await ctx.call(`/api/v1/${companyId}/configuration/company-user/${encodeURIComponent(userId)}`, {
+      const saved = await ctx.call(`/api/v1/${organizationId}/configuration/organization-user/${encodeURIComponent(userId)}`, {
         method: "PUT",
         body: { ...current, role: (ctx.body as Rec)?.role ?? current.role },
       })
-      return { data: toMembership((saved as Rec) ?? current, companyId) }
+      return { data: toMembership((saved as Rec) ?? current, organizationId) }
     },
   },
 
@@ -284,11 +284,11 @@ export const configurationRules: O2sRule[] = [
     methods: ["GET"],
     match: /^\/api\/v1\/menu-permission\/factory-limits$/,
     handle: async (_m, ctx) => {
-      const companyId = encodeURIComponent(ctx.query.get("organizationId") || ctx.companyId)
+      const organizationId = encodeURIComponent(ctx.query.get("organizationId") || ctx.organizationId)
       const userId = encodeURIComponent(ctx.query.get("userId") ?? "")
       const [rows, factories] = (await Promise.all([
-        ctx.call(`/api/v1/${companyId}/configuration/user-menu-permission/user/${userId}`),
-        ctx.call(`/api/v1/${companyId}/configuration/user-menu-permission/user/${userId}/factories`),
+        ctx.call(`/api/v1/${organizationId}/configuration/user-menu-permission/user/${userId}`),
+        ctx.call(`/api/v1/${organizationId}/configuration/user-menu-permission/user/${userId}/factories`),
       ])) as [Rec[], Rec]
       const scoped = (rows ?? []).filter((r) => r.isFactoryScoped)
       const all = (Array.isArray(factories?.factories) ? factories.factories : []) as Rec[]
@@ -310,10 +310,10 @@ export const configurationRules: O2sRule[] = [
     match: /^\/api\/v1\/menu-permission$/,
     handle: async (_m, ctx) => {
       const body = ctx.body as Rec
-      const companyId = String(body.organizationId ?? ctx.companyId)
+      const organizationId = String(body.organizationId ?? ctx.organizationId)
       const userId = String(body.userId)
       const rows = (Array.isArray(body.permissions) ? body.permissions : []) as Rec[]
-      const saved = (await ctx.call(`/api/v1/${companyId}/configuration/user-menu-permission/user/${encodeURIComponent(userId)}`, {
+      const saved = (await ctx.call(`/api/v1/${organizationId}/configuration/user-menu-permission/user/${encodeURIComponent(userId)}`, {
         method: "PUT",
         // factoryIds only on factory-based menus; left out (null) = the limit stays as it is.
         body: rows.map((p) => ({
@@ -323,7 +323,7 @@ export const configurationRules: O2sRule[] = [
       })) as Rec[]
       return {
         data: (saved ?? []).filter((p) => p.isAccess).map((p) => ({
-          id: `${p.menuId}`, organizationId: companyId, userId, menuId: p.menuId,
+          id: `${p.menuId}`, organizationId: organizationId, userId, menuId: p.menuId,
           canView: p.isAccess, canCreate: p.isInsert, canUpdate: p.isUpdate, canDelete: p.isDelete,
           menu: { id: p.menuId, menuName: p.menuName, menuPath: p.menuPath, moduleId: p.moduleId, displayOrder: p.menuSerialNo ?? 0, isActive: true,
             moduleEntry: { id: p.moduleId, moduleName: fromO2sModuleName(p.moduleName as string), moduleKey: kebab(String(p.moduleName ?? "")) } },
@@ -338,9 +338,9 @@ export const configurationRules: O2sRule[] = [
   {
     methods: ["GET", "PUT"],
     match: /^\/api\/v1\/user-setup\/([^/]+)(\/one-time-password|\/status)?$/,
-    to: (m, ctx) => companyPath(ctx, `/configuration/user-setup/${m[1]}${m[2] ?? ""}`),
+    to: (m, ctx) => organizationPath(ctx, `/configuration/user-setup/${m[1]}${m[2] ?? ""}`),
   },
-  { methods: ["POST"], match: /^\/api\/v1\/user-setup$/, to: (_m, ctx) => companyPath(ctx, "/configuration/user-setup") },
+  { methods: ["POST"], match: /^\/api\/v1\/user-setup$/, to: (_m, ctx) => organizationPath(ctx, "/configuration/user-setup") },
 
   // --- the factories a user may work with (IAM "User Factory Permission"; O2S is strict: none = no factory) ---
   {
@@ -354,7 +354,7 @@ export const configurationRules: O2sRule[] = [
         else if (key === "limit") q.set("pageSize", value)
         else q.set(key, value)
       })
-      const data = await ctx.call(companyPath(ctx, `/configuration/user-factory-permission/summary?${q}`))
+      const data = await ctx.call(organizationPath(ctx, `/configuration/user-factory-permission/summary?${q}`))
       return { data: pageOf(data, ctx.query) }
     },
   },
@@ -362,25 +362,25 @@ export const configurationRules: O2sRule[] = [
   {
     methods: ["POST"],
     match: /^\/api\/v1\/user-factory-permission\/request$/,
-    to: (_m, ctx) => companyPath(ctx, "/configuration/user-factory-permission/request"),
+    to: (_m, ctx) => organizationPath(ctx, "/configuration/user-factory-permission/request"),
   },
   // the caller's own factories (the top bar's factory switcher); before the /{userId} rule below
   {
     methods: ["GET"],
     match: /^\/api\/v1\/user-factory-permission\/mine$/,
-    to: (_m, ctx) => companyPath(ctx, "/configuration/user-factory-permission/mine"),
+    to: (_m, ctx) => organizationPath(ctx, "/configuration/user-factory-permission/mine"),
   },
   {
     methods: ["GET"],
     match: /^\/api\/v1\/user-factory-permission\/([^/]+)$/,
-    to: (m, ctx) => companyPath(ctx, `/configuration/user-factory-permission/user/${m[1]}`),
+    to: (m, ctx) => organizationPath(ctx, `/configuration/user-factory-permission/user/${m[1]}`),
   },
   {
     methods: ["PUT"],
     match: /^\/api\/v1\/user-factory-permission\/([^/]+)$/,
     handle: async (m, ctx) => {
       const ids = (ctx.body as Rec)?.factoryIds
-      const data = await ctx.call(companyPath(ctx, `/configuration/user-factory-permission/user/${m[1]}`), {
+      const data = await ctx.call(organizationPath(ctx, `/configuration/user-factory-permission/user/${m[1]}`), {
         method: "PUT",
         body: { factoryIds: Array.isArray(ids) ? ids.map(String) : [] },
       })
@@ -393,13 +393,13 @@ export const configurationRules: O2sRule[] = [
     methods: ["GET"],
     match: /^\/api\/v1\/menu-to-organization-map$/,
     handle: async (_m, ctx) => {
-      const companyId = ctx.query.get("organizationId") || ctx.companyId
-      const list = (await ctx.call(`/api/v1/${companyId}/configuration/company-menu`)) as Rec
+      const organizationId = ctx.query.get("organizationId") || ctx.organizationId
+      const list = (await ctx.call(`/api/v1/${organizationId}/configuration/organization-menu`)) as Rec
       const menus = (Array.isArray(list?.menus) ? list.menus : []) as Rec[]
       return {
         data: menus.filter((m) => m.isAvailable).map((m) => ({
           menuId: m.menuId,
-          organizationId: companyId,
+          organizationId: organizationId,
           menu: { id: m.menuId, menuName: m.menuName, moduleId: m.moduleId, displayOrder: 0, isActive: true,
             moduleEntry: { id: m.moduleId, moduleName: fromO2sModuleName(m.moduleName as string), moduleKey: kebab(String(m.moduleName ?? "")) } },
         })),
@@ -411,29 +411,29 @@ export const configurationRules: O2sRule[] = [
     match: /^\/api\/v1\/menu-to-organization-map$/,
     handle: async (_m, ctx) => {
       const body = ctx.body as Rec
-      const companyId = String(body.organizationId ?? ctx.companyId)
+      const organizationId = String(body.organizationId ?? ctx.organizationId)
       const menuIds = ((body.menuIds as unknown[]) ?? []).map(Number)
-      const saved = (await ctx.call(`/api/v1/${companyId}/configuration/company-menu`, { method: "PUT", body: { menuIds } })) as Rec
+      const saved = (await ctx.call(`/api/v1/${organizationId}/configuration/organization-menu`, { method: "PUT", body: { menuIds } })) as Rec
       const menus = (Array.isArray(saved?.menus) ? saved.menus : []) as Rec[]
       return {
-        data: menus.filter((m) => m.isAvailable).map((m) => ({ menuId: m.menuId, organizationId: companyId, menu: { id: m.menuId, menuName: m.menuName } })),
+        data: menus.filter((m) => m.isAvailable).map((m) => ({ menuId: m.menuId, organizationId: organizationId, menu: { id: m.menuId, menuName: m.menuName } })),
         message: "Organization menus saved",
       }
     },
   },
 
-  // --- access requests (O2S: /account/company-access-requests) ---
+  // --- access requests (O2S: /account/organization-access-requests) ---
   {
     methods: ["POST"],
     match: /^\/api\/v1\/organization-access-requests$/,
-    to: () => "/api/v1/account/company-access-requests",
+    to: () => "/api/v1/account/organization-access-requests",
     response: (data, ctx) => toAccessRequest(data as Rec, ctx),
   },
   {
     methods: ["GET"],
     match: /^\/api\/v1\/organization-access-requests(?:\/(pending|mine))?$/,
     handle: async (m, ctx) => {
-      const rows = (await ctx.call(`/api/v1/account/company-access-requests/${m[1] ?? "mine"}`)) as Rec[]
+      const rows = (await ctx.call(`/api/v1/account/organization-access-requests/${m[1] ?? "mine"}`)) as Rec[]
       return { data: rows.map((r) => toAccessRequest(r, ctx)) }
     },
   },
@@ -443,8 +443,8 @@ export const configurationRules: O2sRule[] = [
     handle: async (m, ctx) => {
       const stored = await findAccessRequest(ctx, m[1])
       const body = (ctx.body ?? {}) as Rec
-      const assignments = ((body.assignments as Rec[]) ?? []).map((a) => ({ companyId: String(a.organizationId ?? a.companyId), role: a.role ?? "user" }))
-      const saved = (await ctx.call(`/api/v1/account/company-access-requests/${m[1]}/${m[2]}`, {
+      const assignments = ((body.assignments as Rec[]) ?? []).map((a) => ({ organizationId: String(a.organizationId ?? a.organizationId), role: a.role ?? "user" }))
+      const saved = (await ctx.call(`/api/v1/account/organization-access-requests/${m[1]}/${m[2]}`, {
         method: "POST",
         body: { assignments, reviewNote: body.reviewNote ?? null, rowVersion: stored.rowVersion },
       })) as Rec
@@ -464,7 +464,7 @@ export const configurationRules: O2sRule[] = [
         else if (key === "limit") q.set("pageSize", value)
         else q.set(key, value)
       })
-      const page = (await ctx.call(companyPath(ctx, `/support/audit-log/paginated-list?${q}`))) as Rec
+      const page = (await ctx.call(organizationPath(ctx, `/support/audit-log/paginated-list?${q}`))) as Rec
       return { data: auditFeed(page, ctx.query) }
     },
   },
@@ -474,7 +474,7 @@ export const configurationRules: O2sRule[] = [
     handle: async (m, ctx) => {
       const moduleName = ctx.query.get("moduleName")
       const query = m[1] === "all" && moduleName ? `?moduleName=${encodeURIComponent(moduleName)}` : ""
-      const result = await ctx.call(companyPath(ctx, `/support/audit-log/${m[1]}${query}`), {
+      const result = await ctx.call(organizationPath(ctx, `/support/audit-log/${m[1]}${query}`), {
         method: "DELETE",
         body: m[1] === "selected" ? { ids: ((ctx.body as Rec)?.ids as unknown[] ?? []).map(Number) } : undefined,
       })

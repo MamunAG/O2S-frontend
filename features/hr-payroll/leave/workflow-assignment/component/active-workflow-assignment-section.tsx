@@ -49,10 +49,10 @@ export function ActiveWorkflowAssignmentSection({
       render: (r) => (
         <div>
           <Badge variant="outline">
-            {String(r.settings.targetType ?? "COMPANY")}
+            {String(r.settings.targetType ?? "ORGANIZATION")}
           </Badge>
           <p className="mt-1 font-mono text-muted-foreground">
-            {String(r.settings.targetId ?? "Company-wide")}
+            {String(r.settings.targetId ?? "Organization-wide")}
           </p>
         </div>
       ),
@@ -107,7 +107,7 @@ export function ActiveWorkflowAssignmentSection({
   return (
     <HrRecordsSection
       title="Active workflow assignments"
-      description="Resolution priority: Employee > Designation > Section > Department > Factory > Company."
+      description="Resolution priority: Employee > Designation > Section > Department > Factory > Organization."
       data={data}
       loading={loading}
       columns={columns}

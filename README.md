@@ -20,13 +20,13 @@ the server. Once the API answers on `https://`, set `NEXT_PUBLIC_API_URL` to tha
 `components/o2s-api-bridge.tsx` (mounted in `app/layout.tsx`) wraps `window.fetch` once. For a request to the API:
 
 - the rule for the code-crafter path (`lib/o2s/rules/*.ts`: account, configuration, merchandising, hr) names
-  the O2S route; the selected organization becomes the route's `{companyId}`;
+  the O2S route; the selected organization becomes the route's `{organizationId}`;
 - request bodies and queries are mapped (`page` / `limit` -> `pageNumber` / `pageSize`, renamed fields, an
   empty `id` -> 0); an edit (PATCH) reads the stored record, merges the change and PUTs it;
 - O2S's `{ IsError, ErrorMessage, Data }` becomes `{ success, message, data }`, its pages `{ items, meta }`,
   numeric ids strings and date-only values `yyyy-MM-dd`; a 401 refreshes the token once.
 
-A new screen can call O2S directly (`/api/v1/{companyId}/...`, envelope `{ IsError, ErrorMessage, Data }`); a
+A new screen can call O2S directly (`/api/v1/{organizationId}/...`, envelope `{ IsError, ErrorMessage, Data }`); a
 path with no rule is passed through unchanged.
 
 Not in O2S, so the screens say so: restoring deleted records (O2S deletes permanently), the master-data Excel

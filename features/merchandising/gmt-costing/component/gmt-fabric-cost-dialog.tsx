@@ -3,7 +3,7 @@
 // The fabric costing of one details row (desktop frmImportFabricCosting). Yarns with their req qty per kg of
 // fabric and price, the common processes (rate and wastage per kg fabric), and per-yarn extra processes;
 // every total recalculates as it is typed. Load a costing from another row of this costing (This costing)
-// or from any GMT costing of the company (Other costings). Set writes it onto the row, whose item price
+// or from any GMT costing of the organization (Other costings). Set writes it onto the row, whose item price
 // then follows the fabric cost.
 
 import { useCallback, useEffect, useMemo, useState } from "react"

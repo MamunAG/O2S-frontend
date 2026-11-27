@@ -1,7 +1,7 @@
-// Step 1: sign-in and account flows, the user's own profile, organizations (O2S companies), the current
+// Step 1: sign-in and account flows, the user's own profile, organizations (O2S organizations), the current
 // user's menu permissions, notifications and file uploads.
 
-import { companyPath, sendBase, isRecord, type O2sContext, type O2sRule } from "../adapter"
+import { organizationPath, sendBase, isRecord, type O2sContext, type O2sRule } from "../adapter"
 import { fromO2sMenuName, fromO2sModuleName, toO2sMenuName } from "../menus"
 
 type Rec = Record<string, unknown>
@@ -62,8 +62,8 @@ function toO2sUserFields(body: Rec): Rec {
 // ---------- files ----------
 
 /** An O2S file attachment as code-crafter's file record. Images are viewed through /support/file/{id}/view. */
-function fileRecord(id: unknown, file: Rec | null, companyId?: string): Rec {
-  const view = companyId ? `${sendBase()}/api/v1/${companyId}/support/file/${id}/view` : ""
+function fileRecord(id: unknown, file: Rec | null, organizationId?: string): Rec {
+  const view = organizationId ? `${sendBase()}/api/v1/${organizationId}/support/file/${id}/view` : ""
   return {
     success: true,
     id,
@@ -80,17 +80,17 @@ function fileRecord(id: unknown, file: Rec | null, companyId?: string): Rec {
   }
 }
 
-// ---------- companies ----------
+// ---------- organizations ----------
 
 function toOrganization(c: Rec): Rec {
-  // /account/companies rows (CompanyUserDto) or Company rows (CompanyDto).
-  if ("companyId" in c && "companyName" in c) {
-    return { id: c.companyId, name: c.companyName, isActive: c.isCompanyActive, isDefault: c.isDefault, role: c.role }
+  // /account/organizations rows (OrganizationUserDto) or Organization rows (OrganizationDto).
+  if ("organizationId" in c && "organizationName" in c) {
+    return { id: c.organizationId, name: c.organizationName, isActive: c.isOrganizationActive, isDefault: c.isDefault, role: c.role }
   }
   return { id: c.id, name: c.name, address: c.address ?? null, contact: c.phone ?? c.email ?? null, isActive: c.isActive }
 }
 
-function toO2sCompany(body: Rec): Rec {
+function toO2sOrganization(body: Rec): Rec {
   return {
     name: body.name,
     address: body.address || null,
@@ -104,7 +104,7 @@ function toO2sCompany(body: Rec): Rec {
 function toPermissionRecord(p: Rec, ctx: O2sContext, menuName?: string): Rec {
   return {
     id: `${p.menuId}`,
-    organizationId: ctx.companyId,
+    organizationId: ctx.organizationId,
     userId: ctx.userId,
     menuId: p.menuId,
     canView: p.isAccess === true,
@@ -126,13 +126,13 @@ function toPermissionRecord(p: Rec, ctx: O2sContext, menuName?: string): Rec {
 /** The current user's menus, one record per code-crafter name each O2S menu stands for. */
 async function currentPermissions(ctx: O2sContext, menuName?: string) {
   const query = menuName ? `?menuName=${encodeURIComponent(toO2sMenuName(menuName))}` : ""
-  const rows = (await ctx.call(companyPath(ctx, `/configuration/user-menu-permission/current${query}`))) as Rec[]
+  const rows = (await ctx.call(organizationPath(ctx, `/configuration/user-menu-permission/current${query}`))) as Rec[]
   return rows.flatMap((p) => fromO2sMenuName(p.menuName as string).map((name) => toPermissionRecord(p, ctx, name)))
 }
 
 const NO_PERMISSION = (ctx: O2sContext, menuName: string): Rec => ({
   id: "",
-  organizationId: ctx.companyId,
+  organizationId: ctx.organizationId,
   userId: ctx.userId,
   menuId: "",
   canView: false,
@@ -176,7 +176,7 @@ export const accountRules: O2sRule[] = [
     methods: ["POST"],
     match: /^\/api\/v1\/auth\/switch-organization$/,
     to: () => "/api/v1/account/switch-organization",
-    request: (body) => ({ companyId: (body as Rec).organizationId }),
+    request: (body) => ({ organizationId: (body as Rec).organizationId }),
     response: (data) => {
       const d = data as Rec
       return { access_token: d.token, organization_id: d.organizationId ?? null }
@@ -233,22 +233,22 @@ export const accountRules: O2sRule[] = [
     request: (body) => ({ recoveryEmail: (body as Rec).recovery_email ?? null }),
   },
 
-  // --- organizations = O2S companies ---
+  // --- organizations = O2S organizations ---
   {
     methods: ["GET"],
     match: /^\/api\/v1\/user-to-oranization-map\/me\/organizations$/,
-    to: () => "/api/v1/account/companies",
+    to: () => "/api/v1/account/organizations",
     response: (data) => (Array.isArray(data) ? data.map((c) => toOrganization(c as Rec)) : data),
   },
   {
     match: /^\/api\/v1\/user-to-oranization-map\/mapping\/([^/]+)\/([^/]+)\/default$/,
-    to: (m) => `/api/v1/account/companies/${m[2]}/default`,
+    to: (m) => `/api/v1/account/organizations/${m[2]}/default`,
     method: "PUT",
   },
   {
     methods: ["GET"],
     match: /^\/api\/v1\/organization$/,
-    to: (_m, ctx) => companyPath(ctx, "/configuration/company/paginated-list"),
+    to: (_m, ctx) => organizationPath(ctx, "/configuration/organization/paginated-list"),
     query: (q) => {
       q.set("pageSize", q.get("pageSize") ?? "500")
       const search = q.get("search")
@@ -265,7 +265,7 @@ export const accountRules: O2sRule[] = [
   {
     methods: ["GET"],
     match: /^\/api\/v1\/organization\/([^/]+)$/,
-    to: (m, ctx) => companyPath(ctx, `/configuration/company/${m[1]}`),
+    to: (m, ctx) => organizationPath(ctx, `/configuration/organization/${m[1]}`),
     response: (data) => toOrganization(data as Rec),
   },
   {
@@ -273,24 +273,24 @@ export const accountRules: O2sRule[] = [
     match: /^\/api\/v1\/organization$/,
     // Any logged-in user creates an organization and becomes its admin (no organization needs to be
     // selected, and no menu permission is needed).
-    to: () => "/api/v1/account/companies",
-    request: (body) => toO2sCompany(body as Rec),
+    to: () => "/api/v1/account/organizations",
+    request: (body) => toO2sOrganization(body as Rec),
     response: (data) => toOrganization(data as Rec),
   },
   {
     methods: ["PATCH", "PUT"],
     match: /^\/api\/v1\/organization\/([^/]+)$/,
     handle: async (m, ctx) => {
-      const path = companyPath(ctx, `/configuration/company/${m[1]}`)
+      const path = organizationPath(ctx, `/configuration/organization/${m[1]}`)
       const current = (await ctx.call(path)) as Rec
-      await ctx.call(path, { method: "PUT", body: { ...current, ...toO2sCompany({ ...toOrganization(current), ...(ctx.body as Rec) }) } })
+      await ctx.call(path, { method: "PUT", body: { ...current, ...toO2sOrganization({ ...toOrganization(current), ...(ctx.body as Rec) }) } })
       return { data: toOrganization((await ctx.call(path)) as Rec), message: "Organization updated successfully" }
     },
   },
   {
     methods: ["DELETE"],
     match: /^\/api\/v1\/organization\/([^/]+)$/,
-    to: (m, ctx) => companyPath(ctx, `/configuration/company/${m[1]}`),
+    to: (m, ctx) => organizationPath(ctx, `/configuration/organization/${m[1]}`),
   },
 
   // --- the current user's menu permissions (sidebar and each screen's check) ---
@@ -314,7 +314,7 @@ export const accountRules: O2sRule[] = [
     handle: async (_m, ctx) => {
       const userId = ctx.query.get("userId")
       if (userId && userId !== ctx.userId) {
-        const rows = (await ctx.call(companyPath(ctx, `/configuration/user-menu-permission/user/${encodeURIComponent(userId)}`))) as Rec[]
+        const rows = (await ctx.call(organizationPath(ctx, `/configuration/user-menu-permission/user/${encodeURIComponent(userId)}`))) as Rec[]
         return {
           data: rows
             .filter((p) => p.isAccess || p.isInsert || p.isUpdate || p.isDelete)
@@ -332,11 +332,11 @@ export const accountRules: O2sRule[] = [
     response: (data, ctx) => (isRecord(data) && Array.isArray(data.items) ? { ...data, items: data.items.map((n) => toNotification(n as Rec, ctx)) } : data),
   },
 
-  // --- uploads: an O2S file of the selected company ---
+  // --- uploads: an O2S file of the selected organization ---
   {
     methods: ["POST"],
     match: /^\/api\/v1\/files\/upload$/,
-    to: (_m, ctx) => companyPath(ctx, "/support/file"),
+    to: (_m, ctx) => organizationPath(ctx, "/support/file"),
     request: (body) => {
       // O2S reads the form field "file".
       if (!(body instanceof FormData)) return body
@@ -346,7 +346,7 @@ export const accountRules: O2sRule[] = [
     },
     response: (data) => {
       const d = data as Rec
-      return fileRecord(d.id, d, String(d.companyId ?? ""))
+      return fileRecord(d.id, d, String(d.organizationId ?? ""))
     },
   },
 ]

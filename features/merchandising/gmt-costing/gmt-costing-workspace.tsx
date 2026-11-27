@@ -1,6 +1,6 @@
 "use client"
 
-// GMT Costing list page: filters, the costings of the selected company, and the entry dialog. Ported from
+// GMT Costing list page: filters, the costings of the selected organization, and the entry dialog. Ported from
 // ClickERP's gmt-costing-index.tsx; the look is this app's (Job Entry, Fabric Costing).
 
 import { useCallback, useEffect, useMemo, useState } from "react"

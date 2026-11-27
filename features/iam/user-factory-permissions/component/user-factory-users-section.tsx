@@ -74,7 +74,7 @@ function EmptyState({ onReset }: { onReset: () => void }) {
       </div>
       <h3 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">No users found</h3>
       <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600 dark:text-slate-300">
-        Try clearing or relaxing the current filters. Users are added to the organization on Company Users.
+        Try clearing or relaxing the current filters. Users are added to the organization on Organization Users.
       </p>
       <Button type="button" onClick={onReset} className="mt-6 rounded-xl">
         Reset

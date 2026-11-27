@@ -4,7 +4,7 @@
 // code-crafter's envelope `{ success, message, data }`. Instead of rewriting each service, this module wraps
 // window.fetch once (lib/o2s/index.ts, mounted by components/o2s-api-bridge.tsx) and, for requests to the API:
 //   - finds the rule for the code-crafter path (lib/o2s/rules/*) and calls the O2S route instead, with the
-//     organization selected now as the route's {companyId} (O2S has no x-organization-id header; a page that
+//     organization selected now as the route's {organizationId} (O2S has no x-organization-id header; a page that
 //     sends a different one, i.e. stale state from before a switch, is refused with a 409);
 //   - maps request bodies and query strings (page/limit -> pageNumber/pageSize, "" ids -> null);
 //   - turns O2S's `{ IsError, ErrorMessage, Data }` (or a bare 201 body) into `{ success, message, data }`,
@@ -22,8 +22,8 @@ import { readSelectedOrganizationId } from "@/lib/organization-selection"
 export const ORGANIZATION_CHANGED_MESSAGE = "The selected organization changed. Close this form and try again."
 
 export type O2sContext = {
-  /** The selected organization (O2S company id), "" when none is selected. */
-  companyId: string
+  /** The selected organization (O2S organization id), "" when none is selected. */
+  organizationId: string
   method: string
   /** The code-crafter URL the app asked for. */
   url: URL
@@ -172,7 +172,7 @@ const SINGULAR_NAVS: Record<string, string> = {
   buyers: "buyer", currencies: "currency", factories: "factory", countries: "country", units: "unit",
   materialGroups: "materialGroup", sizes: "size", colors: "color", fabrics: "fabric", yarns: "yarn",
   processes: "process", gmtCostScopes: "gmtCostScope", embellishments: "embellishment", tasks: "task",
-  jobs: "job", styles: "style", companies: "organization", designations: "designation", departments: "department",
+  jobs: "job", styles: "style", organizations: "organization", designations: "designation", departments: "department",
   employmentTypes: "employmentType", grades: "grade", payGroups: "payGroup", workLocations: "workLocation",
   employees: "employee", leaveTypes: "leaveType", shifts: "shift",
 }
@@ -366,7 +366,7 @@ function serializeBody(body: unknown, headers: Headers): BodyInit | undefined {
 function defaultQuery(q: URLSearchParams) {
   const mapped = new URLSearchParams()
   q.forEach((value, key) => {
-    if (key === "organizationId") return // the route carries the company
+    if (key === "organizationId") return // the route carries the organization
     if (key === "page") mapped.set("pageNumber", value)
     else if (key === "limit") mapped.set("pageSize", value)
     else mapped.append(key, value)
@@ -399,15 +399,15 @@ export function createO2sFetch(original: FetchFn, rules: O2sRule[]): FetchFn {
 
     // Every call goes to the organization selected now (the switcher in the top bar), never to the one a page
     // remembers: a page that still sends an older id (x-organization-id, from state kept since before a switch) is
-    // refused, so a save cannot land in another company. Screens that act on a company the user picks (Company
+    // refused, so a save cannot land in another organization. Screens that act on an organization the user picks (Organization
     // Menus, User Menu Permission, memberships) name it in the path / body / query of their own rule instead.
-    const companyId = readSelectedOrganizationId()
+    const organizationId = readSelectedOrganizationId()
     const requested = (headers.get("x-organization-id") ?? "").trim()
-    if (requested && requested !== "null" && requested !== "undefined" && companyId && requested !== companyId) {
+    if (requested && requested !== "null" && requested !== "undefined" && organizationId && requested !== organizationId) {
       return codeCrafterResponse(409, false, ORGANIZATION_CHANGED_MESSAGE, null)
     }
     const ctx: O2sContext = {
-      companyId,
+      organizationId,
       method,
       url,
       query: url.searchParams,
@@ -484,10 +484,10 @@ export function createO2sFetch(original: FetchFn, rules: O2sRule[]): FetchFn {
 
 // ---------- helpers for the rules ----------
 
-/** The route prefix for the selected company: /api/v1/{companyId}. */
-export function companyPath(ctx: O2sContext, rest: string) {
-  if (!ctx.companyId) throw new O2sError("Select an organization before continuing.", 400)
-  return `/api/v1/${encodeURIComponent(ctx.companyId)}${rest}`
+/** The route prefix for the selected organization: /api/v1/{organizationId}. */
+export function organizationPath(ctx: O2sContext, rest: string) {
+  if (!ctx.organizationId) throw new O2sError("Select an organization before continuing.", 400)
+  return `/api/v1/${encodeURIComponent(ctx.organizationId)}${rest}`
 }
 
 /** Copies `from` -> `to` keys of a record (others unchanged); missing keys are skipped. */

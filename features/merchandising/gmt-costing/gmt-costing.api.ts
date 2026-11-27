@@ -1,4 +1,4 @@
-// O2S calls of the GMT Costing screen. These are O2S routes (/api/v1/{companyId}/merchandising/...), not
+// O2S calls of the GMT Costing screen. These are O2S routes (/api/v1/{organizationId}/merchandising/...), not
 // code-crafter paths, so lib/o2s passes them through unchanged; it still turns the answer into
 // { success, message, data } and a page into { items, meta }. Ids are GUID strings, as the API sends them.
 
@@ -30,13 +30,13 @@ function token() {
   return value
 }
 
-function companyRoute(ctx: ApiContext, path: string) {
-  const companyId = requireSelectedOrganizationId(ctx.organizationId)
-  return `/api/v1/${encodeURIComponent(companyId)}${path}`
+function organizationRoute(ctx: ApiContext, path: string) {
+  const organizationId = requireSelectedOrganizationId(ctx.organizationId)
+  return `/api/v1/${encodeURIComponent(organizationId)}${path}`
 }
 
 function buildUrl(ctx: ApiContext, path: string, query?: Query) {
-  const url = new URL(companyRoute(ctx, path), ctx.apiUrl)
+  const url = new URL(organizationRoute(ctx, path), ctx.apiUrl)
   Object.entries(query ?? {}).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value))
   })
@@ -222,7 +222,7 @@ export async function fetchMaterialInfo(ctx: ApiContext, id: string): Promise<Ma
   }
 }
 
-/** Every active cost scope of the company with its role flags (one call, filtered on the screen). */
+/** Every active cost scope of the organization with its role flags (one call, filtered on the screen). */
 export async function fetchCostScopes(ctx: ApiContext): Promise<CostScope[]> {
   const page = await request<Page<Record<string, unknown>>>(ctx, `${MERCH}/gmt-cost-scope/paginated-list`, {
     query: { isActive: true, pageNumber: 1, pageSize: 1000 },

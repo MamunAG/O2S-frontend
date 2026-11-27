@@ -1,4 +1,4 @@
-// O2S calls of the GMT Booking screen (/api/v1/{companyId}/merchandising/gmt-booking). The request helpers
+// O2S calls of the GMT Booking screen (/api/v1/{organizationId}/merchandising/gmt-booking). The request helpers
 // are the GMT costing screen's.
 
 import { request, type ApiContext, type Page } from "../gmt-costing/gmt-costing.api"

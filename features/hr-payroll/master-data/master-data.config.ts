@@ -99,9 +99,9 @@ export const MASTER_DATA_CONFIGS = {
     ],
   },
   leaveWorkflowAssignment: {
-    slug: "leave-workflow-assignment", apiPath: "leave-workflow-assignments", title: "Workflow Assignments", singular: "workflow assignment", description: "Assign workflows from company through employee scope with explicit resolution priority.", permissionMenuName: "Leave Management",
+    slug: "leave-workflow-assignment", apiPath: "leave-workflow-assignments", title: "Workflow Assignments", singular: "workflow assignment", description: "Assign workflows from organization through employee scope with explicit resolution priority.", permissionMenuName: "Leave Management",
     fields: [
-      { key: "targetType", label: "Target type", kind: "select", defaultValue: "COMPANY", options: ["COMPANY", "FACTORY", "DEPARTMENT", "SECTION", "DESIGNATION", "EMPLOYEE"].map((value) => ({ label: value, value })) }, { key: "targetId", label: "Target ID", kind: "text", placeholder: "Blank for company; UUID for other targets" }, { key: "workflowId", label: "Workflow ID", kind: "text", placeholder: "Workflow UUID" }, { key: "effectiveFrom", label: "Effective from", kind: "date" }, { key: "effectiveTo", label: "Effective to", kind: "date" }, { key: "priority", label: "Resolution priority", kind: "number", min: 1, max: 6, defaultValue: 1 },
+      { key: "targetType", label: "Target type", kind: "select", defaultValue: "ORGANIZATION", options: ["ORGANIZATION", "FACTORY", "DEPARTMENT", "SECTION", "DESIGNATION", "EMPLOYEE"].map((value) => ({ label: value, value })) }, { key: "targetId", label: "Target ID", kind: "text", placeholder: "Blank for organization; UUID for other targets" }, { key: "workflowId", label: "Workflow ID", kind: "text", placeholder: "Workflow UUID" }, { key: "effectiveFrom", label: "Effective from", kind: "date" }, { key: "effectiveTo", label: "Effective to", kind: "date" }, { key: "priority", label: "Resolution priority", kind: "number", min: 1, max: 6, defaultValue: 1 },
     ],
   },
   salaryComponent: {

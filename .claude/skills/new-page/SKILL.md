@@ -44,7 +44,7 @@ All paths below are relative to `O2S-frontend/` unless they start with `O2S-back
 The screens were written for an older API ("code-crafter"). Every service still calls
 `${apiUrl}/api/v1/<resource>` and reads `{ success, message, data }`. `lib/o2s/adapter.ts` wraps
 `window.fetch` and, for each request, finds a rule in `lib/o2s/rules/*.ts` that rewrites it to the
-O2S route `/api/v1/{companyId}<o2sPath>` (companyId = the selected organization). For a standard CRUD
+O2S route `/api/v1/{organizationId}<o2sPath>` (organizationId = the selected organization). For a standard CRUD
 resource one line does it all:
 
 ```ts
@@ -76,7 +76,7 @@ Collect these. Read the backend slice first — most answers are there. Ask the 
 | **Sidebar group** | the existing groups of that module in `lib/module-navigation.ts` | App Config → Core |
 | **Page title + eyebrow** | the user; title usually `<Thing> Setup` or `<Thing> Entry` | "Factory Setup", "App configuration" |
 | **Resource segment** | kebab-case code-crafter segment the service calls; usually the O2S thing segment | `factory` |
-| **O2S path** | `MapGroup(...)` in `O2S-backend/O2S/Endpoints/<Module>/<Thing>Endpoints.cs`, minus `/api/v{version}/{companyId}` | `/configuration/factory` |
+| **O2S path** | `MapGroup(...)` in `O2S-backend/O2S/Endpoints/<Module>/<Thing>Endpoints.cs`, minus `/api/v{version}/{organizationId}` | `/configuration/factory` |
 | **O2S menu name** | `public const string menuName` on that endpoints class | `"Factory"` |
 | **Nav label / permission name** | the sidebar label; if it differs from the O2S menu name, it needs a `MENU_NAME_TO_O2S` entry | `"Factory Setup"` → `"Factory"` |
 | **Fields** | `O2S-backend/O2S/Features/<Module>/<Thing>/Dto/<Thing>.Dto.cs` — name, kind (see table below), required? | `name`*, `displayName`*, `code`, `contact`, `email`, `address`, `remarks`, `isActive`, `imageId` |
@@ -212,7 +212,7 @@ clear a lookup or image; display-only objects (`unit`, `image`) are never sent b
 - Organization: reload on `SELECTED_ORGANIZATION_CHANGED_EVENT`; pass `organizationId: selectedOrganizationId || undefined`.
   The adapter always sends a call to the organization selected **now**; a call whose `organizationId` differs (state
   kept from before a switch) is refused with a 409 "The selected organization changed. Close this form and try
-  again." A screen that works on a company the user picks names it in its own rule's path / body / query.
+  again." A screen that works on an organization the user picks names it in its own rule's path / body / query.
 - Any mutation calls `triggerRefresh()`. Feedback through `toast.success` / `toast.error` (`sonner`); form errors also inside the dialog.
 - Delete is soft first (confirm dialog → amber "recently deleted" banner with Restore / Delete permanently);
   the deleted section offers the same two actions per row.
