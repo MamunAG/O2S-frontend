@@ -67,14 +67,12 @@ export type FactoryRecord = {
 export type FactoryFilterValues = {
     name: string
     displayName: string
-    code: string
     isActive: string
 }
 
 export const EMPTY_FILTERS: FactoryFilterValues = {
     name: "",
     displayName: "",
-    code: "",
     isActive: "",
 }
 

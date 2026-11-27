@@ -76,7 +76,6 @@ async function readJsonResponse<T>(response: Response) {
 function appendFilterParams(url: URL, filters: Partial<FactoryFilterValues>) {
     if (filters.name?.trim()) url.searchParams.set("name", filters.name.trim())
     if (filters.displayName?.trim()) url.searchParams.set("displayName", filters.displayName.trim())
-    if (filters.code?.trim()) url.searchParams.set("code", filters.code.trim())
     if (filters.isActive?.trim()) url.searchParams.set("isActive", filters.isActive.trim())
 }
 

@@ -230,14 +230,6 @@ export function DeletedFactorySection({
               onValueChange: (displayName) => onFilterChange({ ...filters, displayName }),
             },
             {
-              id: "deletedFactoryCode",
-              label: "Code",
-              kind: "text",
-              value: filters.code,
-              placeholder: "Input code",
-              onValueChange: (code) => onFilterChange({ ...filters, code }),
-            },
-            {
               id: "deletedFactoryStatus",
               label: "Status",
               kind: "select",

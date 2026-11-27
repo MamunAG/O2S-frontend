@@ -291,14 +291,6 @@ export function ActiveFactorySection({
               onValueChange: (displayName) => onFilterChange({ ...filters, displayName }),
             },
             {
-              id: "filterFactoryCode",
-              label: "Code",
-              kind: "text",
-              value: filters.code,
-              placeholder: "Input code",
-              onValueChange: (code) => onFilterChange({ ...filters, code }),
-            },
-            {
               id: "filterFactoryStatus",
               label: "Status",
               kind: "select",
