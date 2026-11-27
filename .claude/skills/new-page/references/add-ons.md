@@ -202,9 +202,24 @@ checks with `fetchCurrentMenuPermission({ menuName: "<Page title> Upload" })`. I
   then runs step 1's check again on the server, then saves every row in **one** `SaveChangesAsync` (all or nothing).
   - Invalid → 400 + the report (as step 1; the data may have changed since).
   - No Create on the upload menu → **403** (the permission filter's own answer, before the file is read). The page
-    offers Save only after a successful verify, so it shows its own message for it:
-    **"This file is valid, but saving it needs the Create permission on "<Page title> Upload". Ask an admin to grant it."**
-    (403, never 401: the adapter treats a 401 as an expired session and signs the user out.)
+    offers Save only after a successful verify, so it shows **the upload access notice** (below) for it, never the
+    server's text. (403, never 401: the adapter treats a 401 as an expired session and signs the user out.)
+
+**The upload access notice** — the exact wording, on every page, whenever a verified file can't be saved for want of
+the upload menu (shown instead of Save, and again if the save answers 403). It states that the file is fine and names
+the permission to ask for, each on its own line:
+
+> **This upload file is OK, but to save it you need the permission below.**
+> **Menu name:** Factory Setup Upload
+> **Access:** Create
+> Ask an administrator to grant it on User Menu Permission, then upload the file again.
+
+An amber box inside the upload dialog (`role="alert"`, `rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs
+leading-5 text-amber-900`, dark `border-amber-400/30 bg-amber-500/10 text-amber-100`); the first line `font-semibold`;
+"Menu name" and "Access" as label / value rows, the value in `font-semibold` — the menu name is the `uploadMenuName`
+string exactly as seeded (copy it into one `UPLOAD_MENU_NAME` constant in the workspace, used for the permission check
+and the notice). Not a toast: the user needs to read and copy the menu name. The dialog still shows "All <rowCount>
+rows are valid." above it.
   - Saved → 200 `{ inserted, updated, skipped }`.
 
 **U3 — The upload report** (`Data` of the 400), per page but always this shape:
@@ -253,8 +268,8 @@ inactive / deleted; needs Update to re-activate or Delete-menu restore).
 **U5 — After a successful verify** the same dialog shows "All <rowCount> rows are valid." and:
 - for a user with **Create on the upload menu** (U1; `canSaveUpload`, C.4): a **Save <labels>** button → step 2 →
   `toast.success("<n> <labels> saved.")`, close, `triggerRefresh()`;
-- for anyone else: no Save button, and an amber access notice with U2's 403 message. If the server still answers 403
-  (the role changed meanwhile), show the same notice instead of a toast.
+- for anyone else: no Save button, and **the upload access notice** (U2). If the server still answers 403 (the grant
+  was removed meanwhile), show the same notice instead of a toast.
 
 **U6 — Limits and file types** as the backend's `JobPoUpload`: `.csv` and `.xlsx` (first sheet), ≤ 5 MB, ≤ 10 000 rows,
 headers matched case- and space-insensitively; `.xls` is refused ("save it as .xlsx"). The template the page downloads
