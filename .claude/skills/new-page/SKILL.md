@@ -247,6 +247,7 @@ Known state of the reference pages (update this list when you fix one):
 |---|---|
 | Factory (`features/app-config/factory/`) | R2 (loader effect, dialog draft effect), R3 (`contact` / `email` filters), R4 (bulk upload menu), R5 (no `permissionMenuName`), R9 (`factory.workspace.tsx` re-export), R10 (unused `imageInputRef`, `uploadingTemplate`, `downloadingTemplate`, `optionalNumber`; `<img>` warning in the dialog). R1 done. |
 | Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`) — not yet audited for the rest |
+| Exchange Rates (`features/app-config/exchange-rates/`) | None. A Gmail-style list on `AppDataSection` (row checkboxes, inline rate edit, hover actions, bulk delete in `headerActions`, Rerun latest in the header's `actions`). R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
 | Other CRUD pages | not yet audited |
 
 ## Verify

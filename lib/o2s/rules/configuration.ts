@@ -135,6 +135,23 @@ export const configurationRules: O2sRule[] = [
       },
     ],
   }),
+  // Exchange Rates screen (global table). Inline edit = PATCH (merged into the stored rate, PUT); the ticked
+  // rows go to DELETE /selected; Rerun latest replaces today's (Dhaka) rates with the provider's.
+  ...crudRules("exchange-rate", "/configuration/exchange-rate", {
+    label: "This exchange rate",
+    extra: [
+      {
+        methods: ["DELETE"],
+        match: /^\/api\/v1\/exchange-rate\/selected$/,
+        to: (_m, ctx) => companyPath(ctx, "/configuration/exchange-rate/selected"),
+      },
+      {
+        methods: ["POST"],
+        match: /^\/api\/v1\/exchange-rate\/rerun$/,
+        to: (_m, ctx) => companyPath(ctx, "/configuration/exchange-rate/rerun"),
+      },
+    ],
+  }),
   ...crudRules("unit", "/configuration/unit", { label: "This unit" }),
   ...crudRules("factory", "/configuration/factory", { label: "This factory", fromO2s: imageFields }),
   ...crudRules("supplier", "/configuration/supplier", { label: "This supplier" }),
