@@ -74,7 +74,7 @@ export function SwitchOrganizationDialog({ open, onOpenChange }: SwitchOrganizat
   return (
     <>
       <Dialog open={open && !creating && !editing} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Switch organization</DialogTitle>
             <DialogDescription>Choose the organization to work in. Its factories, modules and menus follow it.</DialogDescription>

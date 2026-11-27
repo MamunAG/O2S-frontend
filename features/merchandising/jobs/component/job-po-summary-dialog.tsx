@@ -193,7 +193,7 @@ export function JobPoSummaryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="left-1/2 top-1/2 grid h-[min(92dvh,760px)] max-h-[92dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] -translate-x-1/2 -translate-y-1/2 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-lg p-0 sm:h-[min(86dvh,720px)] sm:w-[min(980px,calc(100vw-2rem))] sm:max-w-[min(980px,calc(100vw-2rem))] xl:w-[min(1080px,calc(100vw-3rem))] xl:max-w-[min(1080px,calc(100vw-3rem))] 2xl:w-[min(1180px,calc(100vw-4rem))] 2xl:max-w-[min(1180px,calc(100vw-4rem))]">
+      <DialogContent className="left-1/2 top-1/2 grid h-[min(92dvh,760px)] max-h-[90dvh] sm:max-h-[92dvh] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] -translate-x-1/2 -translate-y-1/2 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-lg p-0 sm:h-[min(86dvh,720px)] sm:w-[min(980px,calc(100vw-2rem))] sm:max-w-[min(980px,calc(100vw-2rem))] xl:w-[min(1080px,calc(100vw-3rem))] xl:max-w-[min(1080px,calc(100vw-3rem))] 2xl:w-[min(1180px,calc(100vw-4rem))] 2xl:max-w-[min(1180px,calc(100vw-4rem))]">
         <DialogHeader className="min-w-0 border-b border-slate-200/70 px-4 py-3 pr-10 dark:border-white/10">
           <DialogTitle>PO Summary</DialogTitle>
           <DialogDescription className="max-w-full">

@@ -1011,7 +1011,7 @@ export function __Thing__FormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 sm:max-w-2xl">
         <form
-          className="flex max-h-[calc(100vh-2rem)] flex-col"
+          className="flex max-h-[90dvh] flex-col sm:max-h-[calc(100vh-2rem)]"
           onSubmit={(event) => {
             event.preventDefault()
             onSubmit(draft)
@@ -1086,11 +1086,11 @@ export function __Thing__FormDialog({
 
           <div className="border-t border-slate-200/70 px-6 py-4 dark:border-white/10">
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-9 min-w-24 rounded-xl px-4 text-sm">
                 Cancel
               </Button>
-              <Button type="submit" disabled={disabled} className="rounded-xl">
-                {submitting ? <Loader2 className="size-3.5 animate-spin" /> : null}
+              <Button type="submit" disabled={disabled} className="h-9 min-w-28 rounded-xl px-4 text-sm">
+                {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
                 {mode === "create" ? "Save __label__" : "Save changes"}
               </Button>
             </DialogFooter>

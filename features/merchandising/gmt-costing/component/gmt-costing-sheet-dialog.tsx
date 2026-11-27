@@ -44,7 +44,7 @@ export function GmtCostingSheetDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 p-0 sm:max-w-[min(1400px,calc(100vw-2rem))]">
+      <DialogContent className="flex max-h-[90dvh] sm:max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 p-0 sm:max-w-[min(1400px,calc(100vw-2rem))]">
         <DialogHeader className="border-b border-slate-200/70 p-4 dark:border-white/10">
           <DialogTitle>Costing sheet · {costing.costName}</DialogTitle>
           <DialogDescription>

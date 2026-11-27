@@ -39,7 +39,7 @@ export function UserSetupFormDialog({ open, mode, values, submitting, error, onV
 
   return (
     <Dialog open={open} onOpenChange={(next) => (!submitting ? onOpenChange(next) : undefined)}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[90dvh] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
         <form
           className="space-y-4"
           onSubmit={(event) => {

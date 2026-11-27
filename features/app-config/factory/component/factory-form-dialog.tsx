@@ -89,7 +89,7 @@ export function FactoryFormDialog({
         <Dialog open={open} onOpenChange={dismissible ? onOpenChange : () => undefined}>
             <DialogContent showCloseButton={dismissible} className="overflow-hidden p-0 sm:max-w-2xl">
                 <form
-                    className="flex max-h-[calc(100vh-2rem)] flex-col"
+                    className="flex max-h-[90dvh] sm:max-h-[calc(100vh-2rem)] flex-col"
                     onSubmit={(event) => {
                         event.preventDefault()
                         onSubmit(draft)

@@ -331,7 +331,7 @@ export function TnaImportDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-h-[calc(100vh-2rem)] overflow-hidden sm:max-w-6xl">
+        <DialogContent className="max-h-[90dvh] sm:max-h-[calc(100vh-2rem)] overflow-hidden sm:max-w-6xl">
           <DialogHeader>
             <DialogTitle>Import TNA Details</DialogTitle>
             <DialogDescription>Select a source TNA and import its detail rows into this form.</DialogDescription>

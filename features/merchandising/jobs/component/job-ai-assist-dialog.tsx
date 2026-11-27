@@ -52,7 +52,7 @@ export function JobAiAssistDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="grid max-h-[92dvh] max-w-[calc(100vw-1.5rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-lg p-0 sm:max-w-6xl">
+        <DialogContent className="grid max-h-[90dvh] sm:max-h-[92dvh] max-w-[calc(100vw-1.5rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-lg p-0 sm:max-w-6xl">
           <DialogHeader className="border-b border-slate-200/70 px-4 py-3 dark:border-white/10">
             <DialogTitle>AI Assist</DialogTitle>
             <DialogDescription>Upload a PDF or Excel file. AI Assist will extract PO number, style no, style name, color, size, and quantity rows.</DialogDescription>

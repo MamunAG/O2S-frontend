@@ -10,7 +10,7 @@ import type { LeaveRequestRecord } from "../../operations/operations.types"
 function text(value: unknown, fallback = "—") { return typeof value === "string" && value ? value : fallback }
 export function LeaveDetailsDialog({ open, loading, record, onOpenChange }: { open: boolean; loading: boolean; record: LeaveRequestRecord | null; onOpenChange: (open: boolean) => void }) {
   const employee = record?.employee ?? {}
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[90dvh] sm:max-h-[92vh] overflow-y-auto sm:max-w-4xl">
     <DialogHeader><DialogTitle>Leave application {record?.applicationNumber ?? "details"}</DialogTitle><DialogDescription>Application, day calculation, and immutable approval snapshot.</DialogDescription></DialogHeader>
     {loading ? <div className="flex min-h-48 items-center justify-center"><Loader2 className="size-5 animate-spin"/></div> : record ? <div className="space-y-5">
       <div className="grid gap-3 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-4">
