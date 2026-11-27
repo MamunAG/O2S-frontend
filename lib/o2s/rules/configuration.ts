@@ -304,6 +304,40 @@ export const configurationRules: O2sRule[] = [
     },
   },
 
+  // --- the factories a user may work with (IAM "User Factory Permission"; O2S is strict: none = no factory) ---
+  {
+    methods: ["GET"],
+    match: /^\/api\/v1\/user-factory-permission$/,
+    handle: async (_m, ctx) => {
+      const q = new URLSearchParams()
+      ctx.query.forEach((value, key) => {
+        if (key === "organizationId" || value === "" || value === "all") return
+        if (key === "page") q.set("pageNumber", value)
+        else if (key === "limit") q.set("pageSize", value)
+        else q.set(key, value)
+      })
+      const data = await ctx.call(companyPath(ctx, `/configuration/user-factory-permission/summary?${q}`))
+      return { data: pageOf(data, ctx.query) }
+    },
+  },
+  {
+    methods: ["GET"],
+    match: /^\/api\/v1\/user-factory-permission\/([^/]+)$/,
+    to: (m, ctx) => companyPath(ctx, `/configuration/user-factory-permission/user/${m[1]}`),
+  },
+  {
+    methods: ["PUT"],
+    match: /^\/api\/v1\/user-factory-permission\/([^/]+)$/,
+    handle: async (m, ctx) => {
+      const ids = (ctx.body as Rec)?.factoryIds
+      const data = await ctx.call(companyPath(ctx, `/configuration/user-factory-permission/user/${m[1]}`), {
+        method: "PUT",
+        body: { factoryIds: Array.isArray(ids) ? ids.map(String) : [] },
+      })
+      return { data, message: "Factory access saved" }
+    },
+  },
+
   // --- an organization's menu list (O2S: no list = every menu) ---
   {
     methods: ["GET"],

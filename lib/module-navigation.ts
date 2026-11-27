@@ -601,6 +601,12 @@ export const MODULE_NAVIGATION: ModuleNavigationItem[] = [
               "Grant view, create, update, and delete menu access to users.",
           },
           {
+            label: "User Factory Permission",
+            href: "/iam/access/user-factory-permissions",
+            permissionMenuName: "User Factory Permission",
+            description: "Choose which factories each user may work with.",
+          },
+          {
             label: "Organization access",
             href: "/iam/access/organization-requests",
             description:
