@@ -507,11 +507,6 @@ export function Active__Thing__Section({
   onEdit,
   onDelete,
 }: Active__Thing__SectionProps) {
-  const filterCount = useMemo(
-    () => Object.values(filters).filter((value) => value.trim()).length,
-    [filters],
-  )
-
   const pageSummary = useMemo(() => {
     if (!meta || meta.total === 0) return "No __labels__ found"
     const start = (meta.page - 1) * meta.limit + 1
@@ -596,8 +591,8 @@ export function Active__Thing__Section({
   )
 
   return (
+    // No title: the active section has no header bar (R15) — its badges and any dropdown are in the page header.
     <AppDataSection
-      title="__Labels__ table"
       data={data}
       columns={columns}
       loading={loading}
@@ -622,16 +617,6 @@ export function Active__Thing__Section({
         updated: "h-8 py-1",
         actions: "h-8 py-1",
       }}
-      headerBadges={
-        <>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            Page {meta?.totalPages ? meta.page : 0} of {meta?.totalPages ?? 0}
-          </Badge>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            {filterCount} active filter{filterCount === 1 ? "" : "s"}
-          </Badge>
-        </>
-      }
       filters={
         <AppDataFilterForm
           // FIELDS: one entry per filter — kind "text" for strings, "select" for isActive / enums,
@@ -810,11 +795,6 @@ export function Deleted__Thing__Section({
   onLimitChange,
   onOpenAction,
 }: Deleted__Thing__SectionProps) {
-  const filterCount = useMemo(
-    () => Object.values(filters).filter((value) => value.trim()).length,
-    [filters],
-  )
-
   const pageSummary = useMemo(() => {
     if (!meta || meta.total === 0) return "No deleted __labels__ found"
     const start = (meta.page - 1) * meta.limit + 1
@@ -893,14 +873,9 @@ export function Deleted__Thing__Section({
       emptyState={emptyState}
       mobileSkeletonClassName="h-28 rounded-2xl"
       headerBadges={
-        <>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            {meta?.total ?? data.length} deleted
-          </Badge>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            {filterCount} active filter{filterCount === 1 ? "" : "s"}
-          </Badge>
-        </>
+        <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
+          {meta?.total ?? data.length} deleted
+        </Badge>
       }
       filters={
         <AppDataFilterForm
@@ -1602,7 +1577,8 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
   }
 
   // Shared header: eyebrow, title, description, badges, and the Refresh / New buttons
-  // (AppRefreshButton / AppAddNewButton inside ModulePageHeader).
+  // (AppRefreshButton / AppAddNewButton inside ModulePageHeader). A dropdown or bulk action for the table goes in
+  // `actions` (R15), never in the active section.
   const header = (
     <ModulePageHeader
       eyebrow="__EYEBROW__"

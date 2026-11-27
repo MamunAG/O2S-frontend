@@ -353,7 +353,7 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
     <ModulePageHeader
       eyebrow="App configuration · Data"
       title="Exchange Rates"
-      description="Daily rates between every two currencies, shared by every company: 1 row currency × rate = the column currency. Click a rate to edit it; Rerun latest fetches today's rates again."
+      description="Daily rates between every two currencies, shared by every company."
       badges={
         error
           ? []
@@ -382,12 +382,13 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <ScrollArea className="h-full">
-        <div className="space-y-4 p-2 sm:p-3 lg:p-4">
+        {/* Inline-size containment: the ScrollArea content grows to its widest child, so without it the wide currency
+            grid (or a long one-line text) widens the page past a phone's screen; with it the grid scrolls inside its
+            card and the header stays in view. */}
+        <div className="min-w-0 space-y-4 p-2 [contain:inline-size] sm:p-3 lg:p-4">
           {header}
 
-          {/* Inline-size containment: the wide currency grid scrolls inside its card instead of widening the page
-              (the ScrollArea content grows to its widest child). */}
-          <div className="min-w-0 [contain:inline-size]">
+          <div className="min-w-0">
             <ActiveExchangeRateSection
               data={rows}
               currencies={currencies}
