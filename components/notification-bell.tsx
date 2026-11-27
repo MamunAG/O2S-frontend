@@ -270,7 +270,7 @@ export function NotificationBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-11 z-50 w-[min(22rem,calc(100vw-1rem))] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/15 dark:border-white/10 dark:bg-slate-950 dark:shadow-black/40">
+        <div className="fixed inset-x-3 top-[3.75rem] z-50 overflow-hidden sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-[22rem] rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/15 dark:border-white/10 dark:bg-slate-950 dark:shadow-black/40">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-white/10">
             <div>
               <p className="text-sm font-bold text-slate-950 dark:text-white">Notifications</p>
@@ -288,7 +288,7 @@ export function NotificationBell() {
             </button>
           </div>
 
-          <div className="max-h-[28rem] overflow-y-auto p-2">
+          <div className="max-h-[min(28rem,calc(100dvh-11rem))] overflow-y-auto p-2">
             {pushState !== "unsupported" && pushState !== "granted" && isFirebaseMessagingConfigured() ? <div className="mb-2 rounded-2xl border bg-slate-50 p-3 dark:bg-white/5"><p className="text-xs font-semibold">Browser notifications</p><p className="mt-1 text-xs text-slate-500">Enable push alerts for leave decisions and approvals.</p><button type="button" className="mt-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900" disabled={enablingPush || pushState === "denied"} onClick={() => void enablePushNotifications()}>{pushState === "denied" ? "Blocked in browser settings" : enablingPush ? "Enabling…" : "Enable notifications"}</button></div> : null}
             {loading ? (
               <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm text-slate-500 dark:text-slate-400">
