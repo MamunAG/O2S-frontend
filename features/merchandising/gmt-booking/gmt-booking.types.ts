@@ -1,4 +1,4 @@
-// GMT Booking, as O2S's /{companyId}/merchandising/gmt-booking serves it (GmtBookingDto). Names are the
+// GMT Booking, as O2S's /{organizationId}/merchandising/gmt-booking serves it (GmtBookingDto). Names are the
 // API's verbatim. The rows are never typed in: they come whole from the budget (refresh-from-budget) or the
 // saved booking. Every row also has a `clientId`, the screen's row identity, dropped before a save.
 

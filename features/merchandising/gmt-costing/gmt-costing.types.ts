@@ -1,4 +1,4 @@
-// GMT Costing, as O2S's /{companyId}/merchandising/gmt-costing serves it (GmtCostingDto and its children).
+// GMT Costing, as O2S's /{organizationId}/merchandising/gmt-costing serves it (GmtCostingDto and its children).
 // Property names are the API's, verbatim (ClickERP's: lstDetails, FabricCost, lastYarnDtls,
 // totalFaricPricePerPcsGmt, ...). Ids are the API's GUID strings ("" for a new row, until it is saved). Every list row also carries a `clientId`, the screen's own
 // row identity; it is dropped before a save.

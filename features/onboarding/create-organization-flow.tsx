@@ -6,7 +6,7 @@ import { FactoryQuickEntryDialog } from "@/features/app-config/factory/factory-q
 import { OrganizationEntryDialog } from "@/features/organization/organization-entry-dialog"
 import type { OrganizationRecord } from "@/features/organization/organization.types"
 import { writeSelectedFactoryId } from "@/lib/factory-selection"
-import { writeSelectedOrganizationId } from "@/lib/organization-selection"
+import { switchOrganization } from "@/lib/organization-selection"
 
 type CreateOrganizationFlowProps = {
   open: boolean
@@ -39,8 +39,12 @@ export function CreateOrganizationFlow({ open, onCancel }: CreateOrganizationFlo
         }}
         onSaved={(organization) => {
           savedRef.current = true
-          writeSelectedOrganizationId(organization.id)
-          setCreated(organization)
+          // Work in the new organization (its token) before its first factory is added there.
+          switchOrganization(organization.id)
+            .catch(() => {
+              // The organization exists; the factory step below then reports the problem itself.
+            })
+            .finally(() => setCreated(organization))
         }}
       />
       {created ? (

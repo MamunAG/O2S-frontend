@@ -1,6 +1,6 @@
 "use client"
 
-// GMT Budget list: one row per PO + style of the company's jobs (GET gmt-budget/po-style-list), DONE when it
+// GMT Budget list: one row per PO + style of the organization's jobs (GET gmt-budget/po-style-list), DONE when it
 // has a budget, NOT DONE when it has none. Ported from ClickERP's gmt-budget.index; the look is this app's.
 
 import { useCallback, useEffect, useMemo, useState } from "react"

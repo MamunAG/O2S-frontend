@@ -3,7 +3,7 @@
 // The fabric costing of one budget row (desktop frmImportFabricCosting_Budget): the costing's figures stay
 // read-only beside their budgeted copies (`...Budget`, the processes' `...Buget`), which are typed here.
 // Always forward wastage, as the desktop budget. Load from another row of this budget, or from any GMT
-// costing of the company (its figures become both the costing and the budgeted values). Set writes it
+// costing of the organization (its figures become both the costing and the budgeted values). Set writes it
 // onto the row, whose budgeted item price then follows the budgeted fabric cost.
 
 import { useEffect, useMemo, useState } from "react"

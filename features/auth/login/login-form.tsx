@@ -79,9 +79,8 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
           window.localStorage.setItem("access_token", accessToken)
         }
 
-        if (refreshToken) {
-          window.localStorage.setItem("refresh_token", refreshToken)
-        }
+        // The refresh token is an HttpOnly cookie now (lib/o2s); an old stored one is dropped.
+        window.localStorage.removeItem("refresh_token")
 
         if (payload.data?.user) {
           window.localStorage.setItem("auth_user", JSON.stringify(payload.data.user))

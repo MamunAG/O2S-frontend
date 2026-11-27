@@ -353,7 +353,7 @@ export function ExchangeRateWorkspace({ apiUrl }: { apiUrl: string }) {
     <ModulePageHeader
       eyebrow="App configuration · Data"
       title="Exchange Rates"
-      description="Daily rates between every two currencies, shared by every company."
+      description="Daily rates between every two currencies, shared by every organization."
       badges={
         error
           ? []

@@ -1,7 +1,7 @@
 // Step 3: Merchandising — the masters (buyer, color, size, embellishment, fabric process, GMT cost scope,
 // TNA task), style, job (with its PO tools and AI Assist), order placement, fabric costing and TNA.
 
-import { companyPath, isRecord, type O2sContext, type O2sRule } from "../adapter"
+import { organizationPath, isRecord, type O2sContext, type O2sRule } from "../adapter"
 import { crudListHandler, crudRules } from "../crud"
 
 type Rec = Record<string, unknown>
@@ -187,7 +187,7 @@ export const merchandisingRules: O2sRule[] = [
           const items = list(page.items)
           if (items.length === 0 || items.length > 25) return result
           const full = await Promise.all(
-            items.map((job) => ctx.call(companyPath(ctx, `${MERCH}/job/${job.id}`)).then((r) => jobFromO2s(r as Rec)).catch(() => job)),
+            items.map((job) => ctx.call(organizationPath(ctx, `${MERCH}/job/${job.id}`)).then((r) => jobFromO2s(r as Rec)).catch(() => job)),
           )
           return { data: { ...page, items: items.map((job, i) => ({ ...job, jobDetails: (full[i] as Rec).jobDetails ?? job.jobDetails })) } }
         },
@@ -195,18 +195,18 @@ export const merchandisingRules: O2sRule[] = [
       {
         methods: ["GET"],
         match: /^\/api\/v1\/job\/next-number$/,
-        to: (_m, ctx) => companyPath(ctx, `${MERCH}/job/next-document-number`),
+        to: (_m, ctx) => organizationPath(ctx, `${MERCH}/job/next-document-number`),
         response: (data) => ({ jobNo: (data as Rec).DocumentNumber, jobSerial: (data as Rec).Serial }),
       },
       {
         methods: ["GET"],
         match: /^\/api\/v1\/job\/numbers-by-buyer$/,
-        to: (_m, ctx) => companyPath(ctx, `${MERCH}/job/numbers-by-buyer`),
+        to: (_m, ctx) => organizationPath(ctx, `${MERCH}/job/numbers-by-buyer`),
       },
       {
         methods: ["GET"],
         match: /^\/api\/v1\/job\/po-summary$/,
-        to: (_m, ctx) => companyPath(ctx, `${MERCH}/job/po-summary`),
+        to: (_m, ctx) => organizationPath(ctx, `${MERCH}/job/po-summary`),
         query: (q) => {
           const pono = q.get("pono")
           q.delete("pono")
@@ -227,13 +227,13 @@ export const merchandisingRules: O2sRule[] = [
       {
         methods: ["GET"],
         match: /^\/api\/v1\/job\/po-details\/template\/upload$/,
-        to: (_m, ctx) => companyPath(ctx, `${MERCH}/job/po-details/template/upload`),
+        to: (_m, ctx) => organizationPath(ctx, `${MERCH}/job/po-details/template/upload`),
         file: true,
       },
       {
         methods: ["POST"],
         match: /^\/api\/v1\/job\/po-details\/upload$/,
-        to: (_m, ctx) => companyPath(ctx, `${MERCH}/job/po-details/upload`),
+        to: (_m, ctx) => organizationPath(ctx, `${MERCH}/job/po-details/upload`),
         response: (data) => {
           const d = data as Rec
           return { ...d, rows: list(d.rows).map(uploadRow) }
@@ -242,7 +242,7 @@ export const merchandisingRules: O2sRule[] = [
       {
         methods: ["POST"],
         match: /^\/api\/v1\/job\/ai-assist(\/resolve-row)?$/,
-        to: (m, ctx) => companyPath(ctx, `${MERCH}/job/ai-assist${m[1] ?? ""}`),
+        to: (m, ctx) => organizationPath(ctx, `${MERCH}/job/ai-assist${m[1] ?? ""}`),
       },
     ],
   }),
@@ -285,19 +285,19 @@ export const merchandisingRules: O2sRule[] = [
       {
         methods: ["GET"],
         match: /^\/api\/v1\/tna\/report$/,
-        to: (_m, ctx) => companyPath(ctx, `${MERCH}/tna/report`),
+        to: (_m, ctx) => organizationPath(ctx, `${MERCH}/tna/report`),
         response: (data) => list(data).map((r) => tnaFromO2s(r)),
       },
       {
         methods: ["GET"],
         match: /^\/api\/v1\/tna\/report\/pdf$/,
-        to: (_m, ctx) => companyPath(ctx, `${MERCH}/tna/report/pdf`),
+        to: (_m, ctx) => organizationPath(ctx, `${MERCH}/tna/report/pdf`),
         file: true,
       },
       {
         methods: ["GET"],
         match: /^\/api\/v1\/tna\/([^/]+)\/details\/([^/]+)\/revisions$/,
-        to: (m, ctx) => companyPath(ctx, `${MERCH}/tna/${m[1]}/details/${m[2]}/revisions`),
+        to: (m, ctx) => organizationPath(ctx, `${MERCH}/tna/${m[1]}/details/${m[2]}/revisions`),
       },
     ],
   }),

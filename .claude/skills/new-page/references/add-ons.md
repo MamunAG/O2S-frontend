@@ -186,7 +186,7 @@ needs the backend routes (R4). **Every template upload follows the rules below**
 
 The frontend hides nothing it can't check, but the **backend is the authority** for every row of this table: a button
 the page shows is a convenience, never the check. The page's own Create does **not** allow saving an upload, and the
-upload menu's Create allows nothing else: they are granted separately. As with every menu, a company admin (and a user
+upload menu's Create allows nothing else: they are granted separately. As with every menu, an organization admin (and a user
 whose menu checks are off) has it without a grant.
 
 **The upload menu** is a real menu: a `public const string uploadMenuName = "<Page title> Upload";` on the backend
@@ -196,7 +196,7 @@ checks with `fetchCurrentMenuPermission({ menuName: "<Page title> Upload" })`. I
 
 **U2 — Two steps, two routes; the save never trusts step 1.**
 - Step 1 `POST .../upload/verify` (multipart `file`) reads and checks every row against the page's rules and the
-  company's data and **saves nothing**. Valid → 200 `{ valid: true, rowCount, rows }` (`rows` = a preview the page may
+  organization's data and **saves nothing**. Valid → 200 `{ valid: true, rowCount, rows }` (`rows` = a preview the page may
   show). Invalid → **400** whose `Data` is the **upload report** (U3) and whose `ErrorMessage` is one sentence.
 - Step 2 `POST .../upload` (multipart `file`, the same file) is refused first without Create on the upload menu (U1),
   then runs step 1's check again on the server, then saves every row in **one** `SaveChangesAsync` (all or nothing).
@@ -227,12 +227,12 @@ rows are valid." above it.
 ```jsonc
 {
   "rowCount": 120,
-  "missing": [                       // records the file names that the company does not have (quick-addable)
+  "missing": [                       // records the file names that the organization does not have (quick-addable)
     {
       "kind": "color",               // stable key
       "label": "Color",              // what the dialog shows
       "menuName": "Color",           // the O2S menuName of the entity's screen
-      "canCreate": true,             // the caller's grants on that menu, in this company
+      "canCreate": true,             // the caller's grants on that menu, in this organization
       "canUpdate": false,
       "items": [
         { "value": "Navy", "reason": "missing", "rows": [3, 7], "existingId": null, "fields": { } },
@@ -289,9 +289,9 @@ frontend.
 ...crudRules("__resource__", "__o2sPath__", {
   label: "This __label__",
   extra: [
-    { methods: ["GET"], match: /^\/api\/v1\/__resource__\/template\/upload$/, to: (_m, ctx) => companyPath(ctx, "__o2sPath__/upload/template"), file: true },
-    { methods: ["POST"], match: /^\/api\/v1\/__resource__\/upload\/verify$/, to: (_m, ctx) => companyPath(ctx, "__o2sPath__/upload/verify") },
-    { methods: ["POST"], match: /^\/api\/v1\/__resource__\/upload$/, to: (_m, ctx) => companyPath(ctx, "__o2sPath__/upload") },
+    { methods: ["GET"], match: /^\/api\/v1\/__resource__\/template\/upload$/, to: (_m, ctx) => organizationPath(ctx, "__o2sPath__/upload/template"), file: true },
+    { methods: ["POST"], match: /^\/api\/v1\/__resource__\/upload\/verify$/, to: (_m, ctx) => organizationPath(ctx, "__o2sPath__/upload/verify") },
+    { methods: ["POST"], match: /^\/api\/v1\/__resource__\/upload$/, to: (_m, ctx) => organizationPath(ctx, "__o2sPath__/upload") },
   ],
 }),
 ```

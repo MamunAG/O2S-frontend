@@ -47,11 +47,11 @@ export const MODULE_NAVIGATION: ModuleNavigationItem[] = [
           // {
           //   label: "General settings",
           //   href: "/app-config/core/general",
-          //   description: "Company name, locale, and default system rules.",
+          //   description: "Organization name, locale, and default system rules.",
           //   children: [
           //     {
-          //       label: "Company profile",
-          //       href: "/app-config/core/general/company-profile",
+          //       label: "Organization profile",
+          //       href: "/app-config/core/general/organization-profile",
           //     },
           //     {
           //       label: "Locale defaults",

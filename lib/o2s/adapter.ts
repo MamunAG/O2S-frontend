@@ -4,7 +4,7 @@
 // code-crafter's envelope `{ success, message, data }`. Instead of rewriting each service, this module wraps
 // window.fetch once (lib/o2s/index.ts, mounted by components/o2s-api-bridge.tsx) and, for requests to the API:
 //   - finds the rule for the code-crafter path (lib/o2s/rules/*) and calls the O2S route instead, with the
-//     organization selected now as the route's {companyId} (O2S has no x-organization-id header; a page that
+//     organization selected now as the route's {organizationId} (O2S has no x-organization-id header; a page that
 //     sends a different one, i.e. stale state from before a switch, is refused with a 409);
 //   - maps request bodies and query strings (page/limit -> pageNumber/pageSize, "" ids -> null);
 //   - turns O2S's `{ IsError, ErrorMessage, Data }` (or a bare 201 body) into `{ success, message, data }`,
@@ -22,8 +22,8 @@ import { readSelectedOrganizationId } from "@/lib/organization-selection"
 export const ORGANIZATION_CHANGED_MESSAGE = "The selected organization changed. Close this form and try again."
 
 export type O2sContext = {
-  /** The selected organization (O2S company id), "" when none is selected. */
-  companyId: string
+  /** The selected organization (O2S organization id), "" when none is selected. */
+  organizationId: string
   method: string
   /** The code-crafter URL the app asked for. */
   url: URL
@@ -172,7 +172,7 @@ const SINGULAR_NAVS: Record<string, string> = {
   buyers: "buyer", currencies: "currency", factories: "factory", countries: "country", units: "unit",
   materialGroups: "materialGroup", sizes: "size", colors: "color", fabrics: "fabric", yarns: "yarn",
   processes: "process", gmtCostScopes: "gmtCostScope", embellishments: "embellishment", tasks: "task",
-  jobs: "job", styles: "style", companies: "organization", designations: "designation", departments: "department",
+  jobs: "job", styles: "style", organizations: "organization", designations: "designation", departments: "department",
   employmentTypes: "employmentType", grades: "grade", payGroups: "payGroup", workLocations: "workLocation",
   employees: "employee", leaveTypes: "leaveType", shifts: "shift",
 }
@@ -266,22 +266,34 @@ function readUserId() {
   }
 }
 
+// The routes that issue or end a session. The web app calls them through its own origin (/o2s-api, which
+// next.config.mjs forwards to the API) and asks for the refresh token as an HttpOnly cookie: the cookie is then
+// first-party (SameSite=Strict) and JavaScript never sees the refresh token.
+const SESSION_ROUTE = /^\/api\/v1\/account\/(login|refresh|logout|logout-all|change-password|google\/mobile|apple\/mobile)(\?|$)/
+export const REFRESH_TRANSPORT_HEADER = "x-refresh-transport"
+
+function sessionBase() {
+  return typeof window !== "undefined" && apiBase() ? `${window.location.origin}${API_PROXY_PATH}` : sendBase()
+}
+
 let refreshing: Promise<boolean> | null = null
 
 async function refreshAccessToken(original: FetchFn): Promise<boolean> {
-  const refreshToken = window.localStorage.getItem("refresh_token")
-  if (!refreshToken) return false
   refreshing ??= (async () => {
     try {
-      const response = await original(`${sendBase()}/api/v1/account/refresh`, {
+      // The cookie carries the refresh token. A token a session stored before the cookie existed is sent once more
+      // (the answer moves it into the cookie) and then dropped from localStorage.
+      const legacy = window.localStorage.getItem("refresh_token")
+      const response = await original(`${sessionBase()}/api/v1/account/refresh`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ refreshToken }),
+        headers: { "Content-Type": "application/json", Accept: "application/json", [REFRESH_TRANSPORT_HEADER]: "cookie" },
+        body: JSON.stringify(legacy ? { refreshToken: legacy } : {}),
+        credentials: "same-origin",
       })
       const { ok, data } = await readO2s(response)
       if (!ok || !isRecord(data) || typeof data.token !== "string") return false
       window.localStorage.setItem("access_token", data.token)
-      if (typeof data.refreshToken === "string") window.localStorage.setItem("refresh_token", data.refreshToken)
+      window.localStorage.removeItem("refresh_token")
       return true
     } catch {
       return false
@@ -303,20 +315,36 @@ async function sendToO2s(original: FetchFn, path: string, init: RequestInit, all
   if (menuName) headers.set("x-menu-name", menuName)
   const token = window.localStorage.getItem("access_token")
   if (headers.has("Authorization") && token) headers.set("Authorization", `Bearer ${token}`)
+  const isSessionRoute = SESSION_ROUTE.test(path)
+  if (isSessionRoute) headers.set(REFRESH_TRANSPORT_HEADER, "cookie")
   let response: Response
   try {
-    response = await original(`${sendBase()}${path}`, { ...init, headers })
+    response = await original(`${isSessionRoute ? sessionBase() : sendBase()}${path}`, {
+      ...init,
+      headers,
+      ...(isSessionRoute ? { credentials: "same-origin" as const } : {}),
+    })
   } catch (error) {
     // No answer at all (offline, DNS, or IIS's own error page without CORS headers): fetch throws a TypeError.
     if (error instanceof TypeError) throw new O2sError(OFFLINE_MESSAGE, 503)
     throw error
   }
   if (response.status === 403 && headers.has("Authorization")) {
+    const body = (await response.clone().json().catch(() => null)) as {
+      Data?: { mustChangePassword?: boolean; organizationChanged?: boolean }
+    } | null
     // Logged in with a one-time password: every route but change-password says so until a new one is set.
-    const body = (await response.clone().json().catch(() => null)) as { Data?: { mustChangePassword?: boolean } } | null
     if (body?.Data?.mustChangePassword) {
       markPasswordChangeRequired(true)
       if (window.location.pathname !== SET_PASSWORD_PATH) window.location.assign(SET_PASSWORD_PATH)
+    }
+    // The token's organization is not one the user may work in any more (removed, deactivated), or the token
+    // predates organizations in tokens: a refresh lets the backend choose again, and the page follows it.
+    if (body?.Data?.organizationChanged && allowRefresh) {
+      const before = readSelectedOrganizationId()
+      if ((await refreshAccessToken(original)) && readSelectedOrganizationId() !== before) {
+        window.location.reload()
+      }
     }
   }
   if (response.status === 401 && headers.has("Authorization")) {
@@ -338,7 +366,7 @@ function serializeBody(body: unknown, headers: Headers): BodyInit | undefined {
 function defaultQuery(q: URLSearchParams) {
   const mapped = new URLSearchParams()
   q.forEach((value, key) => {
-    if (key === "organizationId") return // the route carries the company
+    if (key === "organizationId") return // the route carries the organization
     if (key === "page") mapped.set("pageNumber", value)
     else if (key === "limit") mapped.set("pageSize", value)
     else mapped.append(key, value)
@@ -371,15 +399,15 @@ export function createO2sFetch(original: FetchFn, rules: O2sRule[]): FetchFn {
 
     // Every call goes to the organization selected now (the switcher in the top bar), never to the one a page
     // remembers: a page that still sends an older id (x-organization-id, from state kept since before a switch) is
-    // refused, so a save cannot land in another company. Screens that act on a company the user picks (Company
+    // refused, so a save cannot land in another organization. Screens that act on an organization the user picks (Organization
     // Menus, User Menu Permission, memberships) name it in the path / body / query of their own rule instead.
-    const companyId = readSelectedOrganizationId()
+    const organizationId = readSelectedOrganizationId()
     const requested = (headers.get("x-organization-id") ?? "").trim()
-    if (requested && requested !== "null" && requested !== "undefined" && companyId && requested !== companyId) {
+    if (requested && requested !== "null" && requested !== "undefined" && organizationId && requested !== organizationId) {
       return codeCrafterResponse(409, false, ORGANIZATION_CHANGED_MESSAGE, null)
     }
     const ctx: O2sContext = {
-      companyId,
+      organizationId,
       method,
       url,
       query: url.searchParams,
@@ -456,10 +484,10 @@ export function createO2sFetch(original: FetchFn, rules: O2sRule[]): FetchFn {
 
 // ---------- helpers for the rules ----------
 
-/** The route prefix for the selected company: /api/v1/{companyId}. */
-export function companyPath(ctx: O2sContext, rest: string) {
-  if (!ctx.companyId) throw new O2sError("Select an organization before continuing.", 400)
-  return `/api/v1/${encodeURIComponent(ctx.companyId)}${rest}`
+/** The route prefix for the selected organization: /api/v1/{organizationId}. */
+export function organizationPath(ctx: O2sContext, rest: string) {
+  if (!ctx.organizationId) throw new O2sError("Select an organization before continuing.", 400)
+  return `/api/v1/${encodeURIComponent(ctx.organizationId)}${rest}`
 }
 
 /** Copies `from` -> `to` keys of a record (others unchanged); missing keys are skipped. */

@@ -21,7 +21,7 @@ const empty = {
   nameBn: "",
   isActive: true,
   settings: {
-    targetType: "COMPANY",
+    targetType: "ORGANIZATION",
     targetId: "",
     workflowId: "",
     effectiveFrom: new Date().toISOString().slice(0, 10),
@@ -67,7 +67,7 @@ export function WorkflowAssignmentWorkspace({ apiUrl }: { apiUrl: string }) {
       <HrPageHeader
         eyebrow="HR & Payroll · Leave · Configuration"
         title="Workflow Assignments"
-        description="Assign approval workflows by company, factory, department, section, designation, or employee."
+        description="Assign approval workflows by organization, factory, department, section, designation, or employee."
         badges={[
           {
             label: `${crud.activeMeta?.total ?? crud.active.length} current`,

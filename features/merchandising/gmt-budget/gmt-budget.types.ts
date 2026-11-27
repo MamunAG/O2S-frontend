@@ -1,4 +1,4 @@
-// GMT Budget, as O2S's /{companyId}/merchandising/gmt-budget serves it (GmtBudgetDto and its children).
+// GMT Budget, as O2S's /{organizationId}/merchandising/gmt-budget serves it (GmtBudgetDto and its children).
 // Property names are the API's verbatim; most figures come in pairs, the costing's value and its budgeted
 // copy (`...Budget`; the fabric costing's processes spell it `...Buget`, as ClickERP's columns do). Ids are
 // GUID strings; every list row also has a `clientId` (the screen's row identity), dropped before a save.
@@ -228,7 +228,7 @@ export type GmtBudget = {
   updatedDate?: string | null
 }
 
-/** One row of GET /po-style-list: a PO + style of the company's jobs, with its budget if it has one. */
+/** One row of GET /po-style-list: a PO + style of the organization's jobs, with its budget if it has one. */
 export type PoStyleRow = {
   budgetId: string
   poId: string

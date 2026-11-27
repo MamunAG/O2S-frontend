@@ -26,10 +26,36 @@ export const AUTH_USER_AVATAR_COOKIE_NAME = "auth_user_avatar"
 export const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 
 export function clearStoredAuthSession() {
+  revokeServerSession()
   window.localStorage.removeItem("access_token")
   window.localStorage.removeItem("refresh_token")
   window.localStorage.removeItem("auth_user")
   window.localStorage.removeItem(MUST_CHANGE_PASSWORD_KEY)
+  // The organization is the access token's; this key held it before.
+  window.localStorage.removeItem("selected_organization_id")
+}
+
+/**
+ * Signing out also ends the session on the server: the refresh token lives in an HttpOnly cookie that only the
+ * API can revoke and clear (POST /account/logout through this site's /o2s-api proxy, as lib/o2s sends it). Fire
+ * and forget, kept alive through a page change; a token still in localStorage from before the cookie goes too.
+ */
+function revokeServerSession() {
+  if (typeof window === "undefined" || !process.env.NEXT_PUBLIC_API_URL) return
+  const legacy = window.localStorage.getItem("refresh_token")
+  try {
+    void window
+      .fetch(`${window.location.origin}/o2s-api/api/v1/account/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", "x-refresh-transport": "cookie" },
+        body: JSON.stringify(legacy ? { refreshToken: legacy } : {}),
+        credentials: "same-origin",
+        keepalive: true,
+      })
+      .catch(() => undefined)
+  } catch {
+    // no network: the token expires on its own
+  }
 }
 
 /**

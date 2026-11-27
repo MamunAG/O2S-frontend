@@ -21,7 +21,7 @@ import type { HrOption } from "../../../shared/hr.types"
 import { AppDatePicker } from "@/components/app-date-picker"
 
 const priorities: Record<string, number> = {
-  COMPANY: 6,
+  ORGANIZATION: 6,
   FACTORY: 5,
   DEPARTMENT: 4,
   SECTION: 3,
@@ -54,7 +54,7 @@ export function WorkflowAssignmentEntryForm({
 }: Props) {
   const updateSetting = (key: string, value: unknown) =>
     onChange({ ...values, settings: { ...values.settings, [key]: value } })
-  const target = String(values.settings.targetType ?? "COMPANY")
+  const target = String(values.settings.targetType ?? "ORGANIZATION")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -65,7 +65,7 @@ export function WorkflowAssignmentEntryForm({
           </DialogTitle>
           <DialogDescription>
             Employee assignments take precedence over designation, section, department, factory,
-            and company assignments.
+            and organization assignments.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -96,7 +96,7 @@ export function WorkflowAssignmentEntryForm({
                   settings: {
                     ...values.settings,
                     targetType: value,
-                    targetId: value === "COMPANY" ? "" : values.settings.targetId,
+                    targetId: value === "ORGANIZATION" ? "" : values.settings.targetId,
                     priority: priorities[value],
                   },
                 })
@@ -106,12 +106,12 @@ export function WorkflowAssignmentEntryForm({
             />
           </div>
           <div>
-            <Label>Target ID {target !== "COMPANY" ? "*" : ""}</Label>
+            <Label>Target ID {target !== "ORGANIZATION" ? "*" : ""}</Label>
             <Input
-              disabled={target === "COMPANY"}
+              disabled={target === "ORGANIZATION"}
               value={String(values.settings.targetId ?? "")}
               onChange={(event) => updateSetting("targetId", event.target.value)}
-              placeholder={target === "COMPANY" ? "Company-wide" : `${target} UUID`}
+              placeholder={target === "ORGANIZATION" ? "Organization-wide" : `${target} UUID`}
             />
           </div>
           <div className="sm:col-span-2">

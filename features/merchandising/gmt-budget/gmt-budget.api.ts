@@ -1,4 +1,4 @@
-// O2S calls of the GMT Budget screen (/api/v1/{companyId}/merchandising/gmt-budget and the lookups it
+// O2S calls of the GMT Budget screen (/api/v1/{organizationId}/merchandising/gmt-budget and the lookups it
 // needs). The request helpers are the GMT costing screen's.
 
 import { request, selectOptions, type ApiContext, type LoadParams, type Page } from "../gmt-costing/gmt-costing.api"
@@ -18,7 +18,7 @@ export type PoStyleFilters = {
   toBudgetDate?: string
 }
 
-/** Every PO + style of the company's jobs, with its budget when it has one. */
+/** Every PO + style of the organization's jobs, with its budget when it has one. */
 export const fetchPoStyleList = (ctx: ApiContext, page: number, limit: number, filters: PoStyleFilters) =>
   request<Page<PoStyleRow>>(ctx, `${BUDGET}/po-style-list`, {
     query: { pageNumber: page, pageSize: limit, ...filters },
