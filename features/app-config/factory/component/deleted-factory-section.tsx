@@ -108,11 +108,6 @@ export function DeletedFactorySection({
   onLimitChange,
   onOpenAction,
 }: DeletedFactorySectionProps) {
-  const deletedFilterCount = useMemo(
-    () => Object.values(filters).filter((value) => value.trim()).length,
-    [filters],
-  )
-
   const deletedPageSummary = useMemo(() => {
     if (!meta || meta.total === 0) return "No deleted factories found"
     const start = (meta.page - 1) * meta.limit + 1
@@ -203,14 +198,9 @@ export function DeletedFactorySection({
       emptyState={emptyState}
       mobileSkeletonClassName="h-28 rounded-2xl"
       headerBadges={
-        <>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            {meta?.total ?? data.length} deleted
-          </Badge>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            {deletedFilterCount} active filter{deletedFilterCount === 1 ? "" : "s"}
-          </Badge>
-        </>
+        <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
+          {meta?.total ?? data.length} deleted
+        </Badge>
       }
       filters={
         <AppDataFilterForm

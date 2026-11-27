@@ -506,8 +506,6 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
     const activeTotal = meta?.total ?? factories.length
     const deletedTotal = deletedMeta?.total ?? deletedFactories.length
     const activeOnPage = factories.filter((factory) => factory.isActive !== false).length
-    // The table section has no header bar: its badges are in the page header.
-    const activeFilterCount = Object.values(activeFilters).filter((value) => value.trim()).length
 
     // Nothing has finished loading yet (also while redirecting to sign-in).
     if (!loaded) {
@@ -526,8 +524,6 @@ export function FactoryWorkspace({ apiUrl }: { apiUrl: string }) {
                           { label: `Total ${activeTotal}`, variant: "secondary" },
                           { label: `Active ${activeOnPage}` },
                           { label: `Deleted ${deletedTotal}` },
-                          { label: `Page ${meta?.totalPages ? meta.page : 0} of ${meta?.totalPages ?? 0}` },
-                          { label: `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}` },
                           ...(recentlyDeletedFactory ? [{ label: "Recently deleted", variant: "destructive" as const }] : []),
                       ]
             }

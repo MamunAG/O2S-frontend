@@ -252,8 +252,9 @@ it by using them as they are (R1).
 - **No `description` on `AppDataSection`** for the page summary: "Showing x–y of n" goes to `pageSummary` only,
   and the pager under the table already shows it. Pass a `description` only for a note the table can't show
   elsewhere; it's cut to one line too.
-- **Header badges** in `headerBadges` (the deleted section's "N deleted", "N active filters") are all
-  `w-fit rounded-full px-2.5 py-0.5 text-[11px]`. The active section has none (R15).
+- **Header badges**: the deleted section's only badge is "N deleted" (`w-fit rounded-full px-2.5 py-0.5 text-[11px]`).
+  No "Page X of Y" or "N active filters" badge anywhere — not in a section, not in the page header (the pager shows the
+  page; the filter row shows the filters). The active section has no header at all (R15).
 - **The workspace skeleton's header card** matches the compact header: `CardContent className="px-3 py-2 sm:px-4"`
   with a `h-6 w-56` title bar and a `h-4 max-w-md` description bar, not the old `p-6 sm:p-8` / `h-10` bars.
 - **Filter row lines up**: every filter control and the Reset button are `h-7`, and Reset's bottom edge is level
@@ -264,22 +265,22 @@ it by using them as they are (R1).
 **R14 — The deleted section is collapsible and starts collapsed.** Pass `collapsible` and `defaultCollapsed` to the
 deleted section's `AppDataSection`. Its header then shows a chevron button on the right (`ChevronDown`, rotates
 when open, `aria-expanded`); clicking anywhere on the header or the chevron opens / closes the filters and table.
-- The header (title, "N deleted" and "N active filters" badges) stays visible while collapsed, so the count is seen
+- The header (title and the "N deleted" badge) stays visible while collapsed, so the count is seen
   without opening it. Keep loading the deleted page as R2 says — don't skip the request while collapsed.
 - The open / closed state lives inside `AppDataSection` (`useState`), not in the workspace; no prop from the page
   controls it, and nothing opens it from an effect (R2).
 - `headerActions` clicks don't toggle the section (`AppDataSection` stops their propagation).
 - The active section is never collapsible.
 
-**R15 — The active table section has no header bar; its badges and dropdowns live in the page header.**
+**R15 — The active table section has no header bar; no Page / active-filter badges; its dropdowns live in the page header.**
 - Give the active section's `AppDataSection` **no `title`** (and no `headerBadges`, `headerActions`, `description` or
   `collapsible`): without a title it renders no header bar, so the card starts with the filter row.
-- Its badges go into `ModulePageHeader`'s `badges`, after Total / Active / Deleted: `Page X of Y` and
-  `N active filter(s)` (counted in the workspace from the active filters).
+- The page header's badges are Total / Active / Deleted (+ "Recently deleted"). The old table badges "Page X of Y" and
+  "N active filters" are **not** moved there: they are dropped (the pager and the filter row already show both).
 - Any dropdown or button that sat in the table header (a bulk-actions menu, "N selected" + Clear / Delete, Rerun,
   Export, …) goes into `ModulePageHeader`'s `actions` (shown between Refresh and New). Its state (e.g. the selected
   rows) moves up to the workspace, or the section gets it as a prop.
-- The deleted section keeps its header (title, "N deleted", "N active filters", chevron): R14 needs it to collapse.
+- The deleted section keeps its header (title, "N deleted", chevron): R14 needs it to collapse.
 - Row menus (the `…` per row) stay in the row.
 
 ## Applying the rules
@@ -303,7 +304,7 @@ Known state of the reference pages (update this list when you fix one):
 
 | Page | Open rule breaks |
 |---|---|
-| Factory (`features/app-config/factory/`) | None. Brought to R1–R15 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters — Code filter removed at the user's request, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`, deleted section collapsible and collapsed by default, active section without a header bar — its Page / active-filter badges in the page header, R15). |
+| Factory (`features/app-config/factory/`) | None. Brought to R1–R15 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters — Code filter removed at the user's request, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`, deleted section collapsible and collapsed by default, active section without a header bar and no "Page X of Y" / "N active filters" badges anywhere, R15). |
 | Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections), R14 (deleted section not collapsible), R15 (active section has a header bar) — not yet audited for the rest |
 | Exchange Rates (`features/app-config/exchange-rates/`) | R15: the "Saved rates" header bar (badges, the "1 row currency × rate" note, the selection Clear / Delete in `headerActions`) is not yet moved to the page header. Made phone-friendly on 2026-11-27 (the whole page container has inline-size containment, short header description, the table's `description` is only the "1 row currency × rate = the column currency" note, compact badges, `h-7` date filters). A matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
 | Other CRUD pages | not yet audited (R15 is new on 2026-11-27: every other page still has the active section's header bar) |

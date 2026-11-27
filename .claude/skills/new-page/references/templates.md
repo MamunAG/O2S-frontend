@@ -795,11 +795,6 @@ export function Deleted__Thing__Section({
   onLimitChange,
   onOpenAction,
 }: Deleted__Thing__SectionProps) {
-  const filterCount = useMemo(
-    () => Object.values(filters).filter((value) => value.trim()).length,
-    [filters],
-  )
-
   const pageSummary = useMemo(() => {
     if (!meta || meta.total === 0) return "No deleted __labels__ found"
     const start = (meta.page - 1) * meta.limit + 1
@@ -878,14 +873,9 @@ export function Deleted__Thing__Section({
       emptyState={emptyState}
       mobileSkeletonClassName="h-28 rounded-2xl"
       headerBadges={
-        <>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            {meta?.total ?? data.length} deleted
-          </Badge>
-          <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
-            {filterCount} active filter{filterCount === 1 ? "" : "s"}
-          </Badge>
-        </>
+        <Badge variant="outline" className="w-fit rounded-full px-2.5 py-0.5 text-[11px]">
+          {meta?.total ?? data.length} deleted
+        </Badge>
       }
       filters={
         <AppDataFilterForm
@@ -1580,8 +1570,6 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
   const activeTotal = meta?.total ?? __things__.length
   const deletedTotal = deletedMeta?.total ?? deleted__Things__.length
   const activeOnPage = __things__.filter((row) => row.isActive !== false).length
-  // The active table section has no header bar (R15): its badges are in the page header.
-  const activeFilterCount = Object.values(activeFilters).filter((value) => value.trim()).length
 
   // Nothing has finished loading yet (also while redirecting to sign-in).
   if (!loaded) {
@@ -1603,8 +1591,6 @@ export function __Thing__Workspace({ apiUrl }: { apiUrl: string }) {
               { label: `Total ${activeTotal}`, variant: "secondary" },
               { label: `Active ${activeOnPage}` },
               { label: `Deleted ${deletedTotal}` },
-              { label: `Page ${meta?.totalPages ? meta.page : 0} of ${meta?.totalPages ?? 0}` },
-              { label: `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}` },
               ...(recentlyDeleted ? [{ label: "Recently deleted", variant: "destructive" as const }] : []),
             ]
       }
