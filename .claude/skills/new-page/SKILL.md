@@ -256,6 +256,20 @@ it by using them as they are (R1).
   `w-fit rounded-full px-2.5 py-0.5 text-[11px]`.
 - **The workspace skeleton's header card** matches the compact header: `CardContent className="px-3 py-2 sm:px-4"`
   with a `h-6 w-56` title bar and a `h-4 max-w-md` description bar, not the old `p-6 sm:p-8` / `h-10` bars.
+- **Filter row lines up**: every filter control and the Reset button are `h-7`, and Reset's bottom edge is level
+  with the inputs' bottom edges. `AppDataFilterForm` makes its labels and text inputs `block` for this (an inline
+  `<input>` leaves descender space under it, which pushes Reset a few px lower). A `kind: "custom"` control
+  (`AppCombobox`, `AppDatePicker`) must also be block-level / flex and `h-7`; no wrapper that adds margin or height.
+
+**R14 — The deleted section is collapsible and starts collapsed.** Pass `collapsible` and `defaultCollapsed` to the
+deleted section's `AppDataSection`. Its header then shows a chevron button on the right (`ChevronDown`, rotates
+when open, `aria-expanded`); clicking anywhere on the header or the chevron opens / closes the filters and table.
+- The header (title, "N deleted" and "N active filters" badges) stays visible while collapsed, so the count is seen
+  without opening it. Keep loading the deleted page as R2 says — don't skip the request while collapsed.
+- The open / closed state lives inside `AppDataSection` (`useState`), not in the workspace; no prop from the page
+  controls it, and nothing opens it from an effect (R2).
+- `headerActions` clicks don't toggle the section (`AppDataSection` stops their propagation).
+- The active section is never collapsible.
 
 ## Applying the rules
 
@@ -278,8 +292,8 @@ Known state of the reference pages (update this list when you fix one):
 
 | Page | Open rule breaks |
 |---|---|
-| Factory (`features/app-config/factory/`) | None. Brought to R1–R14 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`). |
-| Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections) — not yet audited for the rest |
+| Factory (`features/app-config/factory/`) | None. Brought to R1–R14 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters — Code filter removed at the user's request, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`, deleted section collapsible and collapsed by default). |
+| Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections), R14 (deleted section not collapsible) — not yet audited for the rest |
 | Exchange Rates (`features/app-config/exchange-rates/`) | R13: the table's `description` repeats `pageSummary` (keep only its "1 row currency × rate = the column currency" note). Otherwise a matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
 | Other CRUD pages | not yet audited |
 
@@ -289,7 +303,7 @@ Known state of the reference pages (update this list when you fix one):
 2. Re-check R1–R14 against the finished files: this is the report in step 5 of "Applying the rules".
 3. If the dev server is running (`npm run dev`, port 3000) and the backend is up, open
    `http://localhost:3000<route>` and walk through: list loads → filter → create → edit → delete →
-   restore from the banner → delete → permanently delete from the deleted card.
+   restore from the banner → delete → expand the deleted card (collapsed at first, R14) → permanently delete from it.
    If you cannot run it, say so in your summary rather than claiming it works.
 
 ## Pitfalls

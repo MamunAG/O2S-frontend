@@ -874,6 +874,8 @@ export function Deleted__Thing__Section({
   return (
     <AppDataSection
       title="Deleted __labels__"
+      collapsible
+      defaultCollapsed
       data={data}
       columns={columns}
       loading={loading}
