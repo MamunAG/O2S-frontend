@@ -173,6 +173,10 @@ Search / Reset / New / Refresh `<Button>`s or mobile pagers. Live examples: Fact
   Don't pass `onCreate` / `createLabel` to `AppDataFilterForm` — the
   **New** button lives in `ModulePageHeader` only, so the active section takes no `onCreate` prop.
 - The workspace's `onFilterChange` sets the filters **and resets that list to page 1** in one handler.
+- **On mobile the filters start collapsed.** Below `sm`, `AppDataFilterForm` shows only a "Filters" bar with a
+  `ChevronDown` on the right (rotates when open, `aria-expanded`); tapping it shows the filter fields and Reset.
+  From `sm` up the bar is hidden and the filters always show. The open state lives inside `AppDataFilterForm`
+  (`useState`, starts closed); a page passes nothing for it and never wraps the filters in its own toggle.
 - A page that still passes `onSubmit` (a Search button) breaks R1a: it is fixed in the change that modifies it.
 
 **R2 — No setState in effects (`react-hooks/set-state-in-effect`).** One effect loads the active and the
