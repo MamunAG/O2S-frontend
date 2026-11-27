@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { OrganizationEntryDialog } from "@/features/organization/organization-entry-dialog"
 import { fetchCurrentUserOrganizations } from "@/features/organization/organization.service"
 import type { OrganizationRecord } from "@/features/organization/organization.types"
-import { readSelectedOrganizationId, writeSelectedOrganizationId } from "@/lib/organization-selection"
+import { readSelectedOrganizationId, switchOrganization } from "@/lib/organization-selection"
 import { cn } from "@/lib/utils"
 
 import { CreateOrganizationFlow } from "./create-organization-flow"
@@ -27,6 +27,8 @@ export function SwitchOrganizationDialog({ open, onOpenChange }: SwitchOrganizat
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<OrganizationRecord | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [switching, setSwitching] = useState(false)
+  const [switchError, setSwitchError] = useState("")
 
   const currentId = typeof window === "undefined" ? "" : readSelectedOrganizationId()
 
@@ -49,14 +51,22 @@ export function SwitchOrganizationDialog({ open, onOpenChange }: SwitchOrganizat
     }
   }, [open, reloadKey])
 
-  function apply() {
+  async function apply() {
     if (!chosenId || chosenId === currentId) {
       onOpenChange(false)
       return
     }
-    writeSelectedOrganizationId(chosenId)
-    // Every menu, screen and the factory list follow the organization.
-    window.location.reload()
+    setSwitching(true)
+    setSwitchError("")
+    try {
+      // The backend checks the choice, remembers it and answers a token for it.
+      await switchOrganization(chosenId)
+      // Every menu, screen and the factory list follow the organization.
+      window.location.reload()
+    } catch (caught) {
+      setSwitchError(caught instanceof Error ? caught.message : "Unable to switch organization right now.")
+      setSwitching(false)
+    }
   }
 
   const chosen = organizations?.find((organization) => organization.id === chosenId) ?? null
@@ -131,11 +141,16 @@ export function SwitchOrganizationDialog({ open, onOpenChange }: SwitchOrganizat
             </Button>
           </div>
 
+          {switchError ? (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-200">{switchError}</p>
+          ) : null}
+
           <DialogFooter>
             <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="button" className="rounded-xl" disabled={!chosenId} onClick={apply}>
+            <Button type="button" className="rounded-xl" disabled={!chosenId || switching} onClick={apply}>
+              {switching ? <Loader2 className="size-3.5 animate-spin" /> : null}
               {chosenId && chosenId !== currentId ? "Switch" : "Done"}
             </Button>
           </DialogFooter>

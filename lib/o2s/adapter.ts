@@ -330,11 +330,21 @@ async function sendToO2s(original: FetchFn, path: string, init: RequestInit, all
     throw error
   }
   if (response.status === 403 && headers.has("Authorization")) {
+    const body = (await response.clone().json().catch(() => null)) as {
+      Data?: { mustChangePassword?: boolean; organizationChanged?: boolean }
+    } | null
     // Logged in with a one-time password: every route but change-password says so until a new one is set.
-    const body = (await response.clone().json().catch(() => null)) as { Data?: { mustChangePassword?: boolean } } | null
     if (body?.Data?.mustChangePassword) {
       markPasswordChangeRequired(true)
       if (window.location.pathname !== SET_PASSWORD_PATH) window.location.assign(SET_PASSWORD_PATH)
+    }
+    // The token's organization is not one the user may work in any more (removed, deactivated), or the token
+    // predates organizations in tokens: a refresh lets the backend choose again, and the page follows it.
+    if (body?.Data?.organizationChanged && allowRefresh) {
+      const before = readSelectedOrganizationId()
+      if ((await refreshAccessToken(original)) && readSelectedOrganizationId() !== before) {
+        window.location.reload()
+      }
     }
   }
   if (response.status === 401 && headers.has("Authorization")) {

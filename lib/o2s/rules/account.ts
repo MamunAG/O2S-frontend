@@ -171,6 +171,17 @@ export const accountRules: O2sRule[] = [
       return { access_token: d.token, refresh_token: d.refreshToken, user: toCodeCrafterUser(d), must_change_password: d.mustChangePassword === true }
     },
   },
+  // The organization to work in: the backend saves the choice and answers an access token that carries it.
+  {
+    methods: ["POST"],
+    match: /^\/api\/v1\/auth\/switch-organization$/,
+    to: () => "/api/v1/account/switch-organization",
+    request: (body) => ({ companyId: (body as Rec).organizationId }),
+    response: (data) => {
+      const d = data as Rec
+      return { access_token: d.token, organization_id: d.organizationId ?? null }
+    },
+  },
   {
     methods: ["POST"],
     match: /^\/api\/v1\/auth\/register$/,

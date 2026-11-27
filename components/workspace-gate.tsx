@@ -13,7 +13,7 @@ import { SwitchOrganizationDialog } from "@/features/onboarding/switch-organizat
 import { fetchCurrentUserOrganizations } from "@/features/organization/organization.service"
 import { isPasswordChangeRequired, parseStoredAuthUser, SET_PASSWORD_PATH } from "@/lib/auth-session"
 import { loadMyFactories } from "@/lib/my-factories"
-import { readSelectedOrganizationId, writeSelectedOrganizationId } from "@/lib/organization-selection"
+import { organizationIdOfToken, readSelectedOrganizationId, switchOrganization } from "@/lib/organization-selection"
 
 /** Pages an account may still open without an organization or a factory (the request form among them). */
 const OPEN_PAGES = ["/organization-access-request", "/profile", "/account", "/notifications"]
@@ -24,7 +24,8 @@ type NoFactory = { organizationId: string; organizationName: string; isAdmin: bo
 type FactoryDialog = "create" | "request" | "switch" | null
 
 /**
- * Keeps a valid organization selected (the one remembered, else the default, else the first) and holds the user
+ * Makes sure the token carries an organization (the backend's choice: the last switched to, else the default, else
+ * the first; reloads when another tab switches) and holds the user
  * at two steps until they are done: an account with no organization chooses to create one or to request access,
  * and a user with no factory in the selected organization creates one or requests factory permission. Mounted once,
  * in the top bar; it draws nothing else (the organization is switched from the factory menu).
@@ -57,10 +58,14 @@ export function WorkspaceGate() {
       setNoOrganization(organizations.length === 0)
       if (organizations.length === 0) return
 
-      let organization = organizations.find((item) => item.id === readSelectedOrganizationId())
+      // The token says which organization the user works in (the backend picks it). A token without one (signed
+      // in before joining, or before organizations were in tokens) gets one now: the default, else the first.
+      const organization = organizations.find((item) => item.id === readSelectedOrganizationId())
       if (!organization) {
-        organization = organizations.find((item) => item.isDefault) ?? organizations[0]
-        writeSelectedOrganizationId(organization.id)
+        const fallback = organizations.find((item) => item.isDefault) ?? organizations[0]
+        await switchOrganization(fallback.id)
+        if (!cancelled) window.location.reload()
+        return
       }
 
       // null = could not be read (offline, ...): nothing is blocked on a guess.
@@ -80,8 +85,16 @@ export function WorkspaceGate() {
       // offline or signed out: the pages show their own errors
     })
 
+    // Another tab switched organization (the token is shared): this page's data is the old organization's.
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== "access_token" || !event.newValue) return
+      if (organizationIdOfToken(event.newValue) !== organizationIdOfToken(event.oldValue)) window.location.reload()
+    }
+    window.addEventListener("storage", handleStorage)
+
     return () => {
       cancelled = true
+      window.removeEventListener("storage", handleStorage)
     }
   }, [])
 

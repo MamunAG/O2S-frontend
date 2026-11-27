@@ -31,6 +31,8 @@ export function clearStoredAuthSession() {
   window.localStorage.removeItem("refresh_token")
   window.localStorage.removeItem("auth_user")
   window.localStorage.removeItem(MUST_CHANGE_PASSWORD_KEY)
+  // The organization is the access token's; this key held it before.
+  window.localStorage.removeItem("selected_organization_id")
 }
 
 /**
