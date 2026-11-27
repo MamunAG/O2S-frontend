@@ -18,7 +18,7 @@ description: >
 
 A new page is **1 route file + 6 feature files**, and **2–3 edits** to shared files.
 
-**The rules in "Rules (R1–R10)" below are mandatory for every page — new pages are written to them, and an
+**The rules in "Rules (R1–R11)" below are mandatory for every page — new pages are written to them, and an
 existing page is brought into line with them whenever it is touched** (see "Existing pages").
 
 The live reference is the Factory Setup page — when this document and that code disagree, read both and ask:
@@ -138,7 +138,7 @@ upload, Excel upload) are in **`references/add-ons.md`**. Write each file from i
     to `MENU_NAME_TO_O2S` in `lib/o2s/menus.ts`. Without it, non-admin users with the O2S permission
     still don't see the item.
 
-## Rules (R1–R10) — mandatory for new and existing pages
+## Rules (R1–R11) — mandatory for new and existing pages
 
 Every CRUD page follows all of these. A new page is written to them from the start (the templates already
 do); an existing page is brought into line whenever it is touched — see "Existing pages" below.
@@ -209,12 +209,25 @@ cards, empty states, the banner and dialogs as in the templates (`h-8 py-1` cell
 errors and no warnings — no unused variables, imports, helpers or props. An `<img>` for an O2S file URL
 carries `// eslint-disable-next-line @next/next/no-img-element` with a reason.
 
+**R11 — Every outbound call goes through the service and the O2S adapter** (the frontend side of the
+backend's rule that every outbound HTTP call is a Refit client).
+- Components, dialogs and the workspace never call `fetch` (nor axios or another HTTP client): they call the
+  feature's `<file>.service.ts` (or a shared `*-api.ts` helper), which calls `${apiUrl}/api/v1/...` as in R8 and
+  so passes through `lib/o2s/adapter.ts` and its rule (R6).
+- The browser calls only the O2S API. A third-party service (exchange rates, AI, a vendor, maps, …) is called by
+  the backend through its own Refit client (`O2S-backend` CLAUDE.md, "Every outbound HTTP call goes through
+  Refit"), behind an O2S endpoint the page calls; never from the page, and never with a key in `NEXT_PUBLIC_*`.
+  No such endpoint yet → add it to the backend first (its `production-feature` skill), then the adapter rule.
+- What the user sees of a failure is the adapter's `message` (`toast.error(...)`, the dialog's error): never the
+  raw response text. The adapter already turns an HTML answer (the deploy's `app_offline.htm`, IIS error pages)
+  or no answer at all into a plain sentence; don't read `response.text()` into a toast to get around it.
+
 ## Existing pages
 
 When asked for *any* change to an existing CRUD page (a new field, a filter, a column, a bug fix, a restyle):
 
 1. **Do the requested change.**
-2. **Audit the page against R1–R10** — its route, feature folder, adapter rule, sidebar item and menu-name
+2. **Audit the page against R1–R11** — its route, feature folder, adapter rule, sidebar item and menu-name
    entry. Run `npx eslint <feature folder>` and read the backend `<Thing>Params` / DTO.
 3. **Fix every rule the page breaks**, in the same change, using the templates as the target shape. Keep the
    page's existing columns, fields, labels, badges, image thumbnails and extra actions — the rules change
@@ -222,7 +235,7 @@ When asked for *any* change to an existing CRUD page (a new field, a filter, a c
 4. **Ask before removing anything users can see.** R3 (a filter the backend ignores) and R4 (a bulk-upload
    menu that always errors) remove visible controls: list them and get a yes before deleting them. If the
    user says keep, leave them and note it in the summary.
-5. **Report** a short R1–R10 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
+5. **Report** a short R1–R11 table for the page: ✅ already met / 🔧 fixed / ⏸ left as is (and why).
 
 Known state of the reference pages (update this list when you fix one):
 
