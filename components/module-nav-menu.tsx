@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/sheet"
 import { fetchMenuPermissions } from "@/features/iam/menu-permissions/menu-permission.service"
 import { isGlobalAdmin, parseStoredAuthUser } from "@/lib/auth-session"
+import { canOpenIam, withIamAccess } from "@/lib/iam-access"
 import { readSelectedOrganizationId, SELECTED_ORGANIZATION_CHANGED_EVENT } from "@/lib/organization-selection"
 import { cn } from "@/lib/utils"
 import {
@@ -103,19 +104,23 @@ export function ModuleNavMenu({ current, variant = "header" }: ModuleNavMenuProp
       }
 
       try {
-        const permissions = await fetchMenuPermissions({
-          apiUrl,
-          accessToken,
-          userId: storedUser.id,
-          organizationId: selectedOrganizationId,
-        })
+        const [permissions, iamAllowed] = await Promise.all([
+          fetchMenuPermissions({
+            apiUrl,
+            accessToken,
+            userId: storedUser.id,
+            organizationId: selectedOrganizationId,
+          }),
+          canOpenIam({ apiUrl, accessToken, user: storedUser, organizationId: selectedOrganizationId }).catch(() => false),
+        ])
 
         if (!active) {
           return
         }
 
+        // IAM only for the organization's admins, whatever its menus' permissions say.
         setVisibleModules(
-          filterModuleNavigationByPermissions(MODULE_NAVIGATION, permissions, false),
+          withIamAccess(filterModuleNavigationByPermissions(MODULE_NAVIGATION, permissions, false), iamAllowed),
         )
       } catch {
         if (active) {

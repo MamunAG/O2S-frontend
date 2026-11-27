@@ -3,6 +3,7 @@
 
 import { fetchMenuPermissions } from "@/features/iam/menu-permissions/menu-permission.service"
 import { AUTH_PAGES, isGlobalAdmin, RETURN_PATH_KEY, type AuthUser } from "@/lib/auth-session"
+import { canOpenIam } from "@/lib/iam-access"
 import {
   filterModuleNavigationByPermissions,
   filterModuleSidebarGroupsByPermissions,
@@ -70,6 +71,10 @@ export async function resolveReturnPath({
   const organizationId = readSelectedOrganizationId()
   if (!user?.id || !organizationId) return "/"
   try {
+    // IAM is for the organization's admins only, page by page as well.
+    if (path === "/iam" || path.startsWith("/iam/")) {
+      return (await canOpenIam({ apiUrl, accessToken, user, organizationId })) ? target : "/"
+    }
     const permissions = await fetchMenuPermissions({ apiUrl, accessToken, userId: user.id, organizationId })
     if (moduleHome) {
       return filterModuleNavigationByPermissions([moduleHome], permissions, false).length ? target : "/"
