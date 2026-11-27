@@ -17,7 +17,8 @@ type OnboardingChoiceDialogProps = {
   onRequestAccess: () => void
 }
 
-function ChoiceCard({
+/** One choice of an onboarding dialog: a title in English and Bangla, what it does and the steps that follow. */
+export function ChoiceCard({
   icon,
   title,
   banglaTitle,
@@ -25,6 +26,7 @@ function ChoiceCard({
   steps,
   actionLabel,
   onAction,
+  disabledNote,
 }: {
   icon: React.ReactNode
   title: string
@@ -33,12 +35,16 @@ function ChoiceCard({
   steps: string[]
   actionLabel: string
   onAction: () => void
+  /** When set, the card can't be chosen and this (Bangla) reason is shown instead of the action. */
+  disabledNote?: string
 }) {
+  const disabled = Boolean(disabledNote)
   return (
     <button
       type="button"
       onClick={onAction}
-      className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:border-white/10 dark:bg-white/5 dark:hover:border-white"
+      disabled={disabled}
+      className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition enabled:hover:border-slate-900 enabled:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:enabled:hover:border-white"
     >
       <div className="flex items-center gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900">
@@ -60,10 +66,16 @@ function ChoiceCard({
           </li>
         ))}
       </ol>
-      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-950 group-hover:gap-2.5 dark:text-white">
-        {actionLabel}
-        <ArrowRight className="size-3.5 transition-all" />
-      </span>
+      {disabledNote ? (
+        <span lang="bn" className="mt-4 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs leading-5 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+          {disabledNote}
+        </span>
+      ) : (
+        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-950 group-hover:gap-2.5 dark:text-white">
+          {actionLabel}
+          <ArrowRight className="size-3.5 transition-all" />
+        </span>
+      )}
     </button>
   )
 }

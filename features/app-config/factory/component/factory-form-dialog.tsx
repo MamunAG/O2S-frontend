@@ -36,6 +36,8 @@ type FactoryFormDialogProps = {
     title?: string
     description?: string
     cancelLabel?: string
+    /** false: no Cancel, no close button, Escape / outside clicks ignored (a factory is required). */
+    dismissible?: boolean
 }
 
 function FieldLabel({
@@ -69,6 +71,7 @@ export function FactoryFormDialog({
     title: titleOverride,
     description: descriptionOverride,
     cancelLabel,
+    dismissible = true,
 }: FactoryFormDialogProps) {
     const imageInputRef = useRef<HTMLInputElement | null>(null)
     const title = titleOverride ?? (mode === "create" ? "Create factory" : "Edit factory")
@@ -83,8 +86,8 @@ export function FactoryFormDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="overflow-hidden p-0 sm:max-w-2xl">
+        <Dialog open={open} onOpenChange={dismissible ? onOpenChange : () => undefined}>
+            <DialogContent showCloseButton={dismissible} className="overflow-hidden p-0 sm:max-w-2xl">
                 <form
                     className="flex max-h-[calc(100vh-2rem)] flex-col"
                     onSubmit={(event) => {
@@ -257,14 +260,16 @@ export function FactoryFormDialog({
 
                     <div className="border-t border-slate-200/70 px-6 py-4 dark:border-white/10">
                         <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => onOpenChange(false)}
-                                className="rounded-xl"
-                            >
-                                {cancelLabel ?? "Cancel"}
-                            </Button>
+                            {dismissible ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => onOpenChange(false)}
+                                    className="rounded-xl"
+                                >
+                                    {cancelLabel ?? "Cancel"}
+                                </Button>
+                            ) : null}
                             <Button type="submit" disabled={loading || submitting} className="rounded-xl">
                                 {submitting ? <Loader2 className="size-3.5 animate-spin" /> : null}
                                 {mode === "create" ? "Save factory" : "Save changes"}

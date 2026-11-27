@@ -10,14 +10,14 @@ import { EMPTY_FORM_VALUES, type FactoryFormValues } from "./factory.types"
 type FactoryQuickEntryDialogProps = {
   open: boolean
   organizationId: string
-  /** The first factory right after creating an organization: "Skip for now" instead of "Cancel". */
-  firstFactory?: boolean
+  /** The first factory right after creating an organization: it can't be skipped (no Cancel, no close). */
+  required?: boolean
   onOpenChange: (open: boolean) => void
   onCreated: () => void
 }
 
 /** Adds a factory to the selected organization outside Factory Setup (onboarding, the factory menu). */
-export function FactoryQuickEntryDialog({ open, organizationId, firstFactory, onOpenChange, onCreated }: FactoryQuickEntryDialogProps) {
+export function FactoryQuickEntryDialog({ open, organizationId, required, onOpenChange, onCreated }: FactoryQuickEntryDialogProps) {
   const [values, setValues] = useState<FactoryFormValues>(EMPTY_FORM_VALUES)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -94,13 +94,13 @@ export function FactoryQuickEntryDialog({ open, organizationId, firstFactory, on
       onOpenChange={close}
       onImageUpload={uploadImage}
       onSubmit={submit}
-      title={firstFactory ? "Add your first factory (optional)" : "Add factory"}
+      title={required ? "Add your first factory" : "Add factory"}
       description={
-        firstFactory
-          ? "Modules and menus appear once the organization has a factory. You can skip this and add one later from the factory menu in the top bar."
-          : "Add a factory to the selected organization."
+        required
+          ? "An organization needs a factory before its modules and menus can be used. It is selected in the top bar once saved."
+          : "Add a factory to the selected organization. Once saved it is yours to work in."
       }
-      cancelLabel={firstFactory ? "Skip for now" : "Cancel"}
+      dismissible={!required}
     />
   )
 }

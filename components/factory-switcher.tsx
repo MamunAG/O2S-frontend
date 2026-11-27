@@ -173,7 +173,6 @@ export function FactorySwitcher({ className }: { className?: string }) {
       {dialog === "add" ? (
         <FactoryQuickEntryDialog
           open
-          firstFactory={factories.length === 0}
           organizationId={organizationId}
           onOpenChange={(open) => setDialog(open ? "add" : null)}
           onCreated={() => window.location.reload()}

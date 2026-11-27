@@ -15,8 +15,8 @@ type CreateOrganizationFlowProps = {
 }
 
 /**
- * Create an organization, then (optionally) its first factory. The creator is the organization's admin. Either
- * way the page reloads into the new organization, so the top bar, menus and screens follow it.
+ * Create an organization, then its first factory (required: nothing works without one). The creator is the
+ * organization's admin. The page then reloads into the new organization, so the top bar, menus and screens follow it.
  */
 export function CreateOrganizationFlow({ open, onCancel }: CreateOrganizationFlowProps) {
   const [created, setCreated] = useState<OrganizationRecord | null>(null)
@@ -46,7 +46,7 @@ export function CreateOrganizationFlow({ open, onCancel }: CreateOrganizationFlo
       {created ? (
         <FactoryQuickEntryDialog
           open
-          firstFactory
+          required
           organizationId={created.id}
           onOpenChange={() => finish(created.id)}
           onCreated={() => finish(created.id)}

@@ -14,10 +14,12 @@ type RequestFactoryPermissionDialogProps = {
   open: boolean
   organizationName: string
   onOpenChange: (open: boolean) => void
+  /** After the admins were told (the blocking factory dialog shows "request sent"). */
+  onSent?: () => void
 }
 
 /** Sends the organization's admins a notification and an email asking for factory permission. */
-export function RequestFactoryPermissionDialog({ open, organizationName, onOpenChange }: RequestFactoryPermissionDialogProps) {
+export function RequestFactoryPermissionDialog({ open, organizationName, onOpenChange, onSent }: RequestFactoryPermissionDialogProps) {
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState("")
@@ -41,6 +43,7 @@ export function RequestFactoryPermissionDialog({ open, organizationName, onOpenC
       toast.success(`Request sent to ${sentTo} ${sentTo === 1 ? "admin" : "admins"}. You'll see the factories once they give you permission.`)
       setMessage("")
       onOpenChange(false)
+      onSent?.()
     } catch (caught) {
       const text = caught instanceof Error ? caught.message : "Unable to send the request right now."
       setError(text)

@@ -92,7 +92,6 @@ export function FactoryRequiredGuard({ children }: { children: ReactNode }) {
       {dialog === "add" ? (
         <FactoryQuickEntryDialog
           open
-          firstFactory
           organizationId={organizationId}
           onOpenChange={(open) => setDialog(open ? "add" : null)}
           onCreated={() => window.location.reload()}
