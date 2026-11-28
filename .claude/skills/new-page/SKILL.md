@@ -295,7 +295,7 @@ when open, `aria-expanded`); clicking anywhere on the header or the chevron open
 - The deleted section keeps its header (title, "N deleted", chevron): R14 needs it to collapse.
 - Row menus (the `…` per row) stay in the row.
 
-**R16 — Dialogs: capped height on mobile (entry / edit forms 95%, the rest 90%); full-size footer buttons.**
+**R16 — Dialogs: capped height on mobile (entry / edit forms 95%, the rest 90%); full-size footer buttons on mobile, compact on desktop.**
 - An **entry / edit (Add new) form dialog** is at most **95% of the screen height on mobile**: `max-h-[95dvh]` below
   `sm`, its desktop cap after `sm:` (`max-h-[95dvh] sm:max-h-[calc(100vh-2rem)]` on the `<form>` inside
   `DialogContent`). **Every other** dialog (details, confirmations, pickers) is at most 90%: `max-h-[90dvh]`. Use
@@ -307,11 +307,16 @@ when open, `aria-expanded`); clicking anywhere on the header or the chevron open
 - Header and footer stay put; only the body scrolls: `DialogContent` gets `overflow-hidden p-0`, the form is
   `flex flex-col` with the cap above, the body is `<ScrollArea className="min-h-0 flex-1">`, the footer sits in its own
   bordered `div` under it.
-- The footer's Save and Cancel are full-size buttons, the same on desktop and mobile: Cancel
-  `className="h-9 min-w-24 rounded-xl px-4 text-sm"`, Save `className="h-9 min-w-28 rounded-xl px-4 text-sm"` (the
-  spinner `size-4`). The default `Button` size (`h-7`) is too thin for a dialog footer. `DialogFooter` stacks them
-  full width on mobile (Save on top) and puts them on the right on desktop.
-- Reference: `features/app-config/factory/component/factory-form-dialog.tsx` (2026-11-27).
+- Header and footer bars are compact: the header bar `border-b … py-1 pl-6 pr-10` (`pr-10` keeps the title clear of
+  the close ✕) with `<DialogHeader className="gap-0.5">` and an error box `mt-2` under it; the footer bar
+  `border-t … px-6 py-2` — not the older `px-6 pb-4 pt-6` / `px-6 py-4`.
+- The footer's Save and Cancel are full-size buttons **on mobile only**; from `sm` up they go back to the compact
+  default `Button` size (`h-7`, `px-2`, `text-xs`), as before 2026-11-27. Cancel
+  `className="h-9 min-w-24 rounded-xl px-4 text-sm sm:h-7 sm:min-w-0 sm:px-2 sm:text-xs/relaxed"`, Save
+  `className="h-9 min-w-28 rounded-xl px-4 text-sm sm:h-7 sm:min-w-0 sm:px-2 sm:text-xs/relaxed"` (the spinner
+  `size-4 sm:size-3.5`). `DialogFooter` stacks them full width on mobile (Save on top) and puts them on the right on
+  desktop.
+- Reference: `features/app-config/factory/component/factory-form-dialog.tsx` (2026-11-28).
 
 **R17 — On mobile the filters start collapsed behind a "Filters" bar with a down arrow.**
 - Below `sm`, the filter row (active *and* deleted sections) shows only a full-width "Filters" bar with a
@@ -348,7 +353,7 @@ Known state of the reference pages (update this list when you fix one):
 | Factory (`features/app-config/factory/`) | None. Brought to R1–R17 on 2026-11-27 (requestKey loader, controlled dialog, only `FactoryParams` filters — Code filter removed at the user's request, bulk upload removed, `permissionMenuName`, no re-export, lint-clean, compact header and table cards with no summary `description`, deleted section collapsible and collapsed by default, active section without a header bar and no "Page X of Y" / "N active filters" badges anywhere, R15). |
 | Designation (`features/app-config/designations/`) | R1 header (hand-written header with `AppRefreshButton` / `AppAddNewButton`), R13 (`description={pageSummary}` on both table sections), R14 (deleted section not collapsible), R15 (active section has a header bar) — not yet audited for the rest |
 | Exchange Rates (`features/app-config/exchange-rates/`) | R15: the "Saved rates" header bar (badges, the "1 row currency × rate" note, the selection Clear / Delete in `headerActions`) is not yet moved to the page header. Made phone-friendly on 2026-11-27 (the whole page container has inline-size containment, short header description, the table's `description` is only the "1 row currency × rate = the column currency" note, compact badges, `h-7` date filters). A matrix on `AppDataSection`: a row per date + from currency, a column per to currency built from the response's `currencies`, each cell edited in place (saved at once, toast, reload for the reverse pair), row checkboxes with bulk delete in `headerActions`, Rerun latest in the header's `actions`; its adapter rule has a custom `/matrix` handler. R8's soft delete does not apply: the rates table has no soft delete (a provider rate can be fetched again), so there is no deleted section and Delete is a confirmed hard delete. |
-| Other CRUD pages | not yet audited (R17, new on 2026-11-27, comes from the shared `AppDataFilterForm`, so every page whose filters go through it already meets it. R15 is new on 2026-11-27: every other page still has the active section's header bar). R16 (new on 2026-11-27): the entry / edit form dialogs have the 95% mobile cap, the big editors (Job, Style, Employee, TNA, Order Placement, GMT costing / budget / booking, Buyer, Fabric Process, GMT Cost Scope, TNA Task, Attendance pull) are centered 95% dialogs on mobile since 2026-11-27; their footer buttons are still the thin default size. The GMT fabric-cost pickers and the TNA formula dialog are still full-screen on mobile. |
+| Other CRUD pages | not yet audited (R17, new on 2026-11-27, comes from the shared `AppDataFilterForm`, so every page whose filters go through it already meets it. R15 is new on 2026-11-27: every other page still has the active section's header bar). R16 (new on 2026-11-27): the entry / edit form dialogs have the 95% mobile cap, the big editors (Job, Style, Employee, TNA, Order Placement, GMT costing / budget / booking, Buyer, Fabric Process, GMT Cost Scope, TNA Task, Attendance pull) are centered 95% dialogs on mobile since 2026-11-27; their header / footer bars are still the older `px-6 pb-4 pt-6` / `px-6 py-4` and their footer buttons the default size on mobile too (2026-11-28 R16: compact bars, full-size buttons on mobile only — done on Factory only). The GMT fabric-cost pickers and the TNA formula dialog are still full-screen on mobile. |
 
 ## Verify
 

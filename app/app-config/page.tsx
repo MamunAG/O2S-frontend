@@ -1,13 +1,7 @@
-import { ModuleLandingPage } from "@/components/module-landing-page"
+import { AppConfigOverview } from "@/features/app-config/overview/app-config-overview"
 
 export default function Page() {
-  return (
-    <ModuleLandingPage
-      eyebrow="App Confi"
-      title="Application configuration"
-      description="This module area is ready for app-level settings, brand options, and global preferences."
-      actionHref="/account"
-      actionLabel="Go to account"
-    />
-  )
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5299"
+
+  return <AppConfigOverview apiUrl={apiUrl} />
 }

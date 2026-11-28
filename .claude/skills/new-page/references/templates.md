@@ -1017,14 +1017,14 @@ export function __Thing__FormDialog({
             onSubmit(draft)
           }}
         >
-          <div className="border-b border-slate-200/70 px-6 pb-4 pt-6 dark:border-white/10">
-            <DialogHeader>
+          <div className="border-b border-slate-200/70 py-1 pl-6 pr-10 dark:border-white/10">
+            <DialogHeader className="gap-0.5">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
 
             {!loading && error ? (
-              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+              <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
                 {error}
               </div>
             ) : null}
@@ -1084,13 +1084,13 @@ export function __Thing__FormDialog({
             </div>
           </ScrollArea>
 
-          <div className="border-t border-slate-200/70 px-6 py-4 dark:border-white/10">
+          <div className="border-t border-slate-200/70 px-6 py-2 dark:border-white/10">
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-9 min-w-24 rounded-xl px-4 text-sm">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-9 min-w-24 rounded-xl px-4 text-sm sm:h-7 sm:min-w-0 sm:px-2 sm:text-xs/relaxed">
                 Cancel
               </Button>
-              <Button type="submit" disabled={disabled} className="h-9 min-w-28 rounded-xl px-4 text-sm">
-                {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
+              <Button type="submit" disabled={disabled} className="h-9 min-w-28 rounded-xl px-4 text-sm sm:h-7 sm:min-w-0 sm:px-2 sm:text-xs/relaxed">
+                {submitting ? <Loader2 className="size-4 animate-spin sm:size-3.5" /> : null}
                 {mode === "create" ? "Save __label__" : "Save changes"}
               </Button>
             </DialogFooter>
