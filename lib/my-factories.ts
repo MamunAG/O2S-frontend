@@ -27,6 +27,11 @@ export function loadMyFactories(organizationId = readSelectedOrganizationId()): 
   return result
 }
 
+/** Replaces the cached answer (e.g. with the one "Set as default factory" returns). */
+export function rememberMyFactories(organizationId: string, mine: MyFactoriesRecord) {
+  cache.set(organizationId, { at: Date.now(), result: Promise.resolve(mine) })
+}
+
 /** True when the user may work in at least one factory of the organization (modules and menus are shown). */
 export async function hasAnyFactory(organizationId = readSelectedOrganizationId()) {
   const mine = await loadMyFactories(organizationId)

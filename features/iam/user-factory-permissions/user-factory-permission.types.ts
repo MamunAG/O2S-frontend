@@ -65,7 +65,9 @@ export const EMPTY_FILTERS: UserFactoryFilterValues = {
 
 /** The caller's own factories in the selected organization (the top bar's factory switcher). */
 export type MyFactoriesRecord = {
-  /** A global or organization admin: may also work in "all factories". */
+  /** A global or organization admin: sees every factory of the organization. */
   isUnrestricted: boolean
+  /** The user's default factory ("Set as default factory") while it is one of `factories`; else null. */
+  defaultFactoryId?: string | null
   factories: { id: string; name: string; displayName: string; code?: string | null }[]
 }

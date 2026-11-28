@@ -142,6 +142,28 @@ export async function fetchMyFactories({ apiUrl, accessToken, organizationId }: 
   return payload.data
 }
 
+/** Saves the caller's default factory (selected on their next login). Returns their factories again. */
+export async function saveMyDefaultFactory({
+  apiUrl,
+  accessToken,
+  organizationId,
+  factoryId,
+}: RequestContext & { factoryId: string }): Promise<MyFactoriesRecord> {
+  const url = buildApiUrl(apiUrl, "/api/v1/user-factory-permission/mine/default")
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: buildRequestHeaders({ accessToken, organizationId, contentType: "application/json" }),
+    body: JSON.stringify({ factoryId }),
+  })
+  const payload = await readJsonResponse<MyFactoriesRecord>(response)
+
+  if (!payload.data || !Array.isArray(payload.data.factories)) {
+    throw new Error("The default factory was saved without data.")
+  }
+
+  return payload.data
+}
+
 /** Asks the organization's admins for factories: they get a notification and an email. Returns how many were told. */
 export async function requestFactoryPermission({
   apiUrl,

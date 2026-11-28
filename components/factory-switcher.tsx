@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ArrowLeftRight, ChevronDown, Factory, Plus, Send } from "lucide-react"
+import { ArrowLeftRight, ChevronDown, Factory, Loader2, Send, Star } from "lucide-react"
+import { toast } from "sonner"
 
 import {
   DropdownMenu,
@@ -13,23 +14,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { FactoryQuickEntryDialog } from "@/features/app-config/factory/factory-quick-entry-dialog"
+import { saveMyDefaultFactory } from "@/features/iam/user-factory-permissions/user-factory-permission.service"
 import type { MyFactoriesRecord } from "@/features/iam/user-factory-permissions/user-factory-permission.types"
 import { RequestFactoryPermissionDialog } from "@/features/onboarding/request-factory-permission-dialog"
 import { SwitchOrganizationDialog } from "@/features/onboarding/switch-organization-dialog"
 import { fetchCurrentUserOrganizations } from "@/features/organization/organization.service"
 import { readSelectedFactoryId, writeSelectedFactoryId } from "@/lib/factory-selection"
-import { loadMyFactories } from "@/lib/my-factories"
+import { loadMyFactories, rememberMyFactories } from "@/lib/my-factories"
 import { readSelectedOrganizationId, SELECTED_ORGANIZATION_CHANGED_EVENT } from "@/lib/organization-selection"
 import { cn } from "@/lib/utils"
-
-const ALL_FACTORIES = "__all_factories__"
 
 type Loaded = { organizationId: string; organizationName: string; mine: MyFactoriesRecord | null }
 
 /**
- * The top bar's factory menu (it replaces the organization combobox): the factory the user works in, then "Add
- * factory" for an organization admin, "Request factory permission" for everyone else, and "Switch organization".
+ * The top bar's factory menu (it replaces the organization combobox): the factory the user works in, then "Set
+ * selected factory as default" (saved on the user, selected on their next sign-in), "Request factory permission" for
+ * a non-admin, and "Switch organization". Factories are added from Factory Setup.
  * The factory-based screens show only the selected factory's records and the left menu hides those the user may not
  * use in it; a user with no factory sees no module at all. Switching reloads the page so everything follows.
  */
@@ -38,7 +38,8 @@ export function FactorySwitcher({ className }: { className?: string }) {
     typeof window === "undefined" ? "" : readSelectedOrganizationId(),
   )
   const [loaded, setLoaded] = useState<Loaded | null>(null)
-  const [dialog, setDialog] = useState<"switch" | "request" | "add" | null>(null)
+  const [dialog, setDialog] = useState<"switch" | "request" | null>(null)
+  const [savingDefault, setSavingDefault] = useState(false)
 
   useEffect(() => {
     function handleOrganizationChange(event: Event) {
@@ -65,11 +66,12 @@ export function FactorySwitcher({ className }: { className?: string }) {
       setLoaded({ organizationId, organizationName, mine })
       if (!mine) return
 
-      // A remembered factory the user no longer has, or none for a user who must work in one: pick again.
+      // None remembered (a new sign-in clears it), or one the user no longer has: their default factory (the backend
+      // sends it only while it is one of theirs here), else the first (admins too; there is no "all factories").
       const stored = readSelectedFactoryId(organizationId)
-      const valid = stored ? mine.factories.some((factory) => factory.id === stored) : mine.isUnrestricted || mine.factories.length === 0
+      const valid = stored ? mine.factories.some((factory) => factory.id === stored) : mine.factories.length === 0
       if (!valid) {
-        const next = mine.isUnrestricted ? "" : mine.factories[0]?.id ?? ""
+        const next = mine.defaultFactoryId || mine.factories[0]?.id || ""
         if (next !== stored) {
           writeSelectedFactoryId(next, organizationId)
           window.location.reload()
@@ -89,10 +91,34 @@ export function FactorySwitcher({ className }: { className?: string }) {
   const isAdmin = Boolean(mine?.isUnrestricted)
   const factories = mine?.factories ?? []
   const selected = readSelectedFactoryId(organizationId)
-  const value = selected || (isAdmin ? ALL_FACTORIES : "")
-  const selectedLabel =
-    factories.find((factory) => factory.id === selected)?.displayName ??
-    (factories.length === 0 ? "No factory" : isAdmin ? "All factories" : "Choose a factory")
+  const selectedFactory = factories.find((factory) => factory.id === selected)
+  const selectedLabel = selectedFactory
+    ? selectedFactory.displayName || selectedFactory.name
+    : factories.length === 0
+      ? "No factory"
+      : "Choose a factory"
+  const defaultFactoryId = mine?.defaultFactoryId ?? ""
+  const selectedIsDefault = Boolean(selectedFactory) && selectedFactory?.id === defaultFactoryId
+
+  async function setSelectedAsDefault() {
+    if (!selectedFactory || selectedIsDefault || savingDefault) return
+    setSavingDefault(true)
+    try {
+      const next = await saveMyDefaultFactory({
+        apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "",
+        accessToken: window.localStorage.getItem("access_token") ?? "",
+        organizationId,
+        factoryId: selectedFactory.id,
+      })
+      rememberMyFactories(organizationId, next)
+      setLoaded((previous) => (previous?.organizationId === organizationId ? { ...previous, mine: next } : previous))
+      toast.success(`${selectedFactory.displayName || selectedFactory.name} is now your default factory.`)
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : "Unable to set the default factory right now.")
+    } finally {
+      setSavingDefault(false)
+    }
+  }
 
   return (
     <>
@@ -125,33 +151,37 @@ export function FactorySwitcher({ className }: { className?: string }) {
             </DropdownMenuItem>
           ) : (
             <DropdownMenuRadioGroup
-              value={value}
-              onValueChange={(next) => {
-                const factoryId = next === ALL_FACTORIES ? "" : next
-                if (factoryId === selected) return
+              value={selected}
+              onValueChange={(factoryId) => {
+                if (!factoryId || factoryId === selected) return
                 writeSelectedFactoryId(factoryId, organizationId)
                 window.location.reload()
               }}
             >
-              {isAdmin ? (
-                <DropdownMenuRadioItem value={ALL_FACTORIES} className="text-xs">
-                  All factories
-                </DropdownMenuRadioItem>
-              ) : null}
               {factories.map((factory) => (
                 <DropdownMenuRadioItem key={factory.id} value={factory.id} className="text-xs">
-                  {factory.displayName || factory.name}
+                  <span className="min-w-0 flex-1 truncate">{factory.displayName || factory.name}</span>
+                  {factory.id === defaultFactoryId ? (
+                    <span className="shrink-0 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                      Default
+                    </span>
+                  ) : null}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
           )}
           <DropdownMenuSeparator />
-          {isAdmin ? (
-            <DropdownMenuItem className="text-xs" onSelect={() => setDialog("add")}>
-              <Plus className="size-3.5" />
-              Add factory
+          {selectedFactory ? (
+            <DropdownMenuItem
+              className="text-xs"
+              disabled={selectedIsDefault || savingDefault}
+              onSelect={() => void setSelectedAsDefault()}
+            >
+              {savingDefault ? <Loader2 className="size-3.5 animate-spin" /> : <Star className={cn("size-3.5", selectedIsDefault && "fill-amber-400 text-amber-500")} />}
+              {selectedIsDefault ? "Selected factory is your default" : "Set selected factory as default"}
             </DropdownMenuItem>
-          ) : (
+          ) : null}
+          {isAdmin ? null : (
             <DropdownMenuItem className="text-xs" onSelect={() => setDialog("request")}>
               <Send className="size-3.5" />
               Request factory permission
@@ -170,14 +200,6 @@ export function FactorySwitcher({ className }: { className?: string }) {
         organizationName={current.organizationName}
         onOpenChange={(open) => setDialog(open ? "request" : null)}
       />
-      {dialog === "add" ? (
-        <FactoryQuickEntryDialog
-          open
-          organizationId={organizationId}
-          onOpenChange={(open) => setDialog(open ? "add" : null)}
-          onCreated={() => window.location.reload()}
-        />
-      ) : null}
     </>
   )
 }

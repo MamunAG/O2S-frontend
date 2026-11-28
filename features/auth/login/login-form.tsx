@@ -16,6 +16,7 @@ import {
   SET_PASSWORD_PATH,
 } from "@/lib/auth-session"
 import type { AuthUser } from "@/lib/auth-session"
+import { clearSelectedFactories } from "@/lib/factory-selection"
 import { resolveReturnPath } from "@/lib/return-path"
 
 import { requestConfirmEmailCode } from "../confirm-email/confirm-email.service"
@@ -81,6 +82,8 @@ export function LoginForm({ apiUrl }: LoginFormProps) {
 
         // The refresh token is an HttpOnly cookie now (lib/o2s); an old stored one is dropped.
         window.localStorage.removeItem("refresh_token")
+        // A new sign-in starts from the user's default factory (or their first), not the last one picked here.
+        clearSelectedFactories()
 
         if (payload.data?.user) {
           window.localStorage.setItem("auth_user", JSON.stringify(payload.data.user))

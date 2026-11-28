@@ -1,5 +1,5 @@
-// The factory chosen in the top bar, one per organization ("" = all factories, which only an organization admin
-// or a global admin may work in). The O2S adapter sends it as x-factory-id on every call, with the page's menu as
+// The factory chosen in the top bar, one per organization ("" = none yet; the top bar then picks the user's default
+// factory, else the first one, admins included: there is no "all factories" choice). Cleared on sign-in. The O2S adapter sends it as x-factory-id on every call, with the page's menu as
 // x-menu-name: the backend hides and refuses the factory-based screens (Employee Setup, Payroll Processing, Job,
 // Order Placement, Create Budget) in a factory the user may not use them in, and lists their records for the
 // selected factory only.
@@ -20,7 +20,7 @@ function readAll(): Record<string, string> {
   }
 }
 
-/** The factory selected for the organization selected now ("" = all / none). */
+/** The factory selected for the organization selected now ("" = none yet). */
 export function readSelectedFactoryId(organizationId = readSelectedOrganizationId()) {
   if (!organizationId) return ""
   return String(readAll()[organizationId] ?? "").trim()
@@ -36,6 +36,19 @@ export function writeSelectedFactoryId(factoryId: string, organizationId = readS
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
   } catch {
     // storage blocked: the selection lasts until the page reloads
+  }
+}
+
+/**
+ * Forgets every remembered factory: called on sign-in, so the top bar starts from the user's default factory
+ * (ApiUser.DefaultFactoryId, while they may still use it) or else their first one.
+ */
+export function clearSelectedFactories() {
+  if (typeof window === "undefined") return
+  try {
+    window.localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // storage blocked: nothing was remembered
   }
 }
 

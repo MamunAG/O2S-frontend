@@ -370,6 +370,12 @@ export const configurationRules: O2sRule[] = [
     match: /^\/api\/v1\/user-factory-permission\/mine$/,
     to: (_m, ctx) => organizationPath(ctx, "/configuration/user-factory-permission/mine"),
   },
+  // "Set as default factory" (the factory menu): saved on the user, selected on their next login
+  {
+    methods: ["PUT"],
+    match: /^\/api\/v1\/user-factory-permission\/mine\/default$/,
+    to: (_m, ctx) => organizationPath(ctx, "/configuration/user-factory-permission/mine/default"),
+  },
   {
     methods: ["GET"],
     match: /^\/api\/v1\/user-factory-permission\/([^/]+)$/,
